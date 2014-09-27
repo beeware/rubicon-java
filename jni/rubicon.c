@@ -749,14 +749,14 @@ JNIEXPORT void JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj,
         (*env)->GetStringUTFChars(env, path, JNI_FALSE),
         (*env)->GetStringUTFChars(env, path, JNI_FALSE)
     );
-    LOG_D(pythonPath);
+    LOG_D("PYTHONPATH=%s\n", pythonPath);
     putenv(pythonPath);
     // putenv("PYTHONVERBOSE=1");
 
     sprintf(pythonHome, "%s/python",
         (*env)->GetStringUTFChars(env, path, JNI_FALSE)
     );
-    LOG_D(pythonHome);
+    LOG_D("PYTHONHOME=%s\n", pythonHome);
     Py_SetPythonHome(pythonHome);
 
     LOG_D("Initializing Python runtime\n");
@@ -772,7 +772,6 @@ JNIEXPORT void JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj,
         (*env)->GetStringUTFChars(env, appName, JNI_FALSE)
     );
     LOG_D("Running %s\n", progName);
-    LOG_D(progName);
     FILE* fd = fopen(progName, "r");
     if (fd == NULL) {
         ret = 1;
