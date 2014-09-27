@@ -7,10 +7,12 @@
 
 #include "rubicon.h"
 
-#define LOG_D(x) __android_log_write(ANDROID_LOG_DEBUG, "Python", (x))
-#define LOG_I(x) __android_log_write(ANDROID_LOG_INFO, "Python", (x))
-#define LOG_E(x) __android_log_write(ANDROID_LOG_ERROR, "Python", (x))
-#define LOG_V(x) __android_log_write(ANDROID_LOG_VERBOSE, "Python", (x))
+#define LOG_TAG "Python"
+
+#define LOG_D(...) __android_log_write(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+#define LOG_I(...) __android_log_write(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOG_E(...) __android_log_write(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#define LOG_V(...) __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
 
 // The JNIEnv associated with the Python runtime
 JNIEnv *java;
@@ -23,9 +25,9 @@ void (*method_handler)(const char *, const char *, int, void **);
  *************************************************************************/
 
 void register_handler(void (*handler)(const char *, const char *, int, void **)) {
-    printf("Register handler\n");
+    LOG_D("Register handler\n");
     method_handler = handler;
-    printf("Registered\n");
+    LOG_D("Registered\n");
 }
 
 /**************************************************************************
@@ -769,7 +771,7 @@ JNIEXPORT void JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj,
         (*env)->GetStringUTFChars(env, path, JNI_FALSE),
         (*env)->GetStringUTFChars(env, appName, JNI_FALSE)
     );
-    printf("Running %s\n", progName);
+    LOG_D("Running %s\n", progName);
     LOG_D(progName);
     FILE* fd = fopen(progName, "r");
     if (fd == NULL) {
@@ -803,19 +805,19 @@ JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke(JNIEnv *env, jobj
     LOG_D("Invocation\n");
 
     jclass Python = (*env)->FindClass(env, "org/pybee/Python");
-    printf("handler: %ld\n", (long)Python);
+    LOG_D("handler: %ld\n", (long)Python);
     jfieldID Python__instance = (*env)->GetFieldID(env, Python, "instance", "Ljava/lang/String;");
-    printf("method: %ld\n", (long)Python__instance);
+    LOG_D("method: %ld\n", (long)Python__instance);
 
     jobject instance = (*env)->GetObjectField(env, thisObj, Python__instance);
-    printf("instance: %ld\n", (long)instance);
+    LOG_D("instance: %ld\n", (long)instance);
 
     jclass Method = (*env)->FindClass(env, "java/lang/reflect/Method");
     jmethodID method__getName = (*env)->GetMethodID(env, Method, "getName", "()Ljava/lang/String;");
 
     jobject method_name = (*env)->CallObjectMethod(env, method, method__getName);
 
-    printf("Native invocation %s :: %s\n", (*env)->GetStringUTFChars(env, instance, JNI_FALSE), (*env)->GetStringUTFChars(env, method_name, JNI_FALSE));
+    LOG_D("Native invocation %s :: %s\n", (*env)->GetStringUTFChars(env, instance, JNI_FALSE), (*env)->GetStringUTFChars(env, method_name, JNI_FALSE));
 
     jsize argc = (*env)->GetArrayLength(env, args);
     LOG_D("There are %d arguments\n", argc);
