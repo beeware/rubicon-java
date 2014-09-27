@@ -1,9 +1,16 @@
 #include <jni.h>
 #include <stdio.h>
 
-#include <Python/Python.h>
+#include "android/log.h"
+
+#include "python2.7/Python.h"
 
 #include "rubicon.h"
+
+#define LOG_D(x) __android_log_write(ANDROID_LOG_DEBUG, "Python", (x))
+#define LOG_I(x) __android_log_write(ANDROID_LOG_INFO, "Python", (x))
+#define LOG_E(x) __android_log_write(ANDROID_LOG_ERROR, "Python", (x))
+#define LOG_V(x) __android_log_write(ANDROID_LOG_VERBOSE, "Python", (x))
 
 // The JNIEnv associated with the Python runtime
 JNIEnv *java;
@@ -721,10 +728,13 @@ jobjectRefType GetObjectRefType(jobject obj) {
 /**************************************************************************
  * Method to start the Python runtime.
  *************************************************************************/
-JNIEXPORT void JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj) {
+JNIEXPORT void JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj, jstring path, jstring appName) {
     int ret = 0;
+    char progName[256];
+    char pythonPath[512];
+    char pythonHome[256];
 
-    printf("Start Python runtime!\n");
+    LOG_I("Start Python runtime!\n");
     java = env;
 
     // Special environment to prefer .pyo, and don't write bytecode if .py are found
@@ -732,37 +742,54 @@ JNIEXPORT void JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj)
     putenv("PYTHONOPTIMIZE=2");
     putenv("PYTHONDONTWRITEBYTECODE=1");
     putenv("PYTHONNOUSERSITE=1");
-    putenv("PYTHONPATH=./src:./app_packages");
+
+    sprintf(pythonPath, "PYTHONPATH=%s/app:%s/app_packages",
+        (*env)->GetStringUTFChars(env, path, JNI_FALSE),
+        (*env)->GetStringUTFChars(env, path, JNI_FALSE)
+    );
+    LOG_D(pythonPath);
+    putenv(pythonPath);
     // putenv("PYTHONVERBOSE=1");
 
-    // Py_SetPythonHome(".");
+    sprintf(pythonHome, "%s/python",
+        (*env)->GetStringUTFChars(env, path, JNI_FALSE)
+    );
+    LOG_D(pythonHome);
+    Py_SetPythonHome(pythonHome);
 
-    printf("Initializing Python runtime\n");
+    LOG_D("Initializing Python runtime\n");
     Py_Initialize();
     // PySys_SetArgv(argc, argv);
 
     // If other modules are using thread, we need to initialize them before.
     PyEval_InitThreads();
 
-    // Search and start main.py
-    const char * prog = "src/main.py";
-
-    printf("Running %s\n", prog);
-    FILE* fd = fopen(prog, "r");
+    // Search for and start main.py
+    sprintf(progName, "%s/app/%s/main.py",
+        (*env)->GetStringUTFChars(env, path, JNI_FALSE),
+        (*env)->GetStringUTFChars(env, appName, JNI_FALSE)
+    );
+    printf("Running %s\n", progName);
+    LOG_D(progName);
+    FILE* fd = fopen(progName, "r");
     if (fd == NULL) {
         ret = 1;
-        printf("Unable to open main.py, abort.\n");
+        LOG_E("Unable to open main.py, abort.\n");
     } else {
-        ret = PyRun_SimpleFileEx(fd, prog, 1);
+        ret = PyRun_SimpleFileEx(fd, progName, 1);
         if (ret != 0) {
-            printf("Application quit abnormally!\n");
+            LOG_E("Application quit abnormally!\n");
         }
     }
+}
 
+/**************************************************************************
+ * Method to stop the Python runtime.
+ *************************************************************************/
+JNIEXPORT void JNICALL Java_org_pybee_Python_stop(JNIEnv *env, jobject thisObj) {
+    LOG_I("Finalizing Python runtime\n");
     Py_Finalize();
-    printf("Leaving\n");
-
-    return;
+    LOG_I("Python runtime stopped\n");
 }
 
 
@@ -773,7 +800,7 @@ JNIEXPORT void JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj)
  * method dispatch method that has been registered as part of the runtime.
  *************************************************************************/
 JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke(JNIEnv *env, jobject thisObj, jobject proxy, jobject method, jobjectArray args) {
-    printf("Invocation\n");
+    LOG_D("Invocation\n");
 
     jclass Python = (*env)->FindClass(env, "org/pybee/Python");
     printf("handler: %ld\n", (long)Python);
@@ -791,17 +818,18 @@ JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke(JNIEnv *env, jobj
     printf("Native invocation %s :: %s\n", (*env)->GetStringUTFChars(env, instance, JNI_FALSE), (*env)->GetStringUTFChars(env, method_name, JNI_FALSE));
 
     jsize argc = (*env)->GetArrayLength(env, args);
-    printf("There are %d arguments\n", argc);
-    printf("Event handler\n");
+    LOG_D("There are %d arguments\n", argc);
+    LOG_I("Event handler\n");
 
     void *argv[argc];
-    for (int i = 0; i < argc; i++) {
+    int i;
+    for (i = 0; i < argc; i++) {
         argv[i] = (void *)(*env)->GetObjectArrayElement(env, args, i);
     }
 
     (*method_handler)((*env)->GetStringUTFChars(env, instance, JNI_FALSE), (*env)->GetStringUTFChars(env, method_name, JNI_FALSE), argc, argv);
 
-    printf("Native invocation done\n");
+    LOG_D("Native invocation done\n");
 
     return NULL;
 }

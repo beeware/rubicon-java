@@ -7,10 +7,18 @@ extern "C" {
 #endif
 /*
  * Class:     org_pybee_Python
- * Method:    sayHello
- * Signature: ()V
+ * Method:    start
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_org_pybee_Python_start
+  (JNIEnv *, jobject, jstring, jstring);
+
+/*
+ * Class:     org_pybee_Python
+ * Method:    stop
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_org_pybee_Python_stop
   (JNIEnv *, jobject);
 
 /*
