@@ -9,10 +9,10 @@
 
 #define LOG_TAG "Python"
 
-#define LOG_D(...) __android_log_write(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
-#define LOG_I(...) __android_log_write(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
-#define LOG_E(...) __android_log_write(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
-#define LOG_V(...) __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
+#define LOG_D(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+#define LOG_I(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOG_E(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#define LOG_V(...) __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
 
 // The JNIEnv associated with the Python runtime
 JNIEnv *java;
