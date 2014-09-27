@@ -9,10 +9,11 @@
 
 #define LOG_TAG "Python"
 
+#define LOG_V(...) __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
 #define LOG_D(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define LOG_I(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOG_W(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 #define LOG_E(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
-#define LOG_V(...) __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
 
 // The JNIEnv associated with the Python runtime
 JNIEnv *java;
@@ -21,13 +22,76 @@ JNIEnv *java;
 void (*method_handler)(const char *, const char *, int, void **);
 
 /**************************************************************************
+ * Declaration of a Python module giving access to Android logging
+ *************************************************************************/
+
+static PyObject *androidlog_verbose(PyObject *self, PyObject *args) {
+    char *logstr = NULL;
+    if (!PyArg_ParseTuple(args, "s", &logstr)) {
+        return NULL;
+    }
+    __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, logstr);
+    Py_RETURN_NONE;
+}
+
+static PyObject *androidlog_debug(PyObject *self, PyObject *args) {
+    char *logstr = NULL;
+    if (!PyArg_ParseTuple(args, "s", &logstr)) {
+        return NULL;
+    }
+    __android_log_write(ANDROID_LOG_DEBUG, LOG_TAG, logstr);
+    Py_RETURN_NONE;
+}
+
+static PyObject *androidlog_info(PyObject *self, PyObject *args) {
+    char *logstr = NULL;
+    if (!PyArg_ParseTuple(args, "s", &logstr)) {
+        return NULL;
+    }
+    __android_log_write(ANDROID_LOG_INFO, LOG_TAG, logstr);
+    Py_RETURN_NONE;
+}
+
+static PyObject *androidlog_warn(PyObject *self, PyObject *args) {
+    char *logstr = NULL;
+    if (!PyArg_ParseTuple(args, "s", &logstr)) {
+        return NULL;
+    }
+    __android_log_write(ANDROID_LOG_WARN, LOG_TAG, logstr);
+    Py_RETURN_NONE;
+}
+
+static PyObject *androidlog_error(PyObject *self, PyObject *args) {
+    char *logstr = NULL;
+    if (!PyArg_ParseTuple(args, "s", &logstr)) {
+        return NULL;
+    }
+    __android_log_write(ANDROID_LOG_ERROR, LOG_TAG, logstr);
+    Py_RETURN_NONE;
+}
+
+static PyMethodDef AndroidLogMethods[] = {
+    {"verbose", androidlog_verbose, METH_VARARGS, "Write a VERBOSE message to the Android system log."},
+    {"debug", androidlog_debug, METH_VARARGS, "Write a DEBUG message to the Android system log."},
+    {"info", androidlog_info, METH_VARARGS, "Write an INFO message to the Android system log."},
+    {"warn", androidlog_warn, METH_VARARGS, "Write a WARN message to the Android system log."},
+    {"error", androidlog_error, METH_VARARGS, "Write an ERROR message to the Android system log."},
+    {NULL, NULL, 0, NULL}
+};
+
+PyMODINIT_FUNC initandroidlog(void) {
+    (void) Py_InitModule("androidlog", AndroidLogMethods);
+}
+
+
+/**************************************************************************
  * Method to register the Python method handler.
  *************************************************************************/
 
 void register_handler(void (*handler)(const char *, const char *, int, void **)) {
-    LOG_D("Register handler\n");
+    LOG_D("Register handler...");
     method_handler = handler;
-    LOG_D("Registered\n");
+    LOG_D("Registered.");
 }
 
 /**************************************************************************
@@ -736,7 +800,7 @@ JNIEXPORT void JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj,
     char pythonPath[512];
     char pythonHome[256];
 
-    LOG_I("Start Python runtime!\n");
+    LOG_I("Start Python runtime...");
     java = env;
 
     // Special environment to prefer .pyo, and don't write bytecode if .py are found
@@ -749,48 +813,77 @@ JNIEXPORT void JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj,
         (*env)->GetStringUTFChars(env, path, JNI_FALSE),
         (*env)->GetStringUTFChars(env, path, JNI_FALSE)
     );
-    LOG_D("PYTHONPATH=%s\n", pythonPath);
+    LOG_D("%s", pythonPath);
     putenv(pythonPath);
     // putenv("PYTHONVERBOSE=1");
 
     sprintf(pythonHome, "%s/python",
         (*env)->GetStringUTFChars(env, path, JNI_FALSE)
     );
-    LOG_D("PYTHONHOME=%s\n", pythonHome);
+    LOG_D("PYTHONHOME=%s", pythonHome);
     Py_SetPythonHome(pythonHome);
 
-    LOG_D("Initializing Python runtime\n");
+    LOG_I("Initializing Python runtime...");
     Py_Initialize();
     // PySys_SetArgv(argc, argv);
 
     // If other modules are using thread, we need to initialize them before.
     PyEval_InitThreads();
 
+    // Initialize and bootstrap the Android logging module
+    LOG_I("Initializing Android logging module...");
+    initandroidlog();
+
+    LOG_D("Bootstrap Android logging...");
+    ret = PyRun_SimpleString(
+        "import sys\n" \
+        "import androidlog\n" \
+        "class LogFile(object):\n" \
+        "    def __init__(self, level):\n" \
+        "        self.buffer = ''\n" \
+        "        self.level = level\n" \
+        "    def write(self, s):\n" \
+        "        s = self.buffer + s\n" \
+        "        lines = s.split(\"\\n\")\n" \
+        "        for line in lines[:-1]:\n" \
+        "            self.level(line)\n" \
+        "        self.buffer = lines[-1]\n" \
+        "    def flush(self):\n" \
+        "        return\n" \
+        "sys.stdout = LogFile(androidlog.info)\n" \
+        "sys.stderr = LogFile(androidlog.error)\n" \
+        "print 'Android Logging bootstrap active.'");
+    if (ret != 0) {
+        LOG_E("Exception during logging bootstrap.");
+        return;
+    }
+
     // Search for and start main.py
     sprintf(progName, "%s/app/%s/main.py",
         (*env)->GetStringUTFChars(env, path, JNI_FALSE),
         (*env)->GetStringUTFChars(env, appName, JNI_FALSE)
     );
-    LOG_D("Running %s\n", progName);
+    LOG_D("Running %s", progName);
     FILE* fd = fopen(progName, "r");
     if (fd == NULL) {
         ret = 1;
-        LOG_E("Unable to open main.py, abort.\n");
+        LOG_E("Unable to open main.py, abort.");
     } else {
         ret = PyRun_SimpleFileEx(fd, progName, 1);
         if (ret != 0) {
-            LOG_E("Application quit abnormally!\n");
+            LOG_E("Application quit abnormally!");
         }
     }
+    LOG_D("Python runtime started.");
 }
 
 /**************************************************************************
  * Method to stop the Python runtime.
  *************************************************************************/
 JNIEXPORT void JNICALL Java_org_pybee_Python_stop(JNIEnv *env, jobject thisObj) {
-    LOG_I("Finalizing Python runtime\n");
+    LOG_I("Finalizing Python runtime...");
     Py_Finalize();
-    LOG_I("Python runtime stopped\n");
+    LOG_I("Python runtime stopped.");
 }
 
 
@@ -801,26 +894,26 @@ JNIEXPORT void JNICALL Java_org_pybee_Python_stop(JNIEnv *env, jobject thisObj) 
  * method dispatch method that has been registered as part of the runtime.
  *************************************************************************/
 JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke(JNIEnv *env, jobject thisObj, jobject proxy, jobject method, jobjectArray args) {
-    LOG_D("Invocation\n");
+    LOG_D("Invocation");
 
     jclass Python = (*env)->FindClass(env, "org/pybee/Python");
-    LOG_D("handler: %ld\n", (long)Python);
+    LOG_D("handler: %ld", (long)Python);
     jfieldID Python__instance = (*env)->GetFieldID(env, Python, "instance", "Ljava/lang/String;");
-    LOG_D("method: %ld\n", (long)Python__instance);
+    LOG_D("method: %ld", (long)Python__instance);
 
     jobject instance = (*env)->GetObjectField(env, thisObj, Python__instance);
-    LOG_D("instance: %ld\n", (long)instance);
+    LOG_D("instance: %ld", (long)instance);
 
     jclass Method = (*env)->FindClass(env, "java/lang/reflect/Method");
     jmethodID method__getName = (*env)->GetMethodID(env, Method, "getName", "()Ljava/lang/String;");
 
     jobject method_name = (*env)->CallObjectMethod(env, method, method__getName);
 
-    LOG_D("Native invocation %s :: %s\n", (*env)->GetStringUTFChars(env, instance, JNI_FALSE), (*env)->GetStringUTFChars(env, method_name, JNI_FALSE));
+    LOG_D("Native invocation %s :: %s", (*env)->GetStringUTFChars(env, instance, JNI_FALSE), (*env)->GetStringUTFChars(env, method_name, JNI_FALSE));
 
     jsize argc = (*env)->GetArrayLength(env, args);
-    LOG_D("There are %d arguments\n", argc);
-    LOG_I("Event handler\n");
+    LOG_D("There are %d arguments", argc);
+    LOG_I("Event handler");
 
     void *argv[argc];
     int i;
@@ -830,7 +923,7 @@ JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke(JNIEnv *env, jobj
 
     (*method_handler)((*env)->GetStringUTFChars(env, instance, JNI_FALSE), (*env)->GetStringUTFChars(env, method_name, JNI_FALSE), argc, argv);
 
-    LOG_D("Native invocation done\n");
+    LOG_D("Native invocation done.");
 
     return NULL;
 }
