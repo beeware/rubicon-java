@@ -8,6 +8,14 @@ from .types import *
 # so we have to manually specify it.
 java = cdll.LoadLibrary(os.environ.get('RUBICON_LIBRARY', util.find_library('rubicon')))
 
+JNI_VERSION_1_1 = 0x00010001
+JNI_VERSION_1_2 = 0x00010002
+JNI_VERSION_1_4 = 0x00010004
+JNI_VERSION_1_6 = 0x00010006
+
+java.set_JNIEnv.restype = None
+java.set_JNIEnv.argtypes = [JNIEnv]
+
 java.GetVersion.restype = jint
 java.GetVersion.argtypes = []
 
@@ -337,9 +345,8 @@ java.SetFloatArrayRegion.argtypes = [jfloatArray, jsize, jsize, jfloat_p]
 java.SetDoubleArrayRegion.restype = None
 java.SetDoubleArrayRegion.argtypes = [jdoubleArray, jsize, jsize, jdouble_p]
 
-# FIXME
-# java.RegisterNatives.restype = jint
-# java.RegisterNatives.argtypes = [jclass, const JNINativeMethod *methods, jint]
+java.RegisterNatives.restype = jint
+java.RegisterNatives.argtypes = [jclass, JNINativeMethod_p, jint]
 java.UnregisterNatives.restype = jint
 java.UnregisterNatives.argtypes = [jclass]
 
@@ -348,9 +355,8 @@ java.MonitorEnter.argtypes = [jobject]
 java.MonitorExit.restype = jint
 java.MonitorExit.argtypes = [jobject]
 
-# FIXME
-# java.GetJavaVM.restype = jint
-# java.GetJavaVM.argtypes = [JavaVM **vm]
+java.GetJavaVM.restype = jint
+java.GetJavaVM.argtypes = [JavaVM_p]
 
 java.GetStringRegion.restype = None
 java.GetStringRegion.argtypes = [jstring, jsize, jsize, jchar_p]
@@ -367,11 +373,10 @@ java.GetStringCritical.argtypes = [jstring, jboolean_p]
 java.ReleaseStringCritical.restype = None
 java.ReleaseStringCritical.argtypes = [jstring, jchar_p]
 
-# FIXME
-# java.NewWeakGlobalRef.restype = jweak
-# java.NewWeakGlobalRef.argtypes = [jobject]
-# java.DeleteWeakGlobalRef.restype = None
-# java.DeleteWeakGlobalRef.argtypes = [jweak]
+java.NewWeakGlobalRef.restype = jweak
+java.NewWeakGlobalRef.argtypes = [jobject]
+java.DeleteWeakGlobalRef.restype = None
+java.DeleteWeakGlobalRef.argtypes = [jweak]
 
 java.ExceptionCheck.restype = jboolean
 java.ExceptionCheck.argtypes = []
@@ -383,6 +388,5 @@ java.GetDirectBufferAddress.argtypes = [jobject]
 java.GetDirectBufferCapacity.restype = jlong
 java.GetDirectBufferCapacity.argtypes = [jobject]
 
-# FIXME
-# java.GetObjectRefType.restype = jobjectRefType
-# java.GetObjectRefType.argtypes = [jobject]
+java.GetObjectRefType.restype = c_int
+java.GetObjectRefType.argtypes = [jobject]

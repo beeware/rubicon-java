@@ -37,9 +37,6 @@ JNIEXPORT void JNICALL Java_org_pybee_Python_stop
 JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke
   (JNIEnv *, jobject, jobject, jobject, jobjectArray);
 
-
-JNIEXPORT jint GetVersion();
-
 #ifdef __cplusplus
 }
 #endif

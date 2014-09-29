@@ -4,19 +4,18 @@ JAVA_HOME=$(shell /usr/libexec/java_home)
 
 all: dist/rubicon.jar dist/librubicon.dylib
 
-dist:
+dist/rubicon.jar: org/pybee/Python.class org/pybee/PythonInstance.class
 	mkdir -p dist
-
-dist/rubicon.jar: dist org/pybee/Python.class org/pybee/PythonInstance.class
 	jar -cvf dist/rubicon.jar org/pybee/Python.class org/pybee/PythonInstance.class
 
-dist/librubicon.dylib: dist jni/rubicon.o
+dist/librubicon.dylib: jni/rubicon.o
+	mkdir -p dist
 	gcc -shared -lPython -o $@ $<
 
 clean:
 	rm -f org/pybee/*.class
 	rm -f jni/*.o
-	rm -f dist
+	rm -rf dist
 
 %.class : %.java
 	$(JAVAC) $<

@@ -80,6 +80,13 @@ static PyMethodDef AndroidMethods[] = {
 PyMODINIT_FUNC initandroid(void) {
     (void) Py_InitModule("android", AndroidMethods);
 }
+#else
+
+#define LOG_V(...) printf(__VA_ARGS__); printf("\n")
+#define LOG_D(...) printf(__VA_ARGS__); printf("\n")
+#define LOG_I(...) printf(__VA_ARGS__); printf("\n")
+#define LOG_W(...) printf(__VA_ARGS__); printf("\n")
+#define LOG_E(...) printf(__VA_ARGS__); printf("\n")
 
 #endif
 
@@ -99,9 +106,16 @@ const char *installPath = NULL;
 void (*method_handler)(const char *, const char *, int, void **);
 
 /**************************************************************************
- * Method to register the Python method handler.
+ * Set the Java environment that is active for the Python bridge.
  *************************************************************************/
+void set_JNIEnv(JNIEnv *env) {
+    LOG_D("Set active JNI Environment...");
+    java = env;
+}
 
+/**************************************************************************
+ * Register the Python method handler to use on the bridge.
+ *************************************************************************/
 void register_handler(void (*handler)(const char *, const char *, int, void **)) {
     LOG_D("Register handler...");
     method_handler = handler;

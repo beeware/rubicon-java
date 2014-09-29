@@ -7,6 +7,8 @@ __all__ = [
     'jobject', 'jmethodID', 'jfieldID',
     'jclass', 'jthrowable', 'jstring', 'jarray',
     'jbooleanArray', 'jbyteArray', 'jcharArray', 'jshortArray', 'jintArray', 'jlongArray', 'jfloatArray', 'jdoubleArray', 'jobjectArray',
+    'jweak', 'JNINativeMethod', 'JNINativeMethod_p',
+    'JavaVM', 'JavaVM_p', 'JNIEnv',
     'DISPATCH_FUNCTION'
 ]
 
@@ -48,5 +50,20 @@ jlongArray = jarray
 jfloatArray = jarray
 jdoubleArray = jarray
 jobjectArray = jarray
+
+jweak = jobject
+
+class JNINativeMethod(Structure):
+     _fields_ = [
+        ("name", c_char_p),
+        ("signature", c_char_p),
+        ("fnPtr", c_void_p),
+    ]
+JNINativeMethod_p = POINTER(JNINativeMethod)
+
+JavaVM = c_void_p
+JavaVM_p = POINTER(JavaVM)
+
+JNIEnv = c_void_p
 
 DISPATCH_FUNCTION = CFUNCTYPE(None, c_char_p, c_char_p, c_int, POINTER(c_void_p))
