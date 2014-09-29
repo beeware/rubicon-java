@@ -811,11 +811,12 @@ jobjectRefType GetObjectRefType(jobject obj) {
 JNIEXPORT jint JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj, jstring path) {
     int ret = 0;
     char pythonPath[512];
+    char rubiconLibrary[256];
     char pythonHome[256];
 
     LOG_I("Start Python runtime...");
     java = env;
-    installPath = (*env)->GetStringUTFChars(env, path, JNI_FALSE);
+    installPath = (*env)->GetStringUTFChars(env, path, NULL);
     LOG_D("Install path: %s", installPath);
 
     // Special environment to prefer .pyo, and don't write bytecode if .py are found
@@ -824,13 +825,21 @@ JNIEXPORT jint JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj,
     putenv("PYTHONDONTWRITEBYTECODE=1");
     putenv("PYTHONNOUSERSITE=1");
 
+#ifdef ANDROID
+    // If we're on android, we need to specify the location of the Rubicon
+    // shared library as part of the environment.
+    sprintf(rubiconLibrary, "RUBICON_LIBRARY=%s/python/librubicon.so", installPath);
+    LOG_D("%s", rubiconLibrary);
+    putenv(rubiconLibrary);
+#endif
+
     sprintf(pythonPath, "PYTHONPATH=%s/app:%s/app_packages", installPath, installPath);
     LOG_D("%s", pythonPath);
     putenv(pythonPath);
     // putenv("PYTHONVERBOSE=1");
 
     sprintf(pythonHome, "%s/python",
-        (*env)->GetStringUTFChars(env, path, JNI_FALSE)
+        (*env)->GetStringUTFChars(env, path, NULL)
     );
     LOG_D("PYTHONHOME=%s", pythonHome);
     Py_SetPythonHome(pythonHome);
@@ -886,13 +895,13 @@ JNIEXPORT jint JNICALL Java_org_pybee_Python_run(JNIEnv *env, jobject thisObj, j
     // Search for and start entry script
     sprintf(progName, "%s/app/%s",
         installPath,
-        (*env)->GetStringUTFChars(env, appName, JNI_FALSE)
+        (*env)->GetStringUTFChars(env, appName, NULL)
     );
     LOG_D("Running %s", progName);
     FILE* fd = fopen(progName, "r");
     if (fd == NULL) {
         ret = 1;
-        LOG_E("Unable to open %s", (*env)->GetStringUTFChars(env, appName, JNI_FALSE));
+        LOG_E("Unable to open %s", (*env)->GetStringUTFChars(env, appName, NULL));
     } else {
         ret = PyRun_SimpleFileEx(fd, progName, 1);
         if (ret != 0) {
@@ -936,7 +945,7 @@ JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke(JNIEnv *env, jobj
 
     jobject method_name = (*env)->CallObjectMethod(env, method, method__getName);
 
-    LOG_D("Native invocation %s :: %s", (*env)->GetStringUTFChars(env, instance, JNI_FALSE), (*env)->GetStringUTFChars(env, method_name, JNI_FALSE));
+    LOG_D("Native invocation %s :: %s", (*env)->GetStringUTFChars(env, instance, NULL), (*env)->GetStringUTFChars(env, method_name, NULL));
 
     jsize argc = (*env)->GetArrayLength(env, args);
     LOG_D("There are %d arguments", argc);
@@ -948,7 +957,7 @@ JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke(JNIEnv *env, jobj
         argv[i] = (void *)(*env)->GetObjectArrayElement(env, args, i);
     }
 
-    (*method_handler)((*env)->GetStringUTFChars(env, instance, JNI_FALSE), (*env)->GetStringUTFChars(env, method_name, JNI_FALSE), argc, argv);
+    (*method_handler)((*env)->GetStringUTFChars(env, instance, NULL), (*env)->GetStringUTFChars(env, method_name, NULL), argc, argv);
 
     LOG_D("Native invocation done.");
 

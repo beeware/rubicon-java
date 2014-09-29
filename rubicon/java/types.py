@@ -2,10 +2,12 @@ from ctypes import *
 
 __all__ = [
     'jboolean', 'jbyte', 'jchar', 'jshort', 'jint', 'jlong', 'jfloat', 'jdouble',
+    'jboolean_p', 'jbyte_p', 'jchar_p', 'jshort_p', 'jint_p', 'jlong_p', 'jfloat_p', 'jdouble_p',
     'jsize',
     'jobject', 'jmethodID', 'jfieldID',
     'jclass', 'jthrowable', 'jstring', 'jarray',
     'jbooleanArray', 'jbyteArray', 'jcharArray', 'jshortArray', 'jintArray', 'jlongArray', 'jfloatArray', 'jdoubleArray', 'jobjectArray',
+    'DISPATCH_FUNCTION'
 ]
 
 jboolean = c_bool
