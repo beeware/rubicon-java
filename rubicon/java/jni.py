@@ -5,7 +5,7 @@ import os
 from .types import *
 
 # If we're on Android, the SO file isn't on the LD_LIBRARY_PATH,
-# so we have to manually specify it.
+# so we have to manually specify it using the environment.
 java = cdll.LoadLibrary(os.environ.get('RUBICON_LIBRARY', util.find_library('rubicon')))
 
 JNI_VERSION_1_1 = 0x00010001
@@ -13,8 +13,12 @@ JNI_VERSION_1_2 = 0x00010002
 JNI_VERSION_1_4 = 0x00010004
 JNI_VERSION_1_6 = 0x00010006
 
+# Rubicon configuration points
+
 java.set_JNIEnv.restype = None
 java.set_JNIEnv.argtypes = [JNIEnv]
+
+# Standard JNI API
 
 java.GetVersion.restype = jint
 java.GetVersion.argtypes = []

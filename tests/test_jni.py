@@ -6,7 +6,7 @@ from unittest import TestCase
 
 import math
 
-from rubicon.java import java, jobject
+from rubicon.java import java, jstring
 
 
 class JNITest(TestCase):
@@ -18,73 +18,158 @@ class JNITest(TestCase):
         java_string = java.NewStringUTF(s.encode('utf-8'))
         self.assertEqual(java.GetStringUTFChars(java_string, None).decode('utf-8'), s)
 
-    def test_non_existent_class(self):
-        "A class that doesn't exist won't be found"
+    def test_non_existent(self):
+        "Non-existent classes/methods/fields return None from Find/Get APIs"
+        # A class that doesn't exist
         UnknownClass = java.FindClass("java/XXX")
         self.assertIsNone(UnknownClass)
 
+        # A class that does exist, that we can then search for non-existent methods
+        Example = java.FindClass("org/pybee/test/Example")
+        self.assertIsNotNone(Example)
+
+        # Fields and Methods (static and non-static)
+        self.assertIsNone(java.GetMethodID(Example, "xxx", "V()"))
+        self.assertIsNone(java.GetStaticMethodID(Example, "xxx", "V()"))
+        self.assertIsNone(java.GetFieldID(Example, "xxx", "I"))
+        self.assertIsNone(java.GetStaticFieldID(Example, "xxx", "I"))
+
+        # Bad descriptors for existing fields/methods also fail.
+        self.assertIsNone(java.GetMethodID(Example, "get_int_field", "D()"))
+        self.assertIsNone(java.GetStaticMethodID(Example, "get_static_int_field", "D()"))
+        self.assertIsNone(java.GetFieldID(Example, "int_field", "D"))
+        self.assertIsNone(java.GetStaticFieldID(Example, "static_int_field", "D"))
+
     def test_object_lifecycle(self):
         "The basic lifecycle operations of an object can be performed"
-        # Get a reference to the java.util.Stack class
-        Stack = java.FindClass("java/util/Stack")
-        self.assertIsNotNone(Stack)
+        # Get a reference to the org.pybee.test.Example class
+        Example = java.FindClass("org/pybee/test/Example")
+        self.assertIsNotNone(Example)
 
         # Find the default constructor
-        Stack__init = java.GetMethodID(Stack, "<init>", "()V")
-        self.assertIsNotNone(Stack__init)
+        Example__init = java.GetMethodID(Example, "<init>", "()V")
+        self.assertIsNotNone(Example__init)
 
-        # Find the Stack.push() method
-        Stack__push = java.GetMethodID(Stack, "push", "(Ljava/lang/Object;)Ljava/lang/Object;")
-        self.assertIsNotNone(Stack__push)
+        # Find the 'one int' constructor
+        Example__init_i = java.GetMethodID(Example, "<init>", "(I)V")
+        self.assertIsNotNone(Example__init_i)
 
-        # Find the Stack.pop() method
-        Stack__pop = java.GetMethodID(Stack, "pop", "()Ljava/lang/Object;")
-        self.assertIsNotNone(Stack__pop)
+        # Find the 'two int' constructor
+        Example__init_ii = java.GetMethodID(Example, "<init>", "(II)V")
+        self.assertIsNotNone(Example__init_ii)
 
-        # Create an instance of java.util.Stack
-        stack = java.NewObject(Stack, Stack__init)
-        self.assertIsNotNone(stack)
+        # Find the BaseExample.set_base_int_field() method on Example
+        Example__set_base_int_field = java.GetMethodID(Example, "set_base_int_field", "(I)V")
+        self.assertIsNotNone(Example__set_base_int_field)
 
-        # Create some data to put on the stack
-        data1 = java.NewStringUTF("First item".encode('utf-8'))
-        self.assertIsNotNone(data1)
-        data2 = java.NewStringUTF("Second item".encode('utf-8'))
-        self.assertIsNotNone(data2)
+        # Find the Example.get_base_int_field() method on Example
+        Example__get_base_int_field = java.GetMethodID(Example, "get_base_int_field", "()I")
+        self.assertIsNotNone(Example__get_base_int_field)
 
-        # Push data onto the stack
-        result = java.CallObjectMethod(stack, Stack__push, jobject(data1))
-        self.assertEqual(java.GetStringUTFChars(result, None).decode('utf-8'), "First item")
+        # Find the Example.set_int_field() method
+        Example__set_int_field = java.GetMethodID(Example, "set_int_field", "(I)V")
+        self.assertIsNotNone(Example__set_int_field)
 
-        result = java.CallObjectMethod(stack, Stack__push, jobject(data2))
-        self.assertEqual(java.GetStringUTFChars(result, None).decode('utf-8'), "Second item")
+        # Find the Example.get_int_field() method
+        Example__get_int_field = java.GetMethodID(Example, "get_int_field", "()I")
+        self.assertIsNotNone(Example__get_int_field)
 
-        # Pop data back off the stack
-        result = java.CallObjectMethod(stack, Stack__pop)
-        self.assertEqual(java.GetStringUTFChars(result, None).decode('utf-8'), "Second item")
+        # Find Example.int_field
+        Example__int_field = java.GetFieldID(Example, "int_field", "I")
+        self.assertIsNotNone(Example__int_field)
 
-        result = java.CallObjectMethod(stack, Stack__pop)
-        self.assertEqual(java.GetStringUTFChars(result, None).decode('utf-8'), "First item")
+        # Find Example.base_int_field
+        Example__base_int_field = java.GetFieldID(Example, "base_int_field", "I")
+        self.assertIsNotNone(Example__base_int_field)
 
-        # Another pop will cause an exception!
-        result = java.CallObjectMethod(stack, Stack__pop)
-        self.assertIsNone(result)
+        # Create an instance of org.pybee.test.Example using the empty constructor
+        obj1 = java.NewObject(Example, Example__init)
+        self.assertIsNotNone(obj1)
 
-    def test_static_method(self):
-        "Static methods can be invoked"
-        Math = java.FindClass("java/lang/Math")
-        self.assertIsNotNone(Math)
+        # Use the get_int_field and get_base_int_field methods
+        self.assertEqual(java.CallIntMethod(obj1, Example__get_int_field), 33)
+        self.assertEqual(java.CallIntMethod(obj1, Example__get_base_int_field), 22)
 
-        # Find the Math.abs() method (integer version)
-        Math__abs = java.GetStaticMethodID(Math, "abs", "(I)I")
-        self.assertIsNotNone(java.CallStaticIntMethod(Math, Math__abs, '-42'), 42)
+        self.assertEqual(java.GetIntField(obj1, Example__int_field), 33)
+        self.assertEqual(java.GetIntField(obj1, Example__base_int_field), 22)
 
-    def test_static_field(self):
-        "Static fields can be accessed"
-        Math = java.FindClass("java/lang/Math")
-        self.assertIsNotNone(Math)
+        # Use the set_int_field and set_base_int_field methods
+        java.CallVoidMethod(obj1, Example__set_int_field, 1142)
+        java.CallVoidMethod(obj1, Example__set_base_int_field, 1137)
 
-        # Find the Math.PI field
-        Math__PI = java.GetStaticFieldID(Math, "PI", "D")
-        self.assertIsNotNone(Math__PI)
+        # Confirm that the values have changed
+        self.assertEqual(java.CallIntMethod(obj1, Example__get_int_field), 1142)
+        self.assertEqual(java.CallIntMethod(obj1, Example__get_base_int_field), 1137)
 
-        self.assertEqual(java.GetStaticDoubleField(Math, Math__PI), math.pi)
+        self.assertEqual(java.GetIntField(obj1, Example__int_field), 1142)
+        self.assertEqual(java.GetIntField(obj1, Example__base_int_field), 1137)
+
+        # Create an instance of org.pybee.test.Example using the "one int" constructor
+        obj2 = java.NewObject(Example, Example__init_i, 2242)
+        self.assertIsNotNone(obj2)
+
+        # Check that instance values are as expected
+        self.assertEqual(java.CallIntMethod(obj2, Example__get_int_field), 2242)
+        self.assertEqual(java.CallIntMethod(obj2, Example__get_base_int_field), 44)
+
+        self.assertEqual(java.GetIntField(obj2, Example__int_field), 2242)
+        self.assertEqual(java.GetIntField(obj2, Example__base_int_field), 44)
+
+        # Create an instance of org.pybee.test.Example using the "two int" constructor
+        obj3 = java.NewObject(Example, Example__init_ii, 3342, 3337)
+        self.assertIsNotNone(obj3)
+
+        # Check that instance values are as expected
+        self.assertEqual(java.CallIntMethod(obj3, Example__get_int_field), 3337)
+        self.assertEqual(java.CallIntMethod(obj3, Example__get_base_int_field), 3342)
+
+        self.assertEqual(java.GetIntField(obj3, Example__int_field), 3337)
+        self.assertEqual(java.GetIntField(obj3, Example__base_int_field), 3342)
+
+    def test_static(self):
+        "Static methods and fields can be invoked"
+        # Get a reference to the org.pybee.test.Example class
+        Example = java.FindClass("org/pybee/test/Example")
+        self.assertIsNotNone(Example)
+
+        # Find the BaseExample.set_static_base_int_field() method on Example
+        Example__set_static_base_int_field = java.GetStaticMethodID(Example, "set_static_base_int_field", "(I)V")
+        self.assertIsNotNone(Example__set_static_base_int_field)
+
+        # Find the Example.get_static_base_int_field() method on Example
+        Example__get_static_base_int_field = java.GetStaticMethodID(Example, "get_static_base_int_field", "()I")
+        self.assertIsNotNone(Example__get_static_base_int_field)
+
+        # Find the Example.set_static_int_field() method
+        Example__set_static_int_field = java.GetStaticMethodID(Example, "set_static_int_field", "(I)V")
+        self.assertIsNotNone(Example__set_static_int_field)
+
+        # Find the Example.get_static_int_field() method
+        Example__get_static_int_field = java.GetStaticMethodID(Example, "get_static_int_field", "()I")
+        self.assertIsNotNone(Example__get_static_int_field)
+
+        # Find Example.static_int_field
+        Example__static_int_field = java.GetStaticFieldID(Example, "static_int_field", "I")
+        self.assertIsNotNone(Example__static_int_field)
+
+        # Find Example.static_base_int_field
+        Example__static_base_int_field = java.GetStaticFieldID(Example, "static_base_int_field", "I")
+        self.assertIsNotNone(Example__static_base_int_field)
+
+        # Use the get_static_int_field and get_static_base_int_field methods
+        self.assertEqual(java.CallStaticIntMethod(Example, Example__get_static_int_field), 11)
+        self.assertEqual(java.CallStaticIntMethod(Example, Example__get_static_base_int_field), 1)
+
+        self.assertEqual(java.GetStaticIntField(Example, Example__static_int_field), 11)
+        self.assertEqual(java.GetStaticIntField(Example, Example__static_base_int_field), 1)
+
+        # Use the set_static_int_field and set_static_base_int_field methods
+        java.CallVoidMethod(Example, Example__set_static_int_field, 1142)
+        java.CallVoidMethod(Example, Example__set_static_base_int_field, 1137)
+
+        # Confirm that the values have changed
+        self.assertEqual(java.CallStaticIntMethod(Example, Example__get_static_int_field), 1142)
+        self.assertEqual(java.CallStaticIntMethod(Example, Example__get_static_base_int_field), 1137)
+
+        self.assertEqual(java.GetStaticIntField(Example, Example__static_int_field), 1142)
+        self.assertEqual(java.GetStaticIntField(Example, Example__static_base_int_field), 1137)
