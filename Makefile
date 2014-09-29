@@ -8,9 +8,9 @@ dist/rubicon.jar: org/pybee/Python.class org/pybee/PythonInstance.class
 	mkdir -p dist
 	jar -cvf dist/rubicon.jar org/pybee/Python.class org/pybee/PythonInstance.class
 
-dist/test.jar: org/pybee/test/BaseExample.class org/pybee/test/Example.class org/pybee/test/ExampleInterface.class
+dist/test.jar: org/pybee/test/BaseExample.class org/pybee/test/Example.class org/pybee/test/ICallback.class org/pybee/test/AbstractCallback.class
 	mkdir -p dist
-	jar -cvf dist/test.jar org/pybee/test/BaseExample.class org/pybee/test/Example.class org/pybee/test/ExampleInterface.class
+	jar -cvf dist/test.jar org/pybee/test/BaseExample.class org/pybee/test/Example.class org/pybee/test/ICallback.class org/pybee/test/AbstractCallback.class
 
 dist/librubicon.dylib: jni/rubicon.o
 	mkdir -p dist

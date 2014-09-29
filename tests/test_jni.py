@@ -4,9 +4,7 @@ import bootstrap
 
 from unittest import TestCase
 
-import math
-
-from rubicon.java import java, jstring
+from rubicon.java import java, jclass, jobject, jstring
 
 
 class JNITest(TestCase):
@@ -82,7 +80,7 @@ class JNITest(TestCase):
         Example__base_int_field = java.GetFieldID(Example, "base_int_field", "I")
         self.assertIsNotNone(Example__base_int_field)
 
-        # Create an instance of org.pybee.test.Example using the empty constructor
+        # Create an instance of org.pybee.test.Example using the default constructor
         obj1 = java.NewObject(Example, Example__init)
         self.assertIsNotNone(obj1)
 
@@ -173,3 +171,53 @@ class JNITest(TestCase):
 
         self.assertEqual(java.GetStaticIntField(Example, Example__static_int_field), 1142)
         self.assertEqual(java.GetStaticIntField(Example, Example__static_base_int_field), 1137)
+
+    def test_interface_invocation(self):
+        # Get a handle to the Python utility class
+        PythonInstance = java.FindClass("org/pybee/PythonInstance")
+        self.assertIsNotNone(PythonInstance)
+
+        # Get a handle to the Python utility class
+        Python = java.FindClass("org/pybee/Python")
+        self.assertIsNotNone(Python)
+
+        # Get a reference to the Python.proxy method
+        Python__proxy = java.GetStaticMethodID(Python, "proxy", "(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Object;")
+        self.assertIsNotNone(Python__proxy)
+
+        # Get a handle to the ICallback interface
+        ICallback = java.FindClass("org/pybee/test/ICallback")
+        self.assertIsNotNone(ICallback)
+
+        # Create a Python proxy to the ICallback interface
+        proxy = java.CallStaticObjectMethod(Python, Python__proxy, jclass(ICallback), jstring(java.NewStringUTF("python instance")))
+        self.assertIsNotNone(proxy)
+
+        # Get a reference to the org.pybee.test.Example class
+        Example = java.FindClass("org/pybee/test/Example")
+        self.assertIsNotNone(Example)
+
+        # Find the default constructor
+        Example__init = java.GetMethodID(Example, "<init>", "()V")
+        self.assertIsNotNone(Example__init)
+
+        # Find the method to set the callback
+        Example__set_callback = java.GetMethodID(Example, "set_callback", "(Lorg/pybee/test/ICallback;)V")
+        self.assertIsNotNone(Example__set_callback)
+
+        # Find the test methods that will invoke the callback
+        Example__test_peek = java.GetMethodID(Example, "test_peek", "(I)V")
+        self.assertIsNotNone(Example__test_peek)
+
+        Example__test_poke = java.GetMethodID(Example, "test_poke", "(I)V")
+        self.assertIsNotNone(Example__test_poke)
+
+        # Create an instance of org.pybee.test.Example using the default constructor
+        obj = java.NewObject(Example, Example__init)
+        self.assertIsNotNone(obj)
+
+        # Set the callback to the proxy instance
+        java.CallVoidMethod(obj, Example__set_callback, jobject(proxy))
+
+        # Invoke the test, which will call PEEK on the proxy
+        java.CallVoidMethod(proxy, Example__test_peek, jobject(obj), 42)

@@ -233,7 +233,7 @@ jmethodID GetMethodID(jclass cls, const char *name, const char *sig) {
 jobject CallObjectMethod(jobject obj, jmethodID methodID, ...) {
     va_list args;
     jobject result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallObjectMethodV(java, obj, methodID, args);
     va_end(args);
     return result;
@@ -241,7 +241,7 @@ jobject CallObjectMethod(jobject obj, jmethodID methodID, ...) {
 jboolean CallBooleanMethod(jobject obj, jmethodID methodID, ...) {
     va_list args;
     jboolean result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallBooleanMethodV(java, obj, methodID, args);
     va_end(args);
     return result;
@@ -249,7 +249,7 @@ jboolean CallBooleanMethod(jobject obj, jmethodID methodID, ...) {
 jbyte CallByteMethod(jobject obj, jmethodID methodID, ...) {
     va_list args;
     jbyte result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallByteMethodV(java, obj, methodID, args);
     va_end(args);
     return result;
@@ -257,7 +257,7 @@ jbyte CallByteMethod(jobject obj, jmethodID methodID, ...) {
 jchar CallCharMethod(jobject obj, jmethodID methodID, ...) {
     va_list args;
     jchar result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallCharMethodV(java, obj, methodID, args);
     va_end(args);
     return result;
@@ -265,7 +265,7 @@ jchar CallCharMethod(jobject obj, jmethodID methodID, ...) {
 jshort CallShortMethod(jobject obj, jmethodID methodID, ...) {
     va_list args;
     jshort result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallShortMethodV(java, obj, methodID, args);
     va_end(args);
     return result;
@@ -273,7 +273,7 @@ jshort CallShortMethod(jobject obj, jmethodID methodID, ...) {
 jint CallIntMethod(jobject obj, jmethodID methodID, ...) {
     va_list args;
     jint result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallIntMethodV(java, obj, methodID, args);
     va_end(args);
     return result;
@@ -281,7 +281,7 @@ jint CallIntMethod(jobject obj, jmethodID methodID, ...) {
 jlong CallLongMethod(jobject obj, jmethodID methodID, ...) {
     va_list args;
     jlong result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallLongMethodV(java, obj, methodID, args);
     va_end(args);
     return result;
@@ -289,7 +289,7 @@ jlong CallLongMethod(jobject obj, jmethodID methodID, ...) {
 jfloat CallFloatMethod(jobject obj, jmethodID methodID, ...) {
     va_list args;
     jfloat result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallFloatMethodV(java, obj, methodID, args);
     va_end(args);
     return result;
@@ -297,14 +297,14 @@ jfloat CallFloatMethod(jobject obj, jmethodID methodID, ...) {
 jdouble CallDoubleMethod(jobject obj, jmethodID methodID, ...) {
     va_list args;
     jdouble result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallDoubleMethodV(java, obj, methodID, args);
     va_end(args);
     return result;
 }
 void CallVoidMethod(jobject obj, jmethodID methodID, ...) {
     va_list args;
-    va_start(args,methodID);
+    va_start(args, methodID);
     (*java)->CallVoidMethodV(java, obj, methodID, args);
     va_end(args);
 }
@@ -312,7 +312,7 @@ void CallVoidMethod(jobject obj, jmethodID methodID, ...) {
 jobject CallNonvirtualObjectMethod(jobject obj, jclass cls, jmethodID methodID, ...) {
     va_list args;
     jobject result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallNonvirtualObjectMethodV(java, obj, cls, methodID, args);
     va_end(args);
     return result;
@@ -320,7 +320,7 @@ jobject CallNonvirtualObjectMethod(jobject obj, jclass cls, jmethodID methodID, 
 jboolean CallNonvirtualBooleanMethod(jobject obj, jclass cls, jmethodID methodID, ...) {
     va_list args;
     jboolean result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallNonvirtualBooleanMethodV(java, obj, cls, methodID, args);
     va_end(args);
     return result;
@@ -328,7 +328,7 @@ jboolean CallNonvirtualBooleanMethod(jobject obj, jclass cls, jmethodID methodID
 jbyte CallNonvirtualByteMethod(jobject obj, jclass cls, jmethodID methodID, ...) {
     va_list args;
     jbyte result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallNonvirtualByteMethodV(java, obj, cls, methodID, args);
     va_end(args);
     return result;
@@ -336,7 +336,7 @@ jbyte CallNonvirtualByteMethod(jobject obj, jclass cls, jmethodID methodID, ...)
 jchar CallNonvirtualCharMethod(jobject obj, jclass cls,jmethodID methodID, ...) {
     va_list args;
     jchar result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallNonvirtualCharMethodV(java, obj, cls, methodID, args);
     va_end(args);
     return result;
@@ -344,7 +344,7 @@ jchar CallNonvirtualCharMethod(jobject obj, jclass cls,jmethodID methodID, ...) 
 jshort CallNonvirtualShortMethod(jobject obj, jclass cls, jmethodID methodID, ...) {
     va_list args;
     jshort result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallNonvirtualShortMethodV(java,obj,cls, methodID,args);
     va_end(args);
     return result;
@@ -352,7 +352,7 @@ jshort CallNonvirtualShortMethod(jobject obj, jclass cls, jmethodID methodID, ..
 jint CallNonvirtualIntMethod(jobject obj, jclass cls, jmethodID methodID, ...) {
     va_list args;
     jint result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallNonvirtualIntMethodV(java, obj, cls, methodID, args);
     va_end(args);
     return result;
@@ -360,7 +360,7 @@ jint CallNonvirtualIntMethod(jobject obj, jclass cls, jmethodID methodID, ...) {
 jlong CallNonvirtualLongMethod(jobject obj, jclass cls, jmethodID methodID, ...) {
     va_list args;
     jlong result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallNonvirtualLongMethodV(java,obj,cls, methodID,args);
     va_end(args);
     return result;
@@ -368,7 +368,7 @@ jlong CallNonvirtualLongMethod(jobject obj, jclass cls, jmethodID methodID, ...)
 jfloat CallNonvirtualFloatMethod(jobject obj, jclass cls, jmethodID methodID, ...) {
     va_list args;
     jfloat result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallNonvirtualFloatMethodV(java,obj,cls, methodID,args);
     va_end(args);
     return result;
@@ -376,14 +376,14 @@ jfloat CallNonvirtualFloatMethod(jobject obj, jclass cls, jmethodID methodID, ..
 jdouble CallNonvirtualDoubleMethod(jobject obj, jclass cls, jmethodID methodID, ...) {
     va_list args;
     jdouble result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallNonvirtualDoubleMethodV(java,obj,cls, methodID,args);
     va_end(args);
     return result;
 }
 void CallNonvirtualVoidMethod(jobject obj, jclass cls, jmethodID methodID, ...) {
     va_list args;
-    va_start(args,methodID);
+    va_start(args, methodID);
     (*java)->CallNonvirtualVoidMethodV(java, obj, cls, methodID, args);
     va_end(args);
 }
@@ -455,7 +455,7 @@ jmethodID GetStaticMethodID(jclass cls, const char *name, const char *sig) {
 jobject CallStaticObjectMethod(jclass cls, jmethodID methodID, ...) {
     va_list args;
     jobject result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallStaticObjectMethodV(java, cls, methodID, args);
     va_end(args);
     return result;
@@ -463,7 +463,7 @@ jobject CallStaticObjectMethod(jclass cls, jmethodID methodID, ...) {
 jboolean CallStaticBooleanMethod(jclass cls, jmethodID methodID, ...) {
     va_list args;
     jboolean result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallStaticBooleanMethodV(java, cls, methodID, args);
     va_end(args);
     return result;
@@ -471,7 +471,7 @@ jboolean CallStaticBooleanMethod(jclass cls, jmethodID methodID, ...) {
 jbyte CallStaticByteMethod(jclass cls, jmethodID methodID, ...) {
     va_list args;
     jbyte result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallStaticByteMethodV(java, cls, methodID, args);
     va_end(args);
     return result;
@@ -479,7 +479,7 @@ jbyte CallStaticByteMethod(jclass cls, jmethodID methodID, ...) {
 jchar CallStaticCharMethod(jclass cls, jmethodID methodID, ...) {
     va_list args;
     jchar result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallStaticCharMethodV(java, cls, methodID, args);
     va_end(args);
     return result;
@@ -487,7 +487,7 @@ jchar CallStaticCharMethod(jclass cls, jmethodID methodID, ...) {
 jshort CallStaticShortMethod(jclass cls, jmethodID methodID, ...) {
     va_list args;
     jshort result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallStaticShortMethodV(java, cls, methodID, args);
     va_end(args);
     return result;
@@ -495,7 +495,7 @@ jshort CallStaticShortMethod(jclass cls, jmethodID methodID, ...) {
 jint CallStaticIntMethod(jclass cls, jmethodID methodID, ...) {
     va_list args;
     jint result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallStaticIntMethodV(java, cls, methodID, args);
     va_end(args);
     return result;
@@ -503,7 +503,7 @@ jint CallStaticIntMethod(jclass cls, jmethodID methodID, ...) {
 jlong CallStaticLongMethod(jclass cls, jmethodID methodID, ...) {
     va_list args;
     jlong result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallStaticLongMethodV(java, cls, methodID, args);
     va_end(args);
     return result;
@@ -511,7 +511,7 @@ jlong CallStaticLongMethod(jclass cls, jmethodID methodID, ...) {
 jfloat CallStaticFloatMethod(jclass cls, jmethodID methodID, ...) {
     va_list args;
     jfloat result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallStaticFloatMethodV(java, cls, methodID, args);
     va_end(args);
     return result;
@@ -519,14 +519,14 @@ jfloat CallStaticFloatMethod(jclass cls, jmethodID methodID, ...) {
 jdouble CallStaticDoubleMethod(jclass cls, jmethodID methodID, ...) {
     va_list args;
     jdouble result;
-    va_start(args,methodID);
+    va_start(args, methodID);
     result = (*java)->CallStaticDoubleMethodV(java, cls, methodID, args);
     va_end(args);
     return result;
 }
 void CallStaticVoidMethod(jclass cls, jmethodID methodID, ...) {
     va_list args;
-    va_start(args,methodID);
+    va_start(args, methodID);
     (*java)->CallStaticVoidMethodV(java, cls, methodID, args);
     va_end(args);
 }
@@ -946,13 +946,13 @@ JNIEXPORT void JNICALL Java_org_pybee_Python_stop(JNIEnv *env, jobject thisObj) 
 JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke(JNIEnv *env, jobject thisObj, jobject proxy, jobject method, jobjectArray args) {
     LOG_D("Invocation");
 
-    jclass Python = (*env)->FindClass(env, "org/pybee/Python");
-    LOG_D("handler: %ld", (long)Python);
-    jfieldID Python__instance = (*env)->GetFieldID(env, Python, "instance", "Ljava/lang/String;");
-    LOG_D("method: %ld", (long)Python__instance);
+    jclass PythonInstance = (*env)->FindClass(env, "org/pybee/PythonInstance");
+    LOG_D("PythonInstance: %ld", (long)PythonInstance);
+    jfieldID PythonInstance__id = (*env)->GetFieldID(env, PythonInstance, "id", "Ljava/lang/String;");
+    LOG_D("id: %ld", (long)PythonInstance__id);
 
-    jobject instance = (*env)->GetObjectField(env, thisObj, Python__instance);
-    LOG_D("instance: %ld", (long)instance);
+    jobject instance = (*env)->GetObjectField(env, thisObj, PythonInstance__id);
+    LOG_D("instance: %s", (*env)->GetStringUTFChars(env, instance, NULL));
 
     jclass Method = (*env)->FindClass(env, "java/lang/reflect/Method");
     jmethodID method__getName = (*env)->GetMethodID(env, Method, "getName", "()Ljava/lang/String;");
@@ -961,18 +961,24 @@ JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke(JNIEnv *env, jobj
 
     LOG_D("Native invocation %s :: %s", (*env)->GetStringUTFChars(env, instance, NULL), (*env)->GetStringUTFChars(env, method_name, NULL));
 
-    jsize argc = (*env)->GetArrayLength(env, args);
-    LOG_D("There are %d arguments", argc);
-    LOG_I("Event handler");
+    LOG_D("Args: %ld", (long)args);
+    if (args) {
+        jsize argc = (*env)->GetArrayLength(env, args);
+        LOG_D("There are %d arguments", argc);
+        LOG_I("Event handler");
 
-    void *argv[argc];
-    int i;
-    for (i = 0; i < argc; i++) {
-        argv[i] = (void *)(*env)->GetObjectArrayElement(env, args, i);
+        void *argv[argc];
+        int i;
+        for (i = 0; i < argc; i++) {
+            argv[i] = (void *)(*env)->GetObjectArrayElement(env, args, i);
+        }
+
+        (*method_handler)((*env)->GetStringUTFChars(env, instance, NULL), (*env)->GetStringUTFChars(env, method_name, NULL), argc, argv);
     }
-
-    (*method_handler)((*env)->GetStringUTFChars(env, instance, NULL), (*env)->GetStringUTFChars(env, method_name, NULL), argc, argv);
-
+    else {
+        LOG_D("There are no arguments");
+        (*method_handler)((*env)->GetStringUTFChars(env, instance, NULL), (*env)->GetStringUTFChars(env, method_name, NULL), 0, NULL);
+    }
     LOG_D("Native invocation done.");
 
     return NULL;

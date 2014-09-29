@@ -1,5 +1,6 @@
 package org.pybee.test;
 
+import org.pybee.Python;
 
 public class Example extends BaseExample {
     static public int static_int_field = 11;
@@ -13,6 +14,7 @@ public class Example extends BaseExample {
     }
 
     public int int_field;
+    public ICallback callback;
 
     public Example() {
         super(22);
@@ -37,7 +39,15 @@ public class Example extends BaseExample {
         return int_field;
     }
 
-    public static void main(String [] args) {
-        System.out.println("Hello world");
+    public void set_callback(ICallback cb) {
+        callback = cb;
+    }
+
+    public void test_poke(int value) {
+        callback.poke(this, value);
+    }
+
+    public void test_peek(int value) {
+        callback.peek(this, value);
     }
 }
