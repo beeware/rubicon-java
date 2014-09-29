@@ -828,7 +828,7 @@ JNIEXPORT jint JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj,
 #ifdef ANDROID
     // If we're on android, we need to specify the location of the Rubicon
     // shared library as part of the environment.
-    sprintf(rubiconLibrary, "RUBICON_LIBRARY=%s/python/librubicon.so", installPath);
+    sprintf(rubiconLibrary, "RUBICON_LIBRARY=%s/rubicon/armeabi/librubicon.so", installPath);
     LOG_D("%s", rubiconLibrary);
     putenv(rubiconLibrary);
 #endif
