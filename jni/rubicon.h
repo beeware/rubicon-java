@@ -8,10 +8,18 @@ extern "C" {
 /*
  * Class:     org_pybee_Python
  * Method:    start
- * Signature: (Ljava/lang/String;Ljava/lang/String;)V
+ * Signature: (Ljava/lang/String;)I
  */
-JNIEXPORT void JNICALL Java_org_pybee_Python_start
-  (JNIEnv *, jobject, jstring, jstring);
+JNIEXPORT jint JNICALL Java_org_pybee_Python_start
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     org_pybee_Python
+ * Method:    run
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_org_pybee_Python_start
+  (JNIEnv *, jobject, jstring);
 
 /*
  * Class:     org_pybee_Python
@@ -28,6 +36,9 @@ JNIEXPORT void JNICALL Java_org_pybee_Python_stop
  */
 JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke
   (JNIEnv *, jobject, jobject, jobject, jobjectArray);
+
+
+JNIEXPORT jint GetVersion();
 
 #ifdef __cplusplus
 }
