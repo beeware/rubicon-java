@@ -6,6 +6,12 @@ from .jni import *
 from .types import *
 
 
+# A cache of known JavaClass instances. This is requried so that when
+# we do a return_cast() to a return type, we don't have to recreate
+# the class every time - we can re-use the existing class.
+_class_cache = {}
+
+
 def dispatch(instance, method, argc, argv):
     print("PYTHON INVOKE", instance, "::", method, "(", argv, "[", argc, "])")
     print("Args length?", argc)
@@ -141,7 +147,11 @@ def return_cast(raw, return_type):
     elif '.' in name:
         # Check for NULL return values
         if raw.value:
-            klass = JavaClass(name.replace('.', '/'))
+            descriptor = name.replace('.', '/')
+            try:
+                klass = _class_cache[descriptor]
+            except KeyError:
+                klass = JavaClass(descriptor)
             return klass(jni=raw)
         return None
     return raw
@@ -488,6 +498,8 @@ class JavaClass(type):
                     'methods': {},
                 }
             })
+        # Cache the class instance, so we don't have to recreate it
+        _class_cache[descriptor] = java_class
         return java_class
 
     def _load(self):
