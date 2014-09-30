@@ -85,44 +85,44 @@ class JNITest(TestCase):
         self.assertIsNotNone(obj1)
 
         # Use the get_int_field and get_base_int_field methods
-        self.assertEqual(java.CallIntMethod(obj1, Example__get_int_field), 33)
         self.assertEqual(java.CallIntMethod(obj1, Example__get_base_int_field), 22)
+        self.assertEqual(java.CallIntMethod(obj1, Example__get_int_field), 33)
 
-        self.assertEqual(java.GetIntField(obj1, Example__int_field), 33)
         self.assertEqual(java.GetIntField(obj1, Example__base_int_field), 22)
+        self.assertEqual(java.GetIntField(obj1, Example__int_field), 33)
 
         # Use the set_int_field and set_base_int_field methods
-        java.CallVoidMethod(obj1, Example__set_int_field, 1142)
         java.CallVoidMethod(obj1, Example__set_base_int_field, 1137)
+        java.CallVoidMethod(obj1, Example__set_int_field, 1142)
 
         # Confirm that the values have changed
-        self.assertEqual(java.CallIntMethod(obj1, Example__get_int_field), 1142)
         self.assertEqual(java.CallIntMethod(obj1, Example__get_base_int_field), 1137)
+        self.assertEqual(java.CallIntMethod(obj1, Example__get_int_field), 1142)
 
-        self.assertEqual(java.GetIntField(obj1, Example__int_field), 1142)
         self.assertEqual(java.GetIntField(obj1, Example__base_int_field), 1137)
+        self.assertEqual(java.GetIntField(obj1, Example__int_field), 1142)
 
         # Create an instance of org.pybee.test.Example using the "one int" constructor
         obj2 = java.NewObject(Example, Example__init_i, 2242)
         self.assertIsNotNone(obj2)
 
         # Check that instance values are as expected
-        self.assertEqual(java.CallIntMethod(obj2, Example__get_int_field), 2242)
         self.assertEqual(java.CallIntMethod(obj2, Example__get_base_int_field), 44)
+        self.assertEqual(java.CallIntMethod(obj2, Example__get_int_field), 2242)
 
-        self.assertEqual(java.GetIntField(obj2, Example__int_field), 2242)
         self.assertEqual(java.GetIntField(obj2, Example__base_int_field), 44)
+        self.assertEqual(java.GetIntField(obj2, Example__int_field), 2242)
 
         # Create an instance of org.pybee.test.Example using the "two int" constructor
         obj3 = java.NewObject(Example, Example__init_ii, 3342, 3337)
         self.assertIsNotNone(obj3)
 
         # Check that instance values are as expected
-        self.assertEqual(java.CallIntMethod(obj3, Example__get_int_field), 3337)
         self.assertEqual(java.CallIntMethod(obj3, Example__get_base_int_field), 3342)
+        self.assertEqual(java.CallIntMethod(obj3, Example__get_int_field), 3337)
 
-        self.assertEqual(java.GetIntField(obj3, Example__int_field), 3337)
         self.assertEqual(java.GetIntField(obj3, Example__base_int_field), 3342)
+        self.assertEqual(java.GetIntField(obj3, Example__int_field), 3337)
 
     def test_static(self):
         "Static methods and fields can be invoked"
@@ -155,22 +155,22 @@ class JNITest(TestCase):
         self.assertIsNotNone(Example__static_base_int_field)
 
         # Use the get_static_int_field and get_static_base_int_field methods
-        self.assertEqual(java.CallStaticIntMethod(Example, Example__get_static_int_field), 11)
         self.assertEqual(java.CallStaticIntMethod(Example, Example__get_static_base_int_field), 1)
+        self.assertEqual(java.CallStaticIntMethod(Example, Example__get_static_int_field), 11)
 
-        self.assertEqual(java.GetStaticIntField(Example, Example__static_int_field), 11)
         self.assertEqual(java.GetStaticIntField(Example, Example__static_base_int_field), 1)
+        self.assertEqual(java.GetStaticIntField(Example, Example__static_int_field), 11)
 
         # Use the set_static_int_field and set_static_base_int_field methods
-        java.CallVoidMethod(Example, Example__set_static_int_field, 1142)
         java.CallVoidMethod(Example, Example__set_static_base_int_field, 1137)
+        java.CallVoidMethod(Example, Example__set_static_int_field, 1142)
 
         # Confirm that the values have changed
-        self.assertEqual(java.CallStaticIntMethod(Example, Example__get_static_int_field), 1142)
         self.assertEqual(java.CallStaticIntMethod(Example, Example__get_static_base_int_field), 1137)
+        self.assertEqual(java.CallStaticIntMethod(Example, Example__get_static_int_field), 1142)
 
-        self.assertEqual(java.GetStaticIntField(Example, Example__static_int_field), 1142)
         self.assertEqual(java.GetStaticIntField(Example, Example__static_base_int_field), 1137)
+        self.assertEqual(java.GetStaticIntField(Example, Example__static_int_field), 1142)
 
     def test_interface_invocation(self):
         # Get a handle to the Python utility class

@@ -394,3 +394,68 @@ java.GetDirectBufferCapacity.argtypes = [jobject]
 
 java.GetObjectRefType.restype = c_int
 java.GetObjectRefType.argtypes = [jobject]
+
+
+
+
+class _ReflectionAPI(object):
+    "A lazy-loading proxy for the key classes and methods in the Java reflection API"
+    def __init__(self):
+        self._attrs = {}
+        self._descriptors = {
+            'Class': ('FindClass', 'java/lang/Class'),
+            'Class__getName': ('GetMethodID', 'Class', 'getName', '()Ljava/lang/String;'),
+            'Class__getConstructors': ('GetMethodID', 'Class', 'getConstructors', '()[Ljava/lang/reflect/Constructor;'),
+            'Class__getMethods': ('GetMethodID', 'Class', 'getMethods', '()[Ljava/lang/reflect/Method;'),
+            'Class__getFields': ('GetMethodID', 'Class', 'getFields', '()[Ljava/lang/reflect/Field;'),
+
+            'Constructor': ('FindClass', 'java/lang/reflect/Constructor'),
+            'Constructor__getParameterTypes': ('GetMethodID', 'Constructor', 'getParameterTypes', '()[Ljava/lang/Class;'),
+            'Constructor__getModifiers': ('GetMethodID', 'Constructor', 'getModifiers', '()I'),
+
+            'Method': ('FindClass', 'java/lang/reflect/Method'),
+            'Method__getName': ('GetMethodID', 'Method', 'getName', '()Ljava/lang/String;'),
+            'Method__getReturnType': ('GetMethodID', 'Method', 'getReturnType', '()Ljava/lang/Class;'),
+            'Method__getParameterTypes': ('GetMethodID', 'Method', 'getParameterTypes', '()[Ljava/lang/Class;'),
+            'Method__getModifiers': ('GetMethodID', 'Method', 'getModifiers', '()I'),
+
+            'Field': ('FindClass', 'java/lang/reflect/Field'),
+            'Field__getName': ('GetMethodID', 'Field', 'getName', '()Ljava/lang/String;'),
+            'Field__getType': ('GetMethodID', 'Field', 'getType', '()Ljava/lang/Class;'),
+            'Field__getModifiers': ('GetMethodID', 'Field', 'getModifiers', '()I'),
+
+            'Modifier': ('FindClass', 'java/lang/reflect/Modifier'),
+            'Modifier__isStatic': ('GetStaticMethodID', 'Modifier', 'isStatic', '(I)Z'),
+            'Modifier__isPublic': ('GetStaticMethodID', 'Modifier', 'isPublic', '(I)Z'),
+        }
+
+    def __getattr__(self, name):
+        try:
+            result = self._attrs[name]
+            return result
+        except KeyError:
+            try:
+                args = self._descriptors[name]
+                if args[0] == 'FindClass':
+                    result = java.FindClass(*args[1:])
+                    if result is None:
+                        raise RuntimeError("Couldn't find Java class '%s'" % args[1])
+
+                elif args[0] == 'GetMethodID':
+                    klass = getattr(self, args[1])
+                    result = java.GetMethodID(klass, *args[2:])
+                    if result is None:
+                        raise RuntimeError("Couldn't find Java method '%s.%s'" % (args[1], args[2]))
+
+                elif args[0] == 'GetStaticMethodID':
+                    klass = getattr(self, args[1])
+                    result = java.GetStaticMethodID(klass, *args[2:])
+                    if result is None:
+                        raise RuntimeError("Couldn't find Java static method '%s.%s'" % (args[1], args[2]))
+
+                self._attrs[name] = result
+                return result
+            except KeyError:
+                raise RuntimeError("Unexpected reflection API request '%s'" % name)
+
+reflect = _ReflectionAPI()

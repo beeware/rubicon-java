@@ -14,7 +14,7 @@ public class Example extends BaseExample {
     }
 
     public int int_field;
-    public ICallback callback;
+    private ICallback callback;
 
     public Example() {
         super(22);
@@ -50,4 +50,5 @@ public class Example extends BaseExample {
     public void test_peek(int value) {
         callback.peek(this, value);
     }
+
 }
