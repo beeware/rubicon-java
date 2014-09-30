@@ -4,24 +4,26 @@ import bootstrap
 
 from unittest import TestCase
 
-from rubicon.java import JavaClass
+from rubicon.java import JavaClass, J, jobject, cast, java, jstring
 
 
 class JNITest(TestCase):
 
-    # def test_simple_object(self):
-    #     Stack = JavaClass('java/util/Stack')
+    def test_simple_object(self):
 
-    #     stack = Stack()
+        Stack = JavaClass('java/util/Stack')
 
-    #     stack.push("Hello")
-    #     stack.push("World")
+        stack = Stack()
 
-    #     self.assertEqual(stack.pop(), "World")
-    #     self.assertEqual(stack.pop(), "Hello")
+        # stack.push(J("Hello"))
+        # stack.push(J("World"))
+        print ('TOSTRING', stack.toString())
 
-    #     with self.assertRaises(Exception):
-    #         stack.pop()
+        # self.assertEqual(java.GetStringUTFChars(stack.pop(), None), "World")
+        # self.assertEqual(java.GetStringUTFChars(stack.pop(), None), "Hello")
+
+        # with self.assertRaises(Exception):
+            # stack.pop()
 
     def test_field(self):
         "A field on an instance can be accessed and mutated"
@@ -112,3 +114,21 @@ class JNITest(TestCase):
         with self.assertRaises(AttributeError):
             Example.get_int_field()
 
+    def test_string_return(self):
+        "If a method or field returns a string, you get a Python string back"
+        Example = JavaClass('org/pybee/test/Example')
+        example = Example()
+        self.assertEqual(example.toString(), "This is a Java Example object")
+
+    def test_object_return(self):
+        "If a method or field returns an object, you get an instance of that type returned"
+        Example = JavaClass('org/pybee/test/Example')
+        example = Example()
+
+        Thing = JavaClass('org/pybee/test/Thing')
+        thing = Thing('This is thing', 2)
+
+        example.set_thing(thing)
+
+        the_thing = example.get_thing()
+        self.assertEqual(the_thing.toString(), "This is thing 2")

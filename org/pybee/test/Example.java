@@ -15,6 +15,7 @@ public class Example extends BaseExample {
 
     public int int_field;
     private ICallback callback;
+    public Thing theThing;
 
     public Example() {
         super(22);
@@ -39,6 +40,14 @@ public class Example extends BaseExample {
         return int_field;
     }
 
+    public void set_thing(Thing thing) {
+        theThing = thing;
+    }
+
+    public Thing get_thing() {
+        return theThing;
+    }
+
     public void set_callback(ICallback cb) {
         callback = cb;
     }
@@ -51,4 +60,7 @@ public class Example extends BaseExample {
         callback.peek(this, value);
     }
 
+    public String toString() {
+        return "This is a Java Example object";
+    }
 }

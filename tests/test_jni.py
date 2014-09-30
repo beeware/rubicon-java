@@ -20,23 +20,23 @@ class JNITest(TestCase):
         "Non-existent classes/methods/fields return None from Find/Get APIs"
         # A class that doesn't exist
         UnknownClass = java.FindClass("java/XXX")
-        self.assertIsNone(UnknownClass)
+        self.assertIsNone(UnknownClass.value)
 
         # A class that does exist, that we can then search for non-existent methods
         Example = java.FindClass("org/pybee/test/Example")
-        self.assertIsNotNone(Example)
+        self.assertIsNotNone(Example.value)
 
         # Fields and Methods (static and non-static)
-        self.assertIsNone(java.GetMethodID(Example, "xxx", "V()"))
-        self.assertIsNone(java.GetStaticMethodID(Example, "xxx", "V()"))
-        self.assertIsNone(java.GetFieldID(Example, "xxx", "I"))
-        self.assertIsNone(java.GetStaticFieldID(Example, "xxx", "I"))
+        self.assertIsNone(java.GetMethodID(Example, "xxx", "V()").value)
+        self.assertIsNone(java.GetStaticMethodID(Example, "xxx", "V()").value)
+        self.assertIsNone(java.GetFieldID(Example, "xxx", "I").value)
+        self.assertIsNone(java.GetStaticFieldID(Example, "xxx", "I").value)
 
         # Bad descriptors for existing fields/methods also fail.
-        self.assertIsNone(java.GetMethodID(Example, "get_int_field", "D()"))
-        self.assertIsNone(java.GetStaticMethodID(Example, "get_static_int_field", "D()"))
-        self.assertIsNone(java.GetFieldID(Example, "int_field", "D"))
-        self.assertIsNone(java.GetStaticFieldID(Example, "static_int_field", "D"))
+        self.assertIsNone(java.GetMethodID(Example, "get_int_field", "D()").value)
+        self.assertIsNone(java.GetStaticMethodID(Example, "get_static_int_field", "D()").value)
+        self.assertIsNone(java.GetFieldID(Example, "int_field", "D").value)
+        self.assertIsNone(java.GetStaticFieldID(Example, "static_int_field", "D").value)
 
     def test_object_lifecycle(self):
         "The basic lifecycle operations of an object can be performed"
@@ -179,45 +179,45 @@ class JNITest(TestCase):
 
         # Get a handle to the Python utility class
         Python = java.FindClass("org/pybee/Python")
-        self.assertIsNotNone(Python)
+        self.assertIsNotNone(Python.value)
 
         # Get a reference to the Python.proxy method
         Python__proxy = java.GetStaticMethodID(Python, "proxy", "(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Object;")
-        self.assertIsNotNone(Python__proxy)
+        self.assertIsNotNone(Python__proxy.value)
 
         # Get a handle to the ICallback interface
         ICallback = java.FindClass("org/pybee/test/ICallback")
-        self.assertIsNotNone(ICallback)
+        self.assertIsNotNone(ICallback.value)
 
         # Create a Python proxy to the ICallback interface
-        proxy = java.CallStaticObjectMethod(Python, Python__proxy, jclass(ICallback), jstring(java.NewStringUTF("python instance")))
-        self.assertIsNotNone(proxy)
+        proxy = java.CallStaticObjectMethod(Python, Python__proxy, ICallback, java.NewStringUTF("python instance"))
+        self.assertIsNotNone(proxy.value)
 
         # Get a reference to the org.pybee.test.Example class
         Example = java.FindClass("org/pybee/test/Example")
-        self.assertIsNotNone(Example)
+        self.assertIsNotNone(Example.value)
 
         # Find the default constructor
         Example__init = java.GetMethodID(Example, "<init>", "()V")
-        self.assertIsNotNone(Example__init)
+        self.assertIsNotNone(Example__init.value)
 
         # Find the method to set the callback
         Example__set_callback = java.GetMethodID(Example, "set_callback", "(Lorg/pybee/test/ICallback;)V")
-        self.assertIsNotNone(Example__set_callback)
+        self.assertIsNotNone(Example__set_callback.value)
 
         # Find the test methods that will invoke the callback
         Example__test_peek = java.GetMethodID(Example, "test_peek", "(I)V")
-        self.assertIsNotNone(Example__test_peek)
+        self.assertIsNotNone(Example__test_peek.value)
 
         Example__test_poke = java.GetMethodID(Example, "test_poke", "(I)V")
-        self.assertIsNotNone(Example__test_poke)
+        self.assertIsNotNone(Example__test_poke.value)
 
         # Create an instance of org.pybee.test.Example using the default constructor
-        obj = java.NewObject(Example, Example__init)
-        self.assertIsNotNone(obj)
+        obj = java.NewObject(Example, Example__init.value)
+        self.assertIsNotNone(obj.value)
 
         # Set the callback to the proxy instance
-        java.CallVoidMethod(obj, Example__set_callback, jobject(proxy))
+        java.CallVoidMethod(obj, Example__set_callback, proxy)
 
         # Invoke the test, which will call PEEK on the proxy
-        java.CallVoidMethod(proxy, Example__test_peek, jobject(obj), 42)
+        java.CallVoidMethod(obj, Example__test_peek, obj, 42)

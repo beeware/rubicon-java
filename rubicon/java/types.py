@@ -32,26 +32,59 @@ jdouble_p = POINTER(jdouble)
 
 jsize = jint
 
-jobject = c_void_p
 
-jmethodID = c_void_p
-jfieldID = c_void_p
+class jobject(c_void_p):
+    pass
 
-jclass = jobject
-jthrowable = jobject
-jstring = jobject
-jarray = jobject
-jbooleanArray = jarray
-jbyteArray = jarray
-jcharArray = jarray
-jshortArray = jarray
-jintArray = jarray
-jlongArray = jarray
-jfloatArray = jarray
-jdoubleArray = jarray
-jobjectArray = jarray
+class jmethodID(jobject):
+    pass
 
-jweak = jobject
+class jfieldID(jobject):
+    pass
+
+class jclass(jobject):
+    pass
+
+class jthrowable(jobject):
+    pass
+
+class jstring(jobject):
+    pass
+
+
+class jarray(jobject):
+    pass
+
+class jbooleanArray(jarray):
+    pass
+
+class jbyteArray(jarray):
+    pass
+
+class jcharArray(jarray):
+    pass
+
+class jshortArray(jarray):
+    pass
+
+class jintArray(jarray):
+    pass
+
+class jlongArray(jarray):
+    pass
+
+class jfloatArray(jarray):
+    pass
+
+class jdoubleArray(jarray):
+    pass
+
+class jobjectArray(jarray):
+    pass
+
+
+class jweak(jobject):
+    pass
 
 class JNINativeMethod(Structure):
      _fields_ = [
@@ -61,9 +94,12 @@ class JNINativeMethod(Structure):
     ]
 JNINativeMethod_p = POINTER(JNINativeMethod)
 
-JavaVM = c_void_p
+class JavaVM(c_void_p):
+    pass
+
 JavaVM_p = POINTER(JavaVM)
 
-JNIEnv = c_void_p
+class JNIEnv(c_void_p):
+    pass
 
 DISPATCH_FUNCTION = CFUNCTYPE(None, c_char_p, c_char_p, c_int, POINTER(c_void_p))
