@@ -13,7 +13,7 @@ public class Python {
     public static native int run(String appName);
     public static native void stop();
 
-    public static Object proxy(Class cls, String id) {
+    public static Object proxy(Class cls, long id) {
         Object pinstance = Proxy.newProxyInstance(cls.getClassLoader(),
                                new Class<?>[] {cls},
                                new PythonInstance(id));

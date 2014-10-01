@@ -4,31 +4,30 @@ __version__ = '0.0.0'
 
 from .jni import *
 from .types import *
-
+# import weakref
 
 # A cache of known JavaClass instances. This is requried so that when
 # we do a return_cast() to a return type, we don't have to recreate
 # the class every time - we can re-use the existing class.
 _class_cache = {}
 
+# A cache of known JavaInterface proxies. This is used by the dispatch
+# mechanism to direct callbacks to the right place.
+_proxy_cache = {}
 
 def dispatch(instance, method, argc, argv):
-    print("PYTHON INVOKE", instance, "::", method, "(", argv, "[", argc, "])")
-    print("Args length?", argc)
+    instance = _proxy_cache[instance]
+    signatures = instance._methods.get(method)
+    if len(signatures) == 1:
+        signature = list(signatures)[0]
+        if len(signature) != argc:
+            raise RuntimeError("argc provided for dispatch doesn't match registered method.")
+        args = [reverse_cast(jarg, jtype) for jarg, jtype in zip(argv, signature)]
+        getattr(instance, method)(*args)
+    else:
+        raise RuntimeError("Can't handle multiple prototypes for same method name (yet!)")
 
-    # content = java.GetStringUTFChars(argv[0], False)
-    # print "content", content
-
-    # Tool = java.FindClass("com/example/Tool")
-    # Tool__toString = java.GetMethodID(Tool, "toString", "()Ljava/lang/String;")
-    # print "got tostring", Tool__toString
-
-    # val = java.CallObjectMethod(argv[1], Tool__toString)
-    # print "val", val
-
-    # content = java.GetStringUTFChars(val, False)
-    # print "content", content
-
+# Register the dispatch function
 java_dispatch = DISPATCH_FUNCTION(dispatch)
 result = java.register_handler(java_dispatch)
 
@@ -84,7 +83,7 @@ def signature_for_args(*args):
         elif isinstance(arg, basestring):
             arg_types.append('Ljava/lang/String;')
             wrapped.append(java.NewStringUTF(arg))
-        elif isinstance(arg, JavaInstance):
+        elif isinstance(arg, (JavaInstance, JavaProxy)) :
             arg_types.append('L%s;' % arg.__class__.__dict__['_descriptor'])
             wrapped.append(arg._jni)
         else:
@@ -93,68 +92,130 @@ def signature_for_args(*args):
     return ''.join(arg_types), wrapped
 
 
-def signature_for_type(java_type):
-    type_name = java.CallObjectMethod(java_type, reflect.Class__getName)
-    if type_name is None:
-        raise RuntimeError('Unable to get name of parameter type.')
+def signature_for_type(param_type):
+    """Determine the signature for a given data type
 
-    name = java.GetStringUTFChars(cast(type_name, jstring), None)
-
-    if name == 'void':
+    """
+    if param_type == 'void':
         return 'V'
-    elif name == 'boolean':
+    elif param_type == 'boolean':
         return 'Z'
-    elif name == 'byte':
+    elif param_type == 'byte':
         return 'B'
-    elif name == 'char':
+    elif param_type == 'char':
         return 'C'
-    elif name == 'short':
+    elif param_type == 'short':
         return 'S'
-    elif name == 'int':
+    elif param_type == 'int':
         return 'I'
-    elif name == 'long':
+    elif param_type == 'long':
         return 'J'
-    elif name == 'float':
+    elif param_type == 'float':
         return 'F'
-    elif name == 'double':
+    elif param_type == 'double':
         return 'D'
     else:
-        return 'L%s;' % name.replace('.', '/')
+        return 'L%s;' % param_type.replace('.', '/')
 
-def signature_for_params(params):
+
+def type_descriptors_for_params(params):
+    """Determine the Java type descriptors for an array of Java parameters.
+
+    This is used when registering interfaces.
+    """
     param_count = java.GetArrayLength(params)
 
     sig = []
     for p in range(0, param_count):
-        ptype = java.GetObjectArrayElement(params, p)
-        if ptype is None:
+        java_type = java.GetObjectArrayElement(params, p)
+        if java_type is None:
             raise RuntimeError('Unable to retrieve parameter type from array.')
-        sig.append(signature_for_type(ptype))
 
-    return ''.join(sig)
+        type_name = java.CallObjectMethod(java_type, reflect.Class__getName)
+        if type_name.value is None:
+            raise RuntimeError("Unable to get name of type for parameter.")
+
+        param_type = java.GetStringUTFChars(cast(type_name, jstring), None)
+
+        sig.append(signature_for_type(param_type))
+
+    return tuple(sig)
+
+
+def signature_for_params(params):
+    """Determine the Java-style signature for an array of Java parameters.
+
+    This is used to convert a Method declaration into a string signature
+    that can be used for later lookup.
+    """
+    return ''.join(type_descriptors_for_params(params))
+
 
 def return_cast(raw, return_type):
-    type_name = java.CallObjectMethod(return_type, reflect.Class__getName)
-    if type_name is None:
-        raise RuntimeError('Unable to get name of parameter type.')
+    if return_type in ('void', 'boolean', 'byte', 'char', 'short', 'int', 'long', 'float', 'double'):
+        return raw
 
-    name = java.GetStringUTFChars(cast(type_name, jstring), None)
-    if name == 'java.lang.String':
+    elif return_type == 'java.lang.String':
         # Check for NULL return values
         if raw.value:
             return java.GetStringUTFChars(cast(raw, jstring), None)
         return None
-    elif '.' in name:
+
+    elif '.' in return_type:
         # Check for NULL return values
         if raw.value:
-            descriptor = name.replace('.', '/')
+            descriptor = return_type.replace('.', '/')
             try:
                 klass = _class_cache[descriptor]
             except KeyError:
                 klass = JavaClass(descriptor)
             return klass(jni=raw)
         return None
-    return raw
+
+    raise ValueError("Don't know how to convert return type '%s'" % return_type)
+
+def reverse_cast(raw, java_type):
+    if java_type == 'Z':
+        return java.CallBooleanMethod(jobject(raw), reflect.Boolean__booleanValue)
+
+    elif java_type == 'B':
+        return java.CallByteMethod(jobject(raw), reflect.Byte__byteValue)
+
+    elif java_type == 'C':
+        return java.CallCharMethod(jobject(raw), reflect.Char__charValue)
+
+    elif java_type == 'S':
+        return java.CallShortMethod(jobject(raw), reflect.Short__shortValue)
+
+    elif java_type == 'I':
+        return java.CallIntMethod(jobject(raw), reflect.Integer__intValue)
+
+    elif java_type == 'J':
+        return java.CallLongMethod(jobject(raw), reflect.Long__longValue)
+
+    elif java_type == 'F':
+        return java.CallFloatMethod(jobject(raw), reflect.Float__floatValue)
+
+    elif java_type == 'D':
+        return java.CallDoubleMethod(jobject(raw), reflect.Double__doubleValue)
+
+    elif java_type == 'Ljava/lang/String;':
+        # Check for NULL return values
+        if c_void_p(raw).value:
+            return java.GetStringUTFChars(cast(raw, jstring), None)
+        return None
+
+    elif java_type.startswith('L'):
+        # Check for NULL return values
+        if jobject(raw).value:
+            try:
+                klass = _class_cache[java_type[1:-1]]
+            except KeyError:
+                klass = JavaClass(java_type[1:-1])
+            return klass(jni=jobject(raw))
+        return None
+
+    raise ValueError("Don't know how to convert argument of type '%s'" % java_type)
 
 # [ type = type[]
 # ( arg-types ) ret-type = method type
@@ -170,9 +231,15 @@ class StaticJavaMethod(object):
         self._impl = {}
 
     def _load(self, sig):
-        return_type = java.CallObjectMethod(self._impl[sig]['method'], reflect.Method__getReturnType)
-        if return_type is None:
-            raise RuntimeError('Couldn\'t determine return type for static field "%s"' % self.name)
+        java_type = java.CallObjectMethod(self._impl[sig]['method'], reflect.Method__getReturnType)
+        if java_type.value is None:
+            raise RuntimeError("Couldn't determine return type for static method '%s'" % self.name)
+
+        type_name = java.CallObjectMethod(java_type, reflect.Class__getName)
+        if type_name.value is None:
+            raise RuntimeError("Unable to get name of return type for static method '%s'." % self.name)
+
+        return_type = java.GetStringUTFChars(cast(type_name, jstring), None)
 
         self._impl[sig]['return_type'] = return_type
 
@@ -195,10 +262,11 @@ class StaticJavaMethod(object):
         self._impl[sig]['jni'] = java.GetStaticMethodID(self.java_class, self.name, full_signature)
 
     def add(self, signature, method):
-        self._impl[signature] = {
-            'method': method,
-            'jni': None
-        }
+        if signature not in self._impl:
+            self._impl[signature] = {
+                'method': method,
+                'jni': None
+            }
 
     def __call__(self, *args):
         try:
@@ -227,9 +295,15 @@ class JavaMethod(object):
         self._impl = {}
 
     def _load(self, sig):
-        return_type = java.CallObjectMethod(self._impl[sig]['method'], reflect.Method__getReturnType)
-        if return_type is None:
-            raise RuntimeError("Couldn't determine return type for static field '%s'" % self.name)
+        java_type = java.CallObjectMethod(self._impl[sig]['method'], reflect.Method__getReturnType)
+        if java_type.value is None:
+            raise RuntimeError("Couldn't determine return type for method '%s'" % self.name)
+
+        type_name = java.CallObjectMethod(java_type, reflect.Class__getName)
+        if type_name.value is None:
+            raise RuntimeError("Unable to get name of return type for method '%s'." % self.name)
+
+        return_type = java.GetStringUTFChars(cast(type_name, jstring), None)
 
         self._impl[sig]['return_type'] = return_type
 
@@ -252,19 +326,18 @@ class JavaMethod(object):
         self._impl[sig]['jni'] = java.GetMethodID(self.java_class, self.name, full_signature)
 
     def add(self, signature, method):
-        self._impl[signature] = {
-            'method': method,
-            'jni': None
-        }
+        if signature not in self._impl:
+            self._impl[signature] = {
+                'method': method,
+                'jni': None
+            }
 
     def __call__(self, instance, *args):
         try:
             sig, wrapped = signature_for_args(*args)
             if self._impl[sig]['jni'] is None:
                 self._load(sig)
-
             result = self._impl[sig]['invoker'](instance._jni, self._impl[sig]['jni'], *args)
-
             return return_cast(result, self._impl[sig]['return_type'])
         except KeyError:
             raise AttributeError(
@@ -297,9 +370,15 @@ class StaticJavaField(object):
         self._jni = None
 
     def _load(self):
-        self._type = java.CallObjectMethod(self.java_field, reflect.Field__getType)
-        if self._type is None:
-            raise RuntimeError('Couldn\'t determine type for static field "%s"' % self.name)
+        java_type = java.CallObjectMethod(self.java_field, reflect.Field__getType)
+        if java_type.value is None:
+            raise RuntimeError("Couldn't determine type for static field '%s'" % self.name)
+
+        type_name = java.CallObjectMethod(java_type, reflect.Class__getName)
+        if type_name.value is None:
+            raise RuntimeError("Unable to get name of static field type '%s'." % self.name)
+
+        self._type = java.GetStringUTFChars(cast(type_name, jstring), None)
 
         self._signature = signature_for_type(self._type)
         self._accessor = {
@@ -349,9 +428,15 @@ class JavaField(object):
         self._jni = None
 
     def _load(self):
-        self._type = java.CallObjectMethod(self.java_field, reflect.Field__getType)
-        if self._type is None:
-            raise RuntimeError('Couldn\'t determine type for static field "%s"' % self.name)
+        java_type = java.CallObjectMethod(self.java_field, reflect.Field__getType)
+        if java_type.value is None:
+            raise RuntimeError("Couldn't determine type for field '%s'" % self.name)
+
+        type_name = java.CallObjectMethod(java_type, reflect.Class__getName)
+        if type_name.value is None:
+            raise RuntimeError("Unable to get name of field type '%s'." % self.name)
+
+        self._type = java.GetStringUTFChars(cast(type_name, jstring), None)
 
         self._signature = signature_for_type(self._type)
         self._accessor = {
@@ -505,7 +590,7 @@ class JavaClass(type):
     def _load(self):
         java_class = java.FindClass(self.__dict__['_descriptor'])
         if java_class is None:
-            raise UnknownClassException(descriptor)
+            raise UnknownClassException(self.__dict__['_descriptor'])
 
         ##################################################################
         # Load the constructors for the class
@@ -629,7 +714,7 @@ class JavaClass(type):
         try:
             return super(JavaClass, self).__getattribute__(name)
         except AttributeError:
-            raise AttributeError("Java type object '%s' has no attribute '%s'" % (self.__dict__['_descriptor'], name))
+            raise AttributeError("Java class '%s' has no attribute '%s'" % (self.__dict__['_descriptor'], name))
 
     def __setattr__(self, name, value):
         # First, try to get the _jni attribute.
@@ -645,7 +730,101 @@ class JavaClass(type):
         except KeyError:
             pass
 
-        raise AttributeError("Java type object '%s' has no attribute '%s'" % (self.__dict__['_descriptor'], name))
+        raise AttributeError("Java class '%s' has no attribute '%s'" % (self.__dict__['_descriptor'], name))
 
     def __repr__(self):
         return "<JavaClass: %s>" % self._descriptor
+
+
+###########################################################################
+# Representations of Java classes and instances
+###########################################################################
+
+class JavaProxy(object):
+    def __init__(self):
+        # Create a Java-side proxy for this Python-side object
+        klass = self.__class__._jni
+        self._jni = java.CallStaticObjectMethod(reflect.Python, reflect.Python__proxy, klass, jlong(id(self)))
+
+        # Register this Python instance with the proxy cache
+        # This is a weak reference because _proxy_cache is a registry,
+        # not an actual user of proxy objects. If all references to the
+        # proxy disappear, the proxy cache should be cleaned to avoid
+        # leaking memory on objects that aren't being used.
+        _proxy_cache[id(self)] = self
+
+        self._as_parameter_ = self._jni
+
+    def __repr__(self):
+        return "<%s: %s>" % (self.__class__.__name__, self._jni.value)
+
+    # def __del__(self):
+    #     # If this object is garbage collected, remove it from the proxy cache.
+    #     del _proxy_cache[id(self)]
+
+
+class JavaInterface(type):
+    def __new__(cls, *args):
+        if len(args) == 1:
+            descriptor, = args
+            java_class = super(JavaInterface, cls).__new__(cls, descriptor.encode('utf-8'), (JavaProxy,), {
+                    '_descriptor': descriptor,
+                    '_methods': {}
+                })
+            return java_class
+        else:
+            name, bases, attrs = args
+            attrs['_descriptor'] = bases[-1].__dict__['_descriptor']
+            attrs['_methods'] = {}
+            java_class = super(JavaInterface, cls).__new__(cls, name, bases, attrs)
+            return java_class
+
+    def _load(self):
+        java_class = java.FindClass(self.__dict__['_descriptor'])
+        if java_class is None:
+            raise UnknownClassException(self.__dict__['_descriptor'])
+
+        ##################################################################
+        # Load the methods for the class
+        ##################################################################
+        methods = java.CallObjectMethod(java_class, reflect.Class__getMethods)
+        if methods is None:
+            raise RuntimeError("Couldn't get methods for '%s'" % self)
+        methods = cast(methods, jobjectArray)
+
+        method_count = java.GetArrayLength(methods)
+        for i in range(0, method_count):
+            java_method = java.GetObjectArrayElement(methods, i)
+
+            name = java.CallObjectMethod(java_method, reflect.Method__getName)
+            name_str = java.GetStringUTFChars(cast(name, jstring), None)
+
+            modifiers = java.CallIntMethod(java_method, reflect.Method__getModifiers)
+            static = java.CallStaticBooleanMethod(reflect.Modifier, reflect.Modifier__isStatic, modifiers)
+            public = java.CallStaticBooleanMethod(reflect.Modifier, reflect.Modifier__isPublic, modifiers)
+
+            params = java.CallObjectMethod(java_method, reflect.Method__getParameterTypes)
+            params = cast(params, jobjectArray)
+
+            if public:
+                if not static:
+                    self.__dict__['_methods'].setdefault(name_str, set()).add(type_descriptors_for_params(params))
+
+        self._jni = java_class
+
+    def __getattr__(self, name):
+        # First, try to get the _jni attribute.
+        # If this attribute doesn't exist, try to load the JNI
+        # representation of the class.
+        try:
+            self.__dict__['_jni']
+        except KeyError:
+            self._load()
+
+        try:
+            return super(JavaInterface, self).__getattribute__(name)
+        except AttributeError:
+            raise AttributeError("Java interface '%s' has no attribute '%s'" % (self.__dict__['_descriptor'], name))
+
+    def __repr__(self):
+        return "<JavaInterface: %s>" % self._descriptor

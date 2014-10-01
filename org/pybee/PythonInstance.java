@@ -5,9 +5,9 @@ import java.lang.reflect.Method;
 
 
 public class PythonInstance implements InvocationHandler {
-    public String id;
+    public long id;
 
-    public PythonInstance(String instance_id) {
+    public PythonInstance(long instance_id) {
         id = instance_id;
     }
 

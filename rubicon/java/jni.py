@@ -427,6 +427,33 @@ class _ReflectionAPI(object):
             'Modifier': ('FindClass', 'java/lang/reflect/Modifier'),
             'Modifier__isStatic': ('GetStaticMethodID', 'Modifier', 'isStatic', '(I)Z'),
             'Modifier__isPublic': ('GetStaticMethodID', 'Modifier', 'isPublic', '(I)Z'),
+
+            'Python': ('FindClass', 'org/pybee/Python'),
+            'Python__proxy': ('GetStaticMethodID', 'Python', 'proxy', '(Ljava/lang/Class;J)Ljava/lang/Object;'),
+
+            'Boolean': ('FindClass', 'java/lang/Boolean'),
+            'Boolean__intValue': ('GetMethodID', 'Boolean', 'booleanValue', '()I'),
+
+            'Byte': ('FindClass', 'java/lang/Byte'),
+            'Byte__intValue': ('GetMethodID', 'Byte', 'byteValue', '()I'),
+
+            'Char': ('FindClass', 'java/lang/Char'),
+            'Char__intValue': ('GetMethodID', 'Char', 'charValue', '()I'),
+
+            'Short': ('FindClass', 'java/lang/Short'),
+            'Short__intValue': ('GetMethodID', 'Short', 'shortValue', '()I'),
+
+            'Integer': ('FindClass', 'java/lang/Integer'),
+            'Integer__intValue': ('GetMethodID', 'Integer', 'intValue', '()I'),
+
+            'Long': ('FindClass', 'java/lang/Long'),
+            'Long__intValue': ('GetMethodID', 'Long', 'longValue', '()I'),
+
+            'Float': ('FindClass', 'java/lang/Float'),
+            'Float__intValue': ('GetMethodID', 'Float', 'floatValue', '()I'),
+
+            'Double': ('FindClass', 'java/lang/Double'),
+            'Double__intValue': ('GetMethodID', 'Double', 'doubleValue', '()I'),
         }
 
     def __getattr__(self, name):

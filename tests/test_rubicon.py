@@ -4,7 +4,7 @@ import bootstrap
 
 from unittest import TestCase
 
-from rubicon.java import JavaClass, J, jobject, cast, java, jstring
+from rubicon.java import JavaClass, JavaInterface, J, jobject, cast, java, jstring
 
 
 class JNITest(TestCase):
@@ -17,7 +17,7 @@ class JNITest(TestCase):
 
         # stack.push(J("Hello"))
         # stack.push(J("World"))
-        print ('TOSTRING', stack.toString())
+        # print ('TOSTRING', stack.toString())
 
         # self.assertEqual(java.GetStringUTFChars(stack.pop(), None), "World")
         # self.assertEqual(java.GetStringUTFChars(stack.pop(), None), "Hello")
@@ -132,3 +132,44 @@ class JNITest(TestCase):
 
         the_thing = example.get_thing()
         self.assertEqual(the_thing.toString(), "This is thing 2")
+
+    def test_interface(self):
+        "An Java interface can be defined in Python and proxied."
+        # ICallback = JavaInterface('org/pybee/test/ICallback')
+        ICallback = JavaInterface('org/pybee/test/ICallback')
+
+        results = {}
+
+        class MyInterface(ICallback):
+            def __init__(self, value):
+                super(MyInterface, self).__init__()
+                self.value = value
+
+            def poke(self, example, value):
+                results['string'] = example.toString()
+                results['int'] = value + self.value
+
+            def peek(self, example, value):
+                results['string'] = example.toString()
+                results['int'] = value + self.value
+
+        # Create two handler instances so we can check the right one
+        # is being invoked.
+        handler1 = MyInterface(5)
+        handler2 = MyInterface(10)
+
+        # Create an Example object, and register a handler with it.
+        Example = JavaClass('org/pybee/test/Example')
+        example = Example()
+        example.set_callback(handler2)
+
+        # Invoke the callback; check that the results have been peeked as expected
+        example.test_peek(42)
+
+        self.assertEqual(results['string'], 'This is a Java Example object')
+        self.assertEqual(results['int'], 52)
+
+        example.test_poke(37)
+
+        self.assertEqual(results['string'], 'This is a Java Example object')
+        self.assertEqual(results['int'], 47)

@@ -82,8 +82,11 @@ PyMODINIT_FUNC initandroid(void) {
 }
 #else
 
-#define LOG_V(...) printf(__VA_ARGS__); printf("\n")
-#define LOG_D(...) printf(__VA_ARGS__); printf("\n")
+
+#define LOG_V(...) printf("");
+#define LOG_D(...) printf("");
+// #define LOG_V(...) printf(__VA_ARGS__); printf("\n")
+// #define LOG_D(...) printf(__VA_ARGS__); printf("\n")
 #define LOG_I(...) printf(__VA_ARGS__); printf("\n")
 #define LOG_W(...) printf(__VA_ARGS__); printf("\n")
 #define LOG_E(...) printf(__VA_ARGS__); printf("\n")
@@ -103,7 +106,7 @@ JNIEnv *java = NULL;
 const char *installPath = NULL;
 
 // The Python method dispatch handler
-void (*method_handler)(const char *, const char *, int, void **);
+void (*method_handler)(long, const char *, int, void **);
 
 /**************************************************************************
  * Set the Java environment that is active for the Python bridge.
@@ -116,7 +119,7 @@ void set_JNIEnv(JNIEnv *env) {
 /**************************************************************************
  * Register the Python method handler to use on the bridge.
  *************************************************************************/
-void register_handler(void (*handler)(const char *, const char *, int, void **)) {
+void register_handler(void (*handler)(long, const char *, int, void **)) {
     LOG_D("Register handler...");
     method_handler = handler;
     LOG_D("Registered.");
@@ -944,28 +947,28 @@ JNIEXPORT void JNICALL Java_org_pybee_Python_stop(JNIEnv *env, jobject thisObj) 
  * method dispatch method that has been registered as part of the runtime.
  *************************************************************************/
 JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke(JNIEnv *env, jobject thisObj, jobject proxy, jobject method, jobjectArray args) {
-    LOG_D("Invocation");
+    // LOG_D("Invocation");
 
     jclass PythonInstance = (*env)->FindClass(env, "org/pybee/PythonInstance");
-    LOG_D("PythonInstance: %ld", (long)PythonInstance);
-    jfieldID PythonInstance__id = (*env)->GetFieldID(env, PythonInstance, "id", "Ljava/lang/String;");
-    LOG_D("id: %ld", (long)PythonInstance__id);
+    // LOG_D("PythonInstance: %ld", (long)PythonInstance);
+    jfieldID PythonInstance__id = (*env)->GetFieldID(env, PythonInstance, "id", "J");
+    // LOG_D("id: %ld", (long)PythonInstance__id);
 
-    jobject instance = (*env)->GetObjectField(env, thisObj, PythonInstance__id);
-    LOG_D("instance: %s", (*env)->GetStringUTFChars(env, instance, NULL));
+    long instance = (*env)->GetLongField(env, thisObj, PythonInstance__id);
+    // LOG_D("instance: %ld", instance);
 
     jclass Method = (*env)->FindClass(env, "java/lang/reflect/Method");
     jmethodID method__getName = (*env)->GetMethodID(env, Method, "getName", "()Ljava/lang/String;");
 
     jobject method_name = (*env)->CallObjectMethod(env, method, method__getName);
 
-    LOG_D("Native invocation %s :: %s", (*env)->GetStringUTFChars(env, instance, NULL), (*env)->GetStringUTFChars(env, method_name, NULL));
+    LOG_D("Native invocation %ld :: %s", instance, (*env)->GetStringUTFChars(env, method_name, NULL));
 
-    LOG_D("Args: %ld", (long)args);
+    // LOG_D("Args: %ld", (long)args);
     if (args) {
         jsize argc = (*env)->GetArrayLength(env, args);
-        LOG_D("There are %d arguments", argc);
-        LOG_I("Event handler");
+        // LOG_D("There are %d arguments", argc);
+        // LOG_I("Event handler");
 
         void *argv[argc];
         int i;
@@ -973,13 +976,13 @@ JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke(JNIEnv *env, jobj
             argv[i] = (void *)(*env)->GetObjectArrayElement(env, args, i);
         }
 
-        (*method_handler)((*env)->GetStringUTFChars(env, instance, NULL), (*env)->GetStringUTFChars(env, method_name, NULL), argc, argv);
+        (*method_handler)(instance, (*env)->GetStringUTFChars(env, method_name, NULL), argc, argv);
     }
     else {
-        LOG_D("There are no arguments");
-        (*method_handler)((*env)->GetStringUTFChars(env, instance, NULL), (*env)->GetStringUTFChars(env, method_name, NULL), 0, NULL);
+        // LOG_D("There are no arguments");
+        (*method_handler)(instance, (*env)->GetStringUTFChars(env, method_name, NULL), 0, NULL);
     }
-    LOG_D("Native invocation done.");
+    // LOG_D("Native invocation done.");
 
     return NULL;
 }

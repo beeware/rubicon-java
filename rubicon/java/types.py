@@ -102,4 +102,4 @@ JavaVM_p = POINTER(JavaVM)
 class JNIEnv(c_void_p):
     pass
 
-DISPATCH_FUNCTION = CFUNCTYPE(None, c_char_p, c_char_p, c_int, POINTER(c_void_p))
+DISPATCH_FUNCTION = CFUNCTYPE(None, c_long, c_char_p, c_int, POINTER(c_void_p))
