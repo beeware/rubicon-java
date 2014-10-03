@@ -4,7 +4,7 @@ import bootstrap
 
 from unittest import TestCase
 
-from rubicon.java import java, jclass, jobject, jstring
+from rubicon.java import java, jclass, jobject, jstring, cast
 
 
 class JNITest(TestCase):
@@ -27,14 +27,14 @@ class JNITest(TestCase):
         self.assertIsNotNone(Example.value)
 
         # Fields and Methods (static and non-static)
-        self.assertIsNone(java.GetMethodID(Example, "xxx", "V()").value)
-        self.assertIsNone(java.GetStaticMethodID(Example, "xxx", "V()").value)
+        self.assertIsNone(java.GetMethodID(Example, "xxx", "()V").value)
+        self.assertIsNone(java.GetStaticMethodID(Example, "xxx", "()V").value)
         self.assertIsNone(java.GetFieldID(Example, "xxx", "I").value)
         self.assertIsNone(java.GetStaticFieldID(Example, "xxx", "I").value)
 
         # Bad descriptors for existing fields/methods also fail.
-        self.assertIsNone(java.GetMethodID(Example, "get_int_field", "D()").value)
-        self.assertIsNone(java.GetStaticMethodID(Example, "get_static_int_field", "D()").value)
+        self.assertIsNone(java.GetMethodID(Example, "get_int_field", "()D").value)
+        self.assertIsNone(java.GetStaticMethodID(Example, "get_static_int_field", "()D").value)
         self.assertIsNone(java.GetFieldID(Example, "int_field", "D").value)
         self.assertIsNone(java.GetStaticFieldID(Example, "static_int_field", "D").value)
 
@@ -42,47 +42,47 @@ class JNITest(TestCase):
         "The basic lifecycle operations of an object can be performed"
         # Get a reference to the org.pybee.test.Example class
         Example = java.FindClass("org/pybee/test/Example")
-        self.assertIsNotNone(Example)
+        self.assertIsNotNone(Example.value)
 
         # Find the default constructor
         Example__init = java.GetMethodID(Example, "<init>", "()V")
-        self.assertIsNotNone(Example__init)
+        self.assertIsNotNone(Example__init.value)
 
         # Find the 'one int' constructor
         Example__init_i = java.GetMethodID(Example, "<init>", "(I)V")
-        self.assertIsNotNone(Example__init_i)
+        self.assertIsNotNone(Example__init_i.value)
 
         # Find the 'two int' constructor
         Example__init_ii = java.GetMethodID(Example, "<init>", "(II)V")
-        self.assertIsNotNone(Example__init_ii)
+        self.assertIsNotNone(Example__init_ii.value)
 
         # Find the BaseExample.set_base_int_field() method on Example
         Example__set_base_int_field = java.GetMethodID(Example, "set_base_int_field", "(I)V")
-        self.assertIsNotNone(Example__set_base_int_field)
+        self.assertIsNotNone(Example__set_base_int_field.value)
 
         # Find the Example.get_base_int_field() method on Example
         Example__get_base_int_field = java.GetMethodID(Example, "get_base_int_field", "()I")
-        self.assertIsNotNone(Example__get_base_int_field)
+        self.assertIsNotNone(Example__get_base_int_field.value)
 
         # Find the Example.set_int_field() method
         Example__set_int_field = java.GetMethodID(Example, "set_int_field", "(I)V")
-        self.assertIsNotNone(Example__set_int_field)
+        self.assertIsNotNone(Example__set_int_field.value)
 
         # Find the Example.get_int_field() method
         Example__get_int_field = java.GetMethodID(Example, "get_int_field", "()I")
-        self.assertIsNotNone(Example__get_int_field)
+        self.assertIsNotNone(Example__get_int_field.value)
 
         # Find Example.int_field
         Example__int_field = java.GetFieldID(Example, "int_field", "I")
-        self.assertIsNotNone(Example__int_field)
+        self.assertIsNotNone(Example__int_field.value)
 
         # Find Example.base_int_field
         Example__base_int_field = java.GetFieldID(Example, "base_int_field", "I")
-        self.assertIsNotNone(Example__base_int_field)
+        self.assertIsNotNone(Example__base_int_field.value)
 
         # Create an instance of org.pybee.test.Example using the default constructor
         obj1 = java.NewObject(Example, Example__init)
-        self.assertIsNotNone(obj1)
+        self.assertIsNotNone(obj1.value)
 
         # Use the get_int_field and get_base_int_field methods
         self.assertEqual(java.CallIntMethod(obj1, Example__get_base_int_field), 22)
@@ -128,31 +128,31 @@ class JNITest(TestCase):
         "Static methods and fields can be invoked"
         # Get a reference to the org.pybee.test.Example class
         Example = java.FindClass("org/pybee/test/Example")
-        self.assertIsNotNone(Example)
+        self.assertIsNotNone(Example.value)
 
         # Find the BaseExample.set_static_base_int_field() method on Example
         Example__set_static_base_int_field = java.GetStaticMethodID(Example, "set_static_base_int_field", "(I)V")
-        self.assertIsNotNone(Example__set_static_base_int_field)
+        self.assertIsNotNone(Example__set_static_base_int_field.value)
 
         # Find the Example.get_static_base_int_field() method on Example
         Example__get_static_base_int_field = java.GetStaticMethodID(Example, "get_static_base_int_field", "()I")
-        self.assertIsNotNone(Example__get_static_base_int_field)
+        self.assertIsNotNone(Example__get_static_base_int_field.value)
 
         # Find the Example.set_static_int_field() method
         Example__set_static_int_field = java.GetStaticMethodID(Example, "set_static_int_field", "(I)V")
-        self.assertIsNotNone(Example__set_static_int_field)
+        self.assertIsNotNone(Example__set_static_int_field.value)
 
         # Find the Example.get_static_int_field() method
         Example__get_static_int_field = java.GetStaticMethodID(Example, "get_static_int_field", "()I")
-        self.assertIsNotNone(Example__get_static_int_field)
+        self.assertIsNotNone(Example__get_static_int_field.value)
 
         # Find Example.static_int_field
         Example__static_int_field = java.GetStaticFieldID(Example, "static_int_field", "I")
-        self.assertIsNotNone(Example__static_int_field)
+        self.assertIsNotNone(Example__static_int_field.value)
 
         # Find Example.static_base_int_field
         Example__static_base_int_field = java.GetStaticFieldID(Example, "static_base_int_field", "I")
-        self.assertIsNotNone(Example__static_base_int_field)
+        self.assertIsNotNone(Example__static_base_int_field.value)
 
         # Use the get_static_int_field and get_static_base_int_field methods
         self.assertEqual(java.CallStaticIntMethod(Example, Example__get_static_base_int_field), 1)
@@ -171,3 +171,28 @@ class JNITest(TestCase):
 
         self.assertEqual(java.GetStaticIntField(Example, Example__static_base_int_field), 1137)
         self.assertEqual(java.GetStaticIntField(Example, Example__static_int_field), 1142)
+
+    def test_string_method(self):
+        "A Java string can be created, and the content returned"
+        # This string contains unicode characters
+        s = "Woop"
+        java_string = java.NewStringUTF(s.encode('utf-8'))
+
+        Example = java.FindClass("org/pybee/test/Example")
+        self.assertIsNotNone(Example.value)
+
+        # Find the default constructor
+        Example__init = java.GetMethodID(Example, "<init>", "()V")
+        self.assertIsNotNone(Example__init.value)
+
+        # Find the Example.duplicate_string() method on Example
+        Example__duplicate_string = java.GetMethodID(Example, "duplicate_string", "(Ljava/lang/String;)Ljava/lang/String;")
+        self.assertIsNotNone(Example__duplicate_string.value)
+
+        # Create an instance of org.pybee.test.Example using the default constructor
+        obj1 = java.NewObject(Example, Example__init)
+        self.assertIsNotNone(obj1.value)
+
+        # Invoke the string duplication method
+        result = java.CallObjectMethod(obj1, Example__duplicate_string, java_string)
+        self.assertEqual(java.GetStringUTFChars(cast(result, jstring), None).decode('utf-8'), "WoopWoop")

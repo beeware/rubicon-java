@@ -114,6 +114,12 @@ class JNITest(TestCase):
         with self.assertRaises(AttributeError):
             Example.get_int_field()
 
+    def test_string_argument(self):
+        "A method with a string argument can be passed."
+        Example = JavaClass('org/pybee/test/Example')
+        example = Example()
+        self.assertEqual(example.duplicate_string("Wagga"), "WaggaWagga")
+
     def test_string_return(self):
         "If a method or field returns a string, you get a Python string back"
         Example = JavaClass('org/pybee/test/Example')

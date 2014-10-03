@@ -48,6 +48,10 @@ public class Example extends BaseExample {
         return theThing;
     }
 
+    public String duplicate_string(String in) {
+        return in + in;
+    }
+
     public void set_callback(ICallback cb) {
         callback = cb;
     }

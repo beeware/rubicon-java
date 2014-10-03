@@ -407,7 +407,9 @@ class _ReflectionAPI(object):
             'Class__getName': ('GetMethodID', 'Class', 'getName', '()Ljava/lang/String;'),
             'Class__getConstructors': ('GetMethodID', 'Class', 'getConstructors', '()[Ljava/lang/reflect/Constructor;'),
             'Class__getMethods': ('GetMethodID', 'Class', 'getMethods', '()[Ljava/lang/reflect/Method;'),
+            'Class__getMethod': ('GetMethodID', 'Class', 'getMethod', '(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;'),
             'Class__getFields': ('GetMethodID', 'Class', 'getFields', '()[Ljava/lang/reflect/Field;'),
+            'Class__getField': ('GetMethodID', 'Class', 'getField', '(Ljava/lang/String;)Ljava/lang/reflect/Field;'),
 
             'Constructor': ('FindClass', 'java/lang/reflect/Constructor'),
             'Constructor__getParameterTypes': ('GetMethodID', 'Constructor', 'getParameterTypes', '()[Ljava/lang/Class;'),
@@ -465,19 +467,19 @@ class _ReflectionAPI(object):
                 args = self._descriptors[name]
                 if args[0] == 'FindClass':
                     result = java.FindClass(*args[1:])
-                    if result is None:
+                    if result.value is None:
                         raise RuntimeError("Couldn't find Java class '%s'" % args[1])
 
                 elif args[0] == 'GetMethodID':
                     klass = getattr(self, args[1])
                     result = java.GetMethodID(klass, *args[2:])
-                    if result is None:
+                    if result.value is None:
                         raise RuntimeError("Couldn't find Java method '%s.%s'" % (args[1], args[2]))
 
                 elif args[0] == 'GetStaticMethodID':
                     klass = getattr(self, args[1])
                     result = java.GetStaticMethodID(klass, *args[2:])
-                    if result is None:
+                    if result.value is None:
                         raise RuntimeError("Couldn't find Java static method '%s.%s'" % (args[1], args[2]))
 
                 self._attrs[name] = result
