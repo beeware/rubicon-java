@@ -407,9 +407,9 @@ class _ReflectionAPI(object):
             'Class__getName': ('GetMethodID', 'Class', 'getName', '()Ljava/lang/String;'),
             'Class__getConstructors': ('GetMethodID', 'Class', 'getConstructors', '()[Ljava/lang/reflect/Constructor;'),
             'Class__getMethods': ('GetMethodID', 'Class', 'getMethods', '()[Ljava/lang/reflect/Method;'),
-            'Class__getMethod': ('GetMethodID', 'Class', 'getMethod', '(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;'),
             'Class__getFields': ('GetMethodID', 'Class', 'getFields', '()[Ljava/lang/reflect/Field;'),
-            'Class__getField': ('GetMethodID', 'Class', 'getField', '(Ljava/lang/String;)Ljava/lang/reflect/Field;'),
+            'Class__getInterfaces': ('GetMethodID', 'Class', 'getInterfaces', '()[Ljava/lang/Class;'),
+            'Class__getSuperclass': ('GetMethodID', 'Class', 'getSuperclass', '()Ljava/lang/Class;'),
 
             'Constructor': ('FindClass', 'java/lang/reflect/Constructor'),
             'Constructor__getParameterTypes': ('GetMethodID', 'Constructor', 'getParameterTypes', '()[Ljava/lang/Class;'),

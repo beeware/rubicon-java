@@ -4,7 +4,7 @@ import bootstrap
 
 from unittest import TestCase
 
-from rubicon.java import JavaClass, JavaInterface, J, jobject, cast, java, jstring
+from rubicon.java import JavaClass, JavaInterface
 
 
 class JNITest(TestCase):
@@ -15,12 +15,13 @@ class JNITest(TestCase):
 
         stack = Stack()
 
-        # stack.push(J("Hello"))
-        # stack.push(J("World"))
-        # print ('TOSTRING', stack.toString())
+        stack.push("Hello")
+        stack.push("World")
 
-        # self.assertEqual(java.GetStringUTFChars(stack.pop(), None), "World")
-        # self.assertEqual(java.GetStringUTFChars(stack.pop(), None), "Hello")
+        # The stack methods are protyped to return java/lang/Object,
+        # so we need to call toString() to get the actual content...
+        self.assertEqual(stack.pop().toString(), "World")
+        self.assertEqual(stack.pop().toString(), "Hello")
 
         # with self.assertRaises(Exception):
             # stack.pop()
@@ -45,7 +46,6 @@ class JNITest(TestCase):
         Example = JavaClass('org/pybee/test/Example')
 
         obj = Example()
-
         self.assertEqual(obj.get_base_int_field(), 22)
         self.assertEqual(obj.get_int_field(), 33)
 
@@ -179,3 +179,26 @@ class JNITest(TestCase):
 
         self.assertEqual(results['string'], 'This is a Java Example object')
         self.assertEqual(results['int'], 47)
+
+    def test_alternatives(self):
+        "A class is aware of it's type heirarchy"
+        Example = JavaClass('org/pybee/test/Example')
+
+        Example._load()
+        self.assertEqual(
+            Example.__dict__['_types'],
+            [
+                "Lorg/pybee/test/Example;",
+                "Lorg/pybee/test/BaseExample;",
+                "Ljava/lang/Object;",
+            ])
+
+        AbstractCallback = JavaClass('org/pybee/test/AbstractCallback')
+        AbstractCallback._load()
+        self.assertEqual(
+            AbstractCallback.__dict__['_types'],
+            [
+                "Lorg/pybee/test/AbstractCallback;",
+                "Lorg/pybee/test/ICallback;",
+                "Ljava/lang/Object;",
+            ])

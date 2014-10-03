@@ -67,4 +67,19 @@ public class Example extends BaseExample {
     public String toString() {
         return "This is a Java Example object";
     }
+
+    public class Inner {
+        public final static int INNER_CONSTANT = 1234;
+
+        public Inner() {
+        }
+
+        int the_answer(boolean correct) {
+            if (correct) {
+                return 42;
+            } else {
+                return 54;
+            }
+        }
+    }
 }

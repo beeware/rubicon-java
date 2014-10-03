@@ -2,6 +2,8 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 __version__ = '0.0.0'
 
+import itertools
+
 from .jni import *
 from .types import *
 # import weakref
@@ -22,7 +24,7 @@ def dispatch(instance, method, argc, argv):
         signature = list(signatures)[0]
         if len(signature) != argc:
             raise RuntimeError("argc provided for dispatch doesn't match registered method.")
-        args = [reverse_cast(jarg, jtype) for jarg, jtype in zip(argv, signature)]
+        args = [dispatch_cast(jarg, jtype) for jarg, jtype in zip(argv, signature)]
         getattr(instance, method)(*args)
     else:
         raise RuntimeError("Can't handle multiple prototypes for same method name (yet!)")
@@ -44,52 +46,84 @@ def J(unicode):
 # Methods to convert argument lists into a signature, and vice versa
 ###########################################################################
 
-def signature_for_args(*args):
-    """Determine the signature that will match a given argument list.
 
-    args should be the list of arguments that have been passed to a
-    method or constructor invocation. This method will then return
-    the Java method signature that matches that argument list,
-    and a modified version of the argument that can be passed to the
-    underlying Java function
+def possible_signatures(args):
+    return []
+
+def select_polymorph(polymorphs, args):
+    """Determine the polymorphic signature that will match a given argument list.
+
+    polymorphs should be a dictionary, keyed by JNI signature.
+    The values in the dictionary are not used, only returned by this method.
+
+    args is a list of arguments that have been passed to a method.
+
+    Returns a 4-tuple:
+     - arg_sig - the actual signature of the provided arguments
+     - match_sig - the signature that was matched. Will be the same as arg_sig
+        if all the arguments match, but will be superclasses or interface types
+        if that is what matched.
+     - polymorph - the value from the input polymorphs that matched. Equivalent
+        to polymorphs[match_sig]
+     - wrapped - the args, converted into a form suitable for invocation over
+        the JNI layer.
     """
     arg_types = []
     wrapped = []
-    for arg in args:
-        if isinstance(arg, (bool, jboolean)):
-            arg_types.append('Z')
-            wrapped.append(arg)
-        elif isinstance(arg, jbyte):
-            arg_types.append('B')
-            wrapped.append(arg)
-        elif isinstance(arg, basestring) and len(arg) == 1 or isinstance(arg, jchar):
-            arg_types.append('C')
-            wrapped.append(arg)
-        elif isinstance(arg, jshort):
-            arg_types.append('S')
-            wrapped.append(arg)
-        elif isinstance(arg, (int, jint)):
-            arg_types.append('I')
-            wrapped.append(arg)
-        elif isinstance(arg, jlong):
-            arg_types.append('J')
-            wrapped.append(arg)
-        elif isinstance(arg, (float, jfloat)):
-            arg_types.append('F')
-            wrapped.append(arg)
-        elif isinstance(arg, jdouble):
-            arg_types.append('D')
-            wrapped.append(arg)
-        elif isinstance(arg, basestring):
-            arg_types.append('Ljava/lang/String;')
-            wrapped.append(java.NewStringUTF(arg))
-        elif isinstance(arg, (JavaInstance, JavaProxy)):
-            arg_types.append('L%s;' % arg.__class__.__dict__['_descriptor'])
-            wrapped.append(arg._jni)
-        else:
-            raise ValueError("Unknown argument type", arg, type(arg))
+    if len(args) == 0:
+        arg_sig = ''.join(t[0] for t in arg_types)
+        possible_signatures = [arg_sig]
+    else:
+        for arg in args:
+            if isinstance(arg, (bool, jboolean)):
+                arg_types.append(['Z'])
+                wrapped.append(arg)
+            elif isinstance(arg, jbyte):
+                arg_types.append(['B'])
+                wrapped.append(arg)
+            elif isinstance(arg, basestring) and len(arg) == 1 or isinstance(arg, jchar):
+                arg_types.append(['C'])
+                wrapped.append(arg)
+            elif isinstance(arg, jshort):
+                arg_types.append(['S'])
+                wrapped.append(arg)
+            elif isinstance(arg, (int, jint)):
+                arg_types.append(['I'])
+                wrapped.append(arg)
+            elif isinstance(arg, jlong):
+                arg_types.append(['J'])
+                wrapped.append(arg)
+            elif isinstance(arg, (float, jfloat)):
+                arg_types.append(['F'])
+                wrapped.append(arg)
+            elif isinstance(arg, jdouble):
+                arg_types.append(['D'])
+                wrapped.append(arg)
+            elif isinstance(arg, basestring):
+                arg_types.append(['Ljava/lang/String;', 'Ljava/lang/Object;'])
+                wrapped.append(java.NewStringUTF(arg))
+            elif isinstance(arg, (JavaInstance, JavaProxy)):
+                arg_types.append(arg.__class__.__dict__['_types'])
+                wrapped.append(arg._jni)
+            else:
+                raise ValueError("Unknown argument type", arg, type(arg))
 
-    return ''.join(arg_types), wrapped
+        arg_sig = ''.join(t[0] for t in arg_types)
+
+        possible_signatures = [arg_sig]
+        possible_signatures = list(itertools.product(*arg_types))
+        possible_signatures = [''.join(a) for a in possible_signatures]
+        # possible_signatures = [arg_sig]
+
+    for alternate in possible_signatures:
+        try:
+            print ("TRYING: '%s'" % alternate)
+            return arg_sig, alternate, polymorphs[alternate], wrapped
+        except KeyError:
+            print ("Nope...")
+            pass
+
+    raise KeyError(arg_sig)
 
 
 def signature_for_type_name(type_name):
@@ -165,19 +199,20 @@ def return_cast(raw, return_signature):
             return java.GetStringUTFChars(cast(raw, jstring), None)
         return None
 
-    elif '/' in return_signature:
+    elif return_signature.startswith('L'):
         # Check for NULL return values
         if raw.value:
             try:
-                klass = _class_cache[return_signature]
+                klass = _class_cache[return_signature[1:-1]]
             except KeyError:
-                klass = JavaClass(return_signature)
+                klass = JavaClass(return_signature[1:-1])
             return klass(jni=raw)
         return None
 
-    raise ValueError("Don't know how to convert return signature '%s'" % return_signature)
+    raise ValueError("Don't know how to cast return signature '%s'" % return_signature)
 
-def reverse_cast(raw, type_signature):
+
+def dispatch_cast(raw, type_signature):
     if type_signature == 'Z':
         return java.CallBooleanMethod(jobject(raw), reflect.Boolean__booleanValue)
 
@@ -228,14 +263,13 @@ def reverse_cast(raw, type_signature):
 ###########################################################################
 
 class StaticJavaMethod(object):
-    def __init__(self, name, java_class):
-        self.name = name
+    def __init__(self, java_class, name):
         self.java_class = java_class
-        self._impl = {}
-
+        self.name = name
+        self._polymorphs = {}
 
     def add(self, signature, return_signature):
-        if signature not in self._impl:
+        if signature not in self._polymorphs:
             invoker = {
                 'V': java.CallStaticVoidMethod,
                 'Z': java.CallStaticBooleanMethod,
@@ -249,11 +283,15 @@ class StaticJavaMethod(object):
             }.get(return_signature, java.CallStaticObjectMethod)
 
             full_signature = '(%s)%s' % (signature, return_signature)
-            jni = java.GetStaticMethodID(self.java_class, self.name, full_signature)
+            jni = java.GetStaticMethodID(self.java_class.__dict__['_jni'], self.name, full_signature)
             if jni.value is None:
-                raise RuntimeError("Couldn't find static Java method '%s' with signature '%s'" % (self.name, full_signature))
+                raise RuntimeError("Couldn't find static Java method '%s.%s' with signature '%s'" % (
+                    self.java_class.__dict__['_descriptor'],
+                    self.name,
+                    full_signature)
+                )
 
-            self._impl[signature] = {
+            self._polymorphs[signature] = {
                 'return_signature': return_signature,
                 'invoker': invoker,
                 'jni': jni
@@ -261,32 +299,27 @@ class StaticJavaMethod(object):
 
     def __call__(self, *args):
         try:
-            sig, wrapped = signature_for_args(*args)
-            if self._impl[sig]['jni'] is None:
-                self._load(sig)
-
-            result = self._impl[sig]['invoker'](self.java_class, self._impl[sig]['jni'], *wrapped)
-
-            return return_cast(result, self._impl[sig]['return_signature'])
-        except KeyError:
+            arg_sig, match_sig, polymorph, wrapped = select_polymorph(self._polymorphs, args)
+            result = polymorph['invoker'](self.java_class.__dict__['_jni'], polymorph['jni'], *wrapped)
+            return return_cast(result, polymorph['return_signature'])
+        except KeyError as e:
             raise AttributeError(
-                "Can't find Java static method %s.%s matching argument signature '%s'. Options are: %s" % (
-                        self.__class__,
+                "Can't find Java static method '%s.%s' matching argument signature '%s'. Options are: %s" % (
+                        self.java_class.__dict__['_descriptor'],
                         self.name,
-                        sig,
-                        self._impl.keys()
+                        e,
+                        self._polymorphs.keys()
                     )
             )
 
-
 class JavaMethod(object):
-    def __init__(self, name, java_class):
-        self.name = name
+    def __init__(self, java_class, name):
         self.java_class = java_class
-        self._impl = {}
+        self.name = name
+        self._polymorphs = {}
 
     def add(self, signature, return_signature):
-        if signature not in self._impl:
+        if signature not in self._polymorphs:
             invoker = {
                 'V': java.CallVoidMethod,
                 'Z': java.CallBooleanMethod,
@@ -300,12 +333,15 @@ class JavaMethod(object):
             }.get(return_signature, java.CallObjectMethod)
 
             full_signature = '(%s)%s' % (signature, return_signature)
-            jni = java.GetMethodID(self.java_class, self.name, full_signature)
+            jni = java.GetMethodID(self.java_class.__dict__['_jni'], self.name, full_signature)
             if jni.value is None:
-                raise RuntimeError("Couldn't find Java method '%s' with signature '%s'" % (self.name, full_signature))
+                raise RuntimeError("Couldn't find Java method '%s.%s' with signature '%s'" % (
+                    self.java_class.__dict__['_descriptor'],
+                    self.name,
+                    full_signature)
+                )
 
-
-            self._impl[signature] = {
+            self._polymorphs[signature] = {
                 'return_signature': return_signature,
                 'invoker': invoker,
                 'jni': jni
@@ -313,16 +349,16 @@ class JavaMethod(object):
 
     def __call__(self, instance, *args):
         try:
-            sig, wrapped = signature_for_args(*args)
-            result = self._impl[sig]['invoker'](instance._jni, self._impl[sig]['jni'], *wrapped)
-            return return_cast(result, self._impl[sig]['return_signature'])
-        except KeyError:
+            arg_sig, match_sig, polymorph, wrapped = select_polymorph(self._polymorphs, args)
+            result = polymorph['invoker'](instance, polymorph['jni'], *wrapped)
+            return return_cast(result, polymorph['return_signature'])
+        except KeyError as e:
             raise AttributeError(
-                "Can't find Java instance method %s.%s matching argument signature '%s'. Options are: %s" % (
-                        self.__class__.__name__,
+                "Can't find Java instance method '%s.%s' matching argument signature '%s'. Options are: %s" % (
+                        self.java_class.__dict__['_descriptor'],
                         self.name,
-                        sig,
-                        self._impl.keys()
+                        e,
+                        self._polymorphs.keys()
                     )
             )
 
@@ -340,9 +376,9 @@ class BoundJavaMethod(object):
 ###########################################################################
 
 class StaticJavaField(object):
-    def __init__(self, name, java_class, signature):
-        self.name = name
+    def __init__(self, java_class, name, signature):
         self.java_class = java_class
+        self.name = name
         self._signature = signature
         self._accessor = {
             'Z': java.GetStaticBooleanField,
@@ -366,22 +402,22 @@ class StaticJavaField(object):
             'D': java.SetStaticDoubleField,
         }.get(self._signature, java.SetStaticObjectField)
 
-        self._jni = java.GetStaticFieldID(self.java_class, self.name, self._signature)
+        self._jni = java.GetStaticFieldID(self.java_class.__dict__['_jni'], self.name, self._signature)
         if self._jni.value is None:
-            raise RuntimeError("Couldn't find static Java field '%s'" % self.name)
+            raise RuntimeError("Couldn't find static Java field '%s.%s'" % (self.java_class.__dict__['_jni'], self.name))
 
     def get(self):
-        result = self._accessor(self.java_class, self._jni)
+        result = self._accessor(self.java_class.__dict__['_jni'], self._jni)
         return return_cast(result, self._signature)
 
     def set(self, val):
-        self._mutator(self.java_class, self._jni, val)
+        self._mutator(self.java_class.__dict__['_jni'], self._jni, val)
 
 
 class JavaField(object):
-    def __init__(self, name, java_class, signature):
-        self.name = name
+    def __init__(self, java_class, name, signature):
         self.java_class = java_class
+        self.name = name
         self._signature = signature
         self._accessor = {
             'Z': java.GetBooleanField,
@@ -405,9 +441,9 @@ class JavaField(object):
             'D': java.SetDoubleField,
         }.get(self._signature, java.SetObjectField)
 
-        self._jni = java.GetFieldID(self.java_class, self.name, self._signature)
+        self._jni = java.GetFieldID(self.java_class.__dict__['_jni'], self.name, self._signature)
         if self._jni.value is None:
-            raise RuntimeError("Couldn't find Java field '%s'" % self.name)
+            raise RuntimeError("Couldn't find Java field '%s.%s'" % (self.java_class.__dict__['_jni'], self.name))
 
     def get(self, instance):
         result = self._accessor(instance._jni, self._jni)
@@ -429,32 +465,31 @@ class JavaInstance(object):
 
         if jni is None:
             klass = self.__class__._jni
-            sig, wrapped = signature_for_args(*args)
             try:
-                constructor = self.__class__.__dict__['_constructors'][sig]
+                arg_sig, match_sig, constructor, wrapped = select_polymorph(self.__class__.__dict__['_constructors'], args)
                 if constructor is None:
-                    constructor = java.GetMethodID(klass, '<init>', '(%s)V' % sig)
+                    constructor = java.GetMethodID(klass, '<init>', '(%s)V' % match_sig)
                     if constructor is None:
-                        raise RuntimeError("Couldn't get method ID for %s constructor of %s" % (sig, self.__class__))
-                    self.__class__.__dict__['_constructors'][sig] = constructor
+                        raise RuntimeError("Couldn't get method ID for %s constructor of %s" % (match_sig, self.__class__))
+                    self.__class__.__dict__['_constructors'][match_sig] = constructor
 
                 jni = java.NewObject(klass, constructor, *wrapped)
                 if not jni:
                     raise RuntimeError("Couldn't instantiate Java instance of %s." % self.__class__)
 
 
-            except KeyError:
+            except KeyError as e:
                 raise ValueError(
                     "Can't find constructor matching argument signature %s. Options are: %s" % (
-                            sig,
+                            e,
                             ', '.join(self.__class__.__dict__['_constructors'].keys())
                         )
                 )
         else:
             # Since this instance has been instantiated directly from a JNI reference,
-            # the constructor won't have been invoked, which means the method and field
-            # lists won't be populated. We've presumably got this object to do something
-            # with it, so prime the class.
+            # the constructor won't have necessarily been invoked, which means the method
+            # and field lists won't be populated. We've presumably got this object to do
+            # something with it, so prime the class.
             self.__class__._load()
 
         # This is just:
@@ -512,6 +547,7 @@ class JavaClass(type):
     def __new__(cls, descriptor):
         java_class = super(JavaClass, cls).__new__(cls, descriptor.encode('utf-8'), (JavaInstance,), {
                 '_descriptor': descriptor,
+                '_types': [],
                 '_constructors': {},
                 '_members': {
                     'fields': {},
@@ -528,14 +564,20 @@ class JavaClass(type):
 
     def _load(self):
         java_class = java.FindClass(self.__dict__['_descriptor'])
-        if java_class is None:
+        if java_class.value is None:
             raise UnknownClassException(self.__dict__['_descriptor'])
+
+        # This is just:
+        #   self._jni = java_class
+        # but we can't make that call, because we've overridden __setattr__
+        # to only respond to Java static fields.
+        type.__setattr__(self, '_jni', java_class)
 
         ##################################################################
         # Load the constructors for the class
         ##################################################################
         constructors = java.CallObjectMethod(java_class, reflect.Class__getConstructors)
-        if constructors is None:
+        if constructors.value is None:
             raise RuntimeError("Couldn't get constructors for '%s'" % self)
         constructors = cast(constructors, jobjectArray)
 
@@ -563,7 +605,7 @@ class JavaClass(type):
         # Load the methods for the class
         ##################################################################
         methods = java.CallObjectMethod(java_class, reflect.Class__getMethods)
-        if methods is None:
+        if methods.value is None:
             raise RuntimeError("Couldn't get methods for '%s'" % self)
         methods = cast(methods, jobjectArray)
 
@@ -587,14 +629,14 @@ class JavaClass(type):
             if public:
                 if static:
                     self.__dict__['_static']['methods'].setdefault(name_str, StaticJavaMethod(
+                            java_class=self,
                             name=name_str,
-                            java_class=java_class,
                         )).add(signature_for_params(params), signature_for_type_name(return_type_name))
 
                 else:
                     self.__dict__['_members']['methods'].setdefault(name_str, JavaMethod(
+                            java_class=self,
                             name=name_str,
-                            java_class=java_class,
                         )).add(signature_for_params(params), signature_for_type_name(return_type_name))
 
             java.DeleteLocalRef(type_name)
@@ -608,7 +650,7 @@ class JavaClass(type):
         # Load the fields for the class
         ##################################################################
         fields = java.CallObjectMethod(java_class, reflect.Class__getFields)
-        if fields is None:
+        if fields.value is None:
             raise RuntimeError("Couldn't get fields for '%s'" % self)
         fields = cast(fields, jobjectArray)
 
@@ -631,15 +673,15 @@ class JavaClass(type):
             if public:
                 if static:
                     wrapper = StaticJavaField(
+                        java_class=self,
                         name=name_str,
-                        java_class=java_class,
                         signature=signature,
                     )
                     self.__dict__['_static']['fields'][name_str] = wrapper
                 else:
                     wrapper = JavaField(
+                        java_class=self,
                         name=name_str,
-                        java_class=java_class,
                         signature=signature,
                     )
                     self.__dict__['_members']['fields'][name_str] = wrapper
@@ -650,11 +692,48 @@ class JavaClass(type):
             java.DeleteLocalRef(java_field)
         java.DeleteLocalRef(fields)
 
-        # This is just:
-        #   self._jni = java_class
-        # but we can't make that call, because we've overridden __setattr__
-        # to only respond to Java static fields.
-        type.__setattr__(self, '_jni', java_class)
+        ##################################################################
+        # Determine the alternate types for this class
+        ##################################################################
+
+        # Best option is the type itself
+        self.__dict__['_types'].append('L%s;' % self.__dict__['_descriptor'])
+
+        # Next preference is an interfaces
+        java_interfaces = java.CallObjectMethod(java_class, reflect.Class__getInterfaces)
+        if java_interfaces.value is None:
+            raise RuntimeError("Couldn't get interfaces for '%s'" % self)
+        java_interfaces = cast(java_interfaces, jobjectArray)
+
+        interface_count = java.GetArrayLength(java_interfaces)
+        for i in range(0, interface_count):
+            java_interface = java.GetObjectArrayElement(java_interfaces, i)
+
+            name = java.CallObjectMethod(java_interface, reflect.Class__getName)
+            name_str = java.GetStringUTFChars(cast(name, jstring), None)
+
+            self.__dict__['_types'].append('L%s;' % name_str.replace('.', '/'))
+
+            java.DeleteLocalRef(name)
+            java.DeleteLocalRef(java_interface)
+        java.DeleteLocalRef(java_interfaces)
+
+        # Then check all the superclasses
+        java_superclass = java.CallObjectMethod(java_class, reflect.Class__getSuperclass)
+        while java_superclass.value is not None:
+            name = java.CallObjectMethod(java_superclass, reflect.Class__getName)
+            name_str = java.GetStringUTFChars(cast(name, jstring), None)
+
+            self.__dict__['_types'].append('L%s;' % name_str.replace('.', '/'))
+
+            java.DeleteLocalRef(name)
+
+            super2 = java.CallObjectMethod(java_superclass, reflect.Class__getSuperclass)
+            java.DeleteLocalRef(java_superclass)
+            java_superclass = super2
+        java.DeleteLocalRef(java_superclass)
+        print ('6')
+
 
     def __getattr__(self, name):
         # First, try to get the _jni attribute.
@@ -732,12 +811,14 @@ class JavaInterface(type):
             descriptor, = args
             java_class = super(JavaInterface, cls).__new__(cls, descriptor.encode('utf-8'), (JavaProxy,), {
                     '_descriptor': descriptor,
+                    '_types': ['L%s;' % descriptor],
                     '_methods': {}
                 })
             return java_class
         else:
             name, bases, attrs = args
             attrs['_descriptor'] = bases[-1].__dict__['_descriptor']
+            attrs['_types'] = ['L%s;' % attrs['_descriptor']]
             attrs['_methods'] = {}
             java_class = super(JavaInterface, cls).__new__(cls, name, bases, attrs)
             return java_class
