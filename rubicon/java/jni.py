@@ -434,28 +434,28 @@ class _ReflectionAPI(object):
             'Python__proxy': ('GetStaticMethodID', 'Python', 'proxy', '(Ljava/lang/Class;J)Ljava/lang/Object;'),
 
             'Boolean': ('FindClass', 'java/lang/Boolean'),
-            'Boolean__intValue': ('GetMethodID', 'Boolean', 'booleanValue', '()I'),
+            'Boolean__booleanValue': ('GetMethodID', 'Boolean', 'booleanValue', '()Z'),
 
             'Byte': ('FindClass', 'java/lang/Byte'),
-            'Byte__intValue': ('GetMethodID', 'Byte', 'byteValue', '()I'),
+            'Byte__byteValue': ('GetMethodID', 'Byte', 'byteValue', '()B'),
 
             'Char': ('FindClass', 'java/lang/Char'),
-            'Char__intValue': ('GetMethodID', 'Char', 'charValue', '()I'),
+            'Char__charValue': ('GetMethodID', 'Char', 'charValue', '()C'),
 
             'Short': ('FindClass', 'java/lang/Short'),
-            'Short__intValue': ('GetMethodID', 'Short', 'shortValue', '()I'),
+            'Short__shortValue': ('GetMethodID', 'Short', 'shortValue', '()S'),
 
             'Integer': ('FindClass', 'java/lang/Integer'),
             'Integer__intValue': ('GetMethodID', 'Integer', 'intValue', '()I'),
 
             'Long': ('FindClass', 'java/lang/Long'),
-            'Long__intValue': ('GetMethodID', 'Long', 'longValue', '()I'),
+            'Long__longValue': ('GetMethodID', 'Long', 'longValue', '()J'),
 
             'Float': ('FindClass', 'java/lang/Float'),
-            'Float__intValue': ('GetMethodID', 'Float', 'floatValue', '()I'),
+            'Float__floatValue': ('GetMethodID', 'Float', 'floatValue', '()F'),
 
             'Double': ('FindClass', 'java/lang/Double'),
-            'Double__intValue': ('GetMethodID', 'Double', 'doubleValue', '()I'),
+            'Double__doubleValue': ('GetMethodID', 'Double', 'doubleValue', '()D'),
         }
 
     def __getattr__(self, name):

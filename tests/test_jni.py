@@ -2,9 +2,10 @@
 from __future__ import print_function, division, unicode_literals
 import bootstrap
 
+import math
 from unittest import TestCase
 
-from rubicon.java import java, jclass, jobject, jstring, cast
+from rubicon.java import java, jstring, cast, jdouble
 
 
 class JNITest(TestCase):
@@ -196,3 +197,25 @@ class JNITest(TestCase):
         # Invoke the string duplication method
         result = java.CallObjectMethod(obj1, Example__duplicate_string, java_string)
         self.assertEqual(java.GetStringUTFChars(cast(result, jstring), None).decode('utf-8'), "WoopWoop")
+
+    def test_float_method(self):
+        "A Java float can be created, and the content returned"
+        # This string contains unicode characters
+        Example = java.FindClass("org/pybee/test/Example")
+        self.assertIsNotNone(Example.value)
+
+        # Find the default constructor
+        Example__init = java.GetMethodID(Example, "<init>", "()V")
+        self.assertIsNotNone(Example__init.value)
+
+        # Find the Example.area_of_square() method on Example
+        Example__area_of_square = java.GetMethodID(Example, "area_of_square", "(F)F")
+        self.assertIsNotNone(Example__area_of_square.value)
+
+        # Create an instance of org.pybee.test.Example using the default constructor
+        obj1 = java.NewObject(Example, Example__init)
+        self.assertIsNotNone(obj1.value)
+
+        # Invoke the area method
+        result = java.CallFloatMethod(obj1, Example__area_of_square, jdouble(1.5))
+        self.assertEqual(result, 2.25)

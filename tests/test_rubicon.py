@@ -2,6 +2,7 @@
 from __future__ import print_function, division, unicode_literals
 import bootstrap
 
+import math
 from unittest import TestCase
 
 from rubicon.java import JavaClass, JavaInterface
@@ -126,6 +127,18 @@ class JNITest(TestCase):
         example = Example()
         self.assertEqual(example.toString(), "This is a Java Example object")
 
+    def test_float_method(self):
+        "A method with a float arguments can be handled."
+        Example = JavaClass('org/pybee/test/Example')
+        example = Example()
+        self.assertEqual(example.area_of_square(1.5), 2.25)
+
+    def test_double_method(self):
+        "A method with a double arguments can be handled."
+        Example = JavaClass('org/pybee/test/Example')
+        example = Example()
+        self.assertEqual(example.area_of_circle(1.5), 1.5 * math.pi)
+
     def test_object_return(self):
         "If a method or field returns an object, you get an instance of that type returned"
         Example = JavaClass('org/pybee/test/Example')
@@ -202,3 +215,15 @@ class JNITest(TestCase):
                 "Lorg/pybee/test/ICallback;",
                 "Ljava/lang/Object;",
             ])
+
+    def test_inner(self):
+        "Inner classes can be accessed, instantiated and invoked"
+
+        Example = JavaClass('org/pybee/test/Example')
+        Inner = JavaClass('org/pybee/test/Example$Inner')
+
+        self.assertEqual(Inner.INNER_CONSTANT, 1234)
+
+        # obj = Inner()
+        # self.assertEqual(obj.the_answer(True), 42)
+        # self.assertEqual(obj.the_answer(False), 54)

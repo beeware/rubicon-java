@@ -1,5 +1,6 @@
 package org.pybee.test;
 
+import java.lang.Math;
 import org.pybee.Python;
 
 public class Example extends BaseExample {
@@ -38,6 +39,14 @@ public class Example extends BaseExample {
 
     public int get_int_field() {
         return int_field;
+    }
+
+    public float area_of_square(float size) {
+        return size * size;
+    }
+
+    public double area_of_circle(double diameter) {
+        return diameter * Math.PI;
     }
 
     public void set_thing(Thing thing) {

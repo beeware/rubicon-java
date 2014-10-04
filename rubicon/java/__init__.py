@@ -6,7 +6,6 @@ import itertools
 
 from .jni import *
 from .types import *
-# import weakref
 
 # A cache of known JavaClass instances. This is requried so that when
 # we do a return_cast() to a return type, we don't have to recreate
@@ -47,8 +46,54 @@ def J(unicode):
 ###########################################################################
 
 
-def possible_signatures(args):
-    return []
+def convert_args(args, type_names):
+    """Convert the list of arguments to be in a format compliant with the JNI signature.
+    """
+    converted = []
+    for type_name, arg in zip(type_names, args):
+        if isinstance(arg, jboolean):
+            arg_types.append(['Z'])
+            converted.append(arg)
+        elif isinstance(arg, bool):
+            arg_types.append(['Z'])
+            converted.append(jboolean(arg))
+        elif isinstance(arg, jbyte):
+            converted.append(arg)
+        elif isinstance(arg, jchar):
+            converted.append(arg)
+        elif isinstance(arg, jshort):
+            converted.append(arg)
+        elif isinstance(arg, jint):
+            converted.append(arg)
+        elif isinstance(arg, int):
+            if type_name == 'I':
+                converted.append(jint(arg))
+            elif type_name == 'J':
+                converted.append(jlong(arg))
+            elif type_name == 'S':
+                converted.append(jshort(arg))
+            else:
+                raise ValueError("Unexpected type name for int argument.")
+        elif isinstance(arg, jlong):
+            converted.append(arg)
+        elif isinstance(arg, jfloat):
+            converted.append(jdouble(arg.value))
+        elif isinstance(arg, float):
+            # The JNI method uses VA_ARGS, and VA_ARGS transparently
+            # converts floats to doubles; so regardless of whether the
+            # argument is F or D, cast to jdouble.
+            converted.append(jdouble(arg))
+        elif isinstance(arg, jdouble):
+            converted.append(arg)
+        elif isinstance(arg, basestring):
+            converted.append(java.NewStringUTF(arg))
+        elif isinstance(arg, (JavaInstance, JavaProxy)):
+            converted.append(arg._jni)
+        else:
+            raise ValueError("Unknown argument type", arg, type(arg))
+
+    return converted
+
 
 def select_polymorph(polymorphs, args):
     """Determine the polymorphic signature that will match a given argument list.
@@ -58,69 +103,56 @@ def select_polymorph(polymorphs, args):
 
     args is a list of arguments that have been passed to a method.
 
-    Returns a 4-tuple:
+    Returns a 3-tuple:
      - arg_sig - the actual signature of the provided arguments
-     - match_sig - the signature that was matched. Will be the same as arg_sig
-        if all the arguments match, but will be superclasses or interface types
-        if that is what matched.
+     - match_types - the type list that was matched. This is a list of individual
+        type signatures, not a string form like arg_sig, but the contents will
+        be the same as arg_sig if all the arguments match. However, if a
+        superclass or interface types matches, that will be returned.
      - polymorph - the value from the input polymorphs that matched. Equivalent
-        to polymorphs[match_sig]
-     - wrapped - the args, converted into a form suitable for invocation over
-        the JNI layer.
+        to polymorphs[match_types]
     """
     arg_types = []
-    wrapped = []
     if len(args) == 0:
-        arg_sig = ''.join(t[0] for t in arg_types)
-        possible_signatures = [arg_sig]
+        arg_sig = ''
+        options = [[]]
     else:
         for arg in args:
             if isinstance(arg, (bool, jboolean)):
                 arg_types.append(['Z'])
-                wrapped.append(arg)
             elif isinstance(arg, jbyte):
                 arg_types.append(['B'])
-                wrapped.append(arg)
-            elif isinstance(arg, basestring) and len(arg) == 1 or isinstance(arg, jchar):
+            elif isinstance(arg, jchar):
                 arg_types.append(['C'])
-                wrapped.append(arg)
             elif isinstance(arg, jshort):
                 arg_types.append(['S'])
-                wrapped.append(arg)
-            elif isinstance(arg, (int, jint)):
+            elif isinstance(arg, jint):
                 arg_types.append(['I'])
-                wrapped.append(arg)
+            elif isinstance(arg, int):
+                arg_types.append(['I', 'J', 'S'])
             elif isinstance(arg, jlong):
                 arg_types.append(['J'])
-                wrapped.append(arg)
-            elif isinstance(arg, (float, jfloat)):
+            elif isinstance(arg, jfloat):
                 arg_types.append(['F'])
-                wrapped.append(arg)
+            elif isinstance(arg, float):
+                arg_types.append(['D', 'F'])
             elif isinstance(arg, jdouble):
                 arg_types.append(['D'])
-                wrapped.append(arg)
             elif isinstance(arg, basestring):
                 arg_types.append(['Ljava/lang/String;', 'Ljava/lang/Object;'])
-                wrapped.append(java.NewStringUTF(arg))
             elif isinstance(arg, (JavaInstance, JavaProxy)):
                 arg_types.append(arg.__class__.__dict__['_types'])
-                wrapped.append(arg._jni)
             else:
                 raise ValueError("Unknown argument type", arg, type(arg))
 
         arg_sig = ''.join(t[0] for t in arg_types)
 
-        possible_signatures = [arg_sig]
-        possible_signatures = list(itertools.product(*arg_types))
-        possible_signatures = [''.join(a) for a in possible_signatures]
-        # possible_signatures = [arg_sig]
+        options = list(itertools.product(*arg_types))
 
-    for alternate in possible_signatures:
+    for option in options:
         try:
-            print ("TRYING: '%s'" % alternate)
-            return arg_sig, alternate, polymorphs[alternate], wrapped
+            return arg_sig, option, polymorphs[''.join(option)]
         except KeyError:
-            print ("Nope...")
             pass
 
     raise KeyError(arg_sig)
@@ -299,8 +331,12 @@ class StaticJavaMethod(object):
 
     def __call__(self, *args):
         try:
-            arg_sig, match_sig, polymorph, wrapped = select_polymorph(self._polymorphs, args)
-            result = polymorph['invoker'](self.java_class.__dict__['_jni'], polymorph['jni'], *wrapped)
+            arg_sig, match_types, polymorph = select_polymorph(self._polymorphs, args)
+            result = polymorph['invoker'](
+                self.java_class.__dict__['_jni'],
+                polymorph['jni'],
+                *convert_args(args, match_types)
+            )
             return return_cast(result, polymorph['return_signature'])
         except KeyError as e:
             raise AttributeError(
@@ -349,8 +385,12 @@ class JavaMethod(object):
 
     def __call__(self, instance, *args):
         try:
-            arg_sig, match_sig, polymorph, wrapped = select_polymorph(self._polymorphs, args)
-            result = polymorph['invoker'](instance, polymorph['jni'], *wrapped)
+            arg_sig, match_types, polymorph = select_polymorph(self._polymorphs, args)
+            result = polymorph['invoker'](
+                instance,
+                polymorph['jni'],
+                *convert_args(args, match_types)
+            )
             return return_cast(result, polymorph['return_signature'])
         except KeyError as e:
             raise AttributeError(
@@ -466,14 +506,15 @@ class JavaInstance(object):
         if jni is None:
             klass = self.__class__._jni
             try:
-                arg_sig, match_sig, constructor, wrapped = select_polymorph(self.__class__.__dict__['_constructors'], args)
+                arg_sig, match_types, constructor = select_polymorph(self.__class__.__dict__['_constructors'], args)
                 if constructor is None:
-                    constructor = java.GetMethodID(klass, '<init>', '(%s)V' % match_sig)
+                    sig = ''.join(match_types)
+                    constructor = java.GetMethodID(klass, '<init>', '(%s)V' % ''.join(sig))
                     if constructor is None:
-                        raise RuntimeError("Couldn't get method ID for %s constructor of %s" % (match_sig, self.__class__))
-                    self.__class__.__dict__['_constructors'][match_sig] = constructor
+                        raise RuntimeError("Couldn't get method ID for %s constructor of %s" % (sig, self.__class__))
+                    self.__class__.__dict__['_constructors'][sig] = constructor
 
-                jni = java.NewObject(klass, constructor, *wrapped)
+                jni = java.NewObject(klass, constructor, *convert_args(args, match_types))
                 if not jni:
                     raise RuntimeError("Couldn't instantiate Java instance of %s." % self.__class__)
 
@@ -732,8 +773,6 @@ class JavaClass(type):
             java.DeleteLocalRef(java_superclass)
             java_superclass = super2
         java.DeleteLocalRef(java_superclass)
-        print ('6')
-
 
     def __getattr__(self, name):
         # First, try to get the _jni attribute.
@@ -744,7 +783,7 @@ class JavaClass(type):
         except KeyError:
             self._load()
         try:
-             return self.__dict__['_static']['fields'][name].get()
+            return self.__dict__['_static']['fields'][name].get()
         except KeyError:
             pass
 
