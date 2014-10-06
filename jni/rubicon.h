@@ -8,17 +8,17 @@ extern "C" {
 /*
  * Class:     org_pybee_Python
  * Method:    start
- * Signature: (Ljava/lang/String;)I
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_org_pybee_Python_start
-  (JNIEnv *, jobject, jstring);
+  (JNIEnv *, jobject, jstring, jstring, jstring);
 
 /*
  * Class:     org_pybee_Python
  * Method:    run
  * Signature: (Ljava/lang/String;)I
  */
-JNIEXPORT jint JNICALL Java_org_pybee_Python_start
+JNIEXPORT jint JNICALL Java_org_pybee_Python_run
   (JNIEnv *, jobject, jstring);
 
 /*

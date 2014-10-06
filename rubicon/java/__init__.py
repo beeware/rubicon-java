@@ -16,35 +16,33 @@ _class_cache = {}
 # mechanism to direct callbacks to the right place.
 _proxy_cache = {}
 
-def dispatch(instance, method, argc, argv):
-    instance = _proxy_cache[instance]
-    signatures = instance._methods.get(method)
-    if len(signatures) == 1:
-        signature = list(signatures)[0]
-        if len(signature) != argc:
-            raise RuntimeError("argc provided for dispatch doesn't match registered method.")
-        args = [dispatch_cast(jarg, jtype) for jarg, jtype in zip(argv, signature)]
-        getattr(instance, method)(*args)
-    else:
-        raise RuntimeError("Can't handle multiple prototypes for same method name (yet!)")
+def dispatch(instance, method, args):
+    try:
+        print (_proxy_cache)
+        print ("PYTHON SIDE DISPATCH", instance, method, args)
+        pyinstance = _proxy_cache[instance]
+        signatures = pyinstance._methods.get(method)
+        if len(signatures) == 1:
+            signature = list(signatures)[0]
+            if len(signature) != len(args):
+                raise RuntimeError("argc provided for dispatch doesn't match registered method.")
+            try:
+                args = [dispatch_cast(jarg, jtype) for jarg, jtype in zip(args, signature)]
+                getattr(pyinstance, method)(*args)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+        else:
+            raise RuntimeError("Can't handle multiple prototypes for same method name (yet!)")
+    except KeyError:
+        raise RuntimeError("Unknown Python instance %d", instance)
 
-# Register the dispatch function
-java_dispatch = DISPATCH_FUNCTION(dispatch)
-result = java.register_handler(java_dispatch)
-
-
-def J(unicode):
-    "A shorthand way of creating a Java string"
-    def __init__(self, content):
-        super(J, self).__init__(content)
-        self._as_parameter_ = java.NewStringUTF(content.encode('utf-8'))
 
 ###########################################################################
 # Signature handling
 #
 # Methods to convert argument lists into a signature, and vice versa
 ###########################################################################
-
 
 def convert_args(args, type_names):
     """Convert the list of arguments to be in a format compliant with the JNI signature.

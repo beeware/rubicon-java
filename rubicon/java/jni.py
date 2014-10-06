@@ -13,11 +13,6 @@ JNI_VERSION_1_2 = 0x00010002
 JNI_VERSION_1_4 = 0x00010004
 JNI_VERSION_1_6 = 0x00010006
 
-# Rubicon configuration points
-
-java.set_JNIEnv.restype = None
-java.set_JNIEnv.argtypes = [JNIEnv]
-
 # Standard JNI API
 
 java.GetVersion.restype = jint

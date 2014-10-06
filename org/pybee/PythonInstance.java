@@ -8,6 +8,7 @@ public class PythonInstance implements InvocationHandler {
     public long id;
 
     public PythonInstance(long instance_id) {
+        System.out.println("CREATED PYTHON INSTANCE" + instance_id);
         id = instance_id;
     }
 

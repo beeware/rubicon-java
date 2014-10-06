@@ -102,28 +102,8 @@ PyMODINIT_FUNC initandroid(void) {
 // The JNIEnv associated with the Python runtime
 JNIEnv *java = NULL;
 
-// The path to the Python installation. Should contain an app and app_packages subdirectory.
-const char *installPath = NULL;
-
 // The Python method dispatch handler
-void (*method_handler)(long, const char *, int, void **);
-
-/**************************************************************************
- * Set the Java environment that is active for the Python bridge.
- *************************************************************************/
-void set_JNIEnv(JNIEnv *env) {
-    LOG_D("Set active JNI Environment...");
-    java = env;
-}
-
-/**************************************************************************
- * Register the Python method handler to use on the bridge.
- *************************************************************************/
-void register_handler(void (*handler)(long, const char *, int, void **)) {
-    LOG_D("Register handler...");
-    method_handler = handler;
-    LOG_D("Registered.");
-}
+static PyObject *method_handler = NULL;
 
 /**************************************************************************
  * Wrappers around JNI methods, bound to the JNIEnv associated with the
@@ -825,16 +805,13 @@ jobjectRefType GetObjectRefType(jobject obj) {
 /**************************************************************************
  * Method to start the Python runtime.
  *************************************************************************/
-JNIEXPORT jint JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj, jstring path) {
+JNIEXPORT jint JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj, jstring pythonHome, jstring pythonPath, jstring rubiconLib) {
     int ret = 0;
-    char pythonPath[512];
-    char rubiconLibrary[256];
-    char pythonHome[256];
+    char pythonPathVar[512];
+    char rubiconLibVar[256];
 
     LOG_I("Start Python runtime...");
     java = env;
-    installPath = (*env)->GetStringUTFChars(env, path, NULL);
-    LOG_D("Install path: %s", installPath);
 
     // Special environment to prefer .pyo, and don't write bytecode if .py are found
     // because the process will not have write attribute on the device.
@@ -842,30 +819,40 @@ JNIEXPORT jint JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj,
     putenv("PYTHONDONTWRITEBYTECODE=1");
     putenv("PYTHONNOUSERSITE=1");
 
+    if (pythonHome) {
+        LOG_D("PYTHONHOME=%s", (*env)->GetStringUTFChars(env, pythonHome, NULL));
+        Py_SetPythonHome((char *)(*env)->GetStringUTFChars(env, pythonHome, NULL));
+    } else {
+        LOG_D("Using default PYTHONHOME");
+    }
+
+    if (pythonPath) {
+        sprintf(pythonPathVar, "PYTHONPATH=%s", (*env)->GetStringUTFChars(env, pythonPath, NULL));
+        LOG_D("%s", pythonPathVar);
+        putenv(pythonPathVar);
+    } else {
+        LOG_D("Using default PYTHONPATH");
+    }
+
 #ifdef ANDROID
     // If we're on android, we need to specify the location of the Rubicon
     // shared library as part of the environment.
-    sprintf(rubiconLibrary, "RUBICON_LIBRARY=%s/rubicon/armeabi/librubicon.so", installPath);
-    LOG_D("%s", rubiconLibrary);
-    putenv(rubiconLibrary);
+    if (rubiconLib) {
+        sprintf(rubiconLibVar, "RUBICON_LIBRARY=%s", (*env)->GetStringUTFChars(env, rubiconLib, NULL));
+        LOG_D("%s", rubiconLibVar);
+        putenv(rubiconLibVar);
+    } else {
+        LOG_D("Not setting RUBICON_LIBRARY");
+    }
 #endif
 
-    sprintf(pythonPath, "PYTHONPATH=%s/app:%s/app_packages", installPath, installPath);
-    LOG_D("%s", pythonPath);
-    putenv(pythonPath);
     // putenv("PYTHONVERBOSE=1");
-
-    sprintf(pythonHome, "%s/python",
-        (*env)->GetStringUTFChars(env, path, NULL)
-    );
-    LOG_D("PYTHONHOME=%s", pythonHome);
-    Py_SetPythonHome(pythonHome);
 
     LOG_I("Initializing Python runtime...");
     Py_Initialize();
     // PySys_SetArgv(argc, argv);
 
-    // If other modules are using thread, we need to initialize them before.
+    // If other modules are using threads, we need to initialize them before.
     PyEval_InitThreads();
 
 #ifdef ANDROID
@@ -899,6 +886,32 @@ JNIEXPORT jint JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj,
     }
 #endif
 
+    LOG_I("Import rubicon...");
+    PyObject *rubicon;
+
+    rubicon = PyImport_ImportModule("rubicon.java");
+    if (rubicon == NULL) {
+        LOG_E("Couldn't import rubicon python module");
+        PyErr_Print();
+        PyErr_Clear();
+        java = NULL;
+        return -1;
+    }
+    LOG_D("Got rubicon python module");
+
+    method_handler = PyObject_GetAttrString(rubicon, "dispatch");
+    if (method_handler == NULL) {
+        LOG_E("Couldn't find method dipatch handler");
+        PyErr_Print();
+        PyErr_Clear();
+        java = NULL;
+        return -2;
+    }
+    LOG_D("Got method dispatch handler");
+
+    Py_DECREF(rubicon);
+
+    LOG_D("Python runtime started.");
     return ret;
 }
 
@@ -907,24 +920,21 @@ JNIEXPORT jint JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj,
  *************************************************************************/
 JNIEXPORT jint JNICALL Java_org_pybee_Python_run(JNIEnv *env, jobject thisObj, jstring appName) {
     int ret = 0;
-    char progName[256];
 
     // Search for and start entry script
-    sprintf(progName, "%s/app/%s",
-        installPath,
-        (*env)->GetStringUTFChars(env, appName, NULL)
-    );
-    LOG_D("Running %s", progName);
-    FILE* fd = fopen(progName, "r");
+    const char* appNameStr = (*env)->GetStringUTFChars(env, appName, NULL);
+    LOG_D("Running %s", appNameStr);
+    FILE* fd = fopen(appNameStr, "r");
     if (fd == NULL) {
         ret = 1;
-        LOG_E("Unable to open %s", (*env)->GetStringUTFChars(env, appName, NULL));
+        LOG_E("Unable to open %s", appNameStr);
     } else {
-        ret = PyRun_SimpleFileEx(fd, progName, 1);
+        ret = PyRun_SimpleFileEx(fd, appNameStr, 1);
         if (ret != 0) {
             LOG_E("Application quit abnormally!");
         }
     }
+
     return ret;
 }
 
@@ -932,11 +942,15 @@ JNIEXPORT jint JNICALL Java_org_pybee_Python_run(JNIEnv *env, jobject thisObj, j
  * Method to stop the Python runtime.
  *************************************************************************/
 JNIEXPORT void JNICALL Java_org_pybee_Python_stop(JNIEnv *env, jobject thisObj) {
-    LOG_D("Finalizing Python runtime...");
-    Py_Finalize();
-    java = NULL;
-    installPath = NULL;
-    LOG_I("Python runtime stopped.");
+    if (java) {
+        LOG_D("Finalizing Python runtime...");
+        Py_Finalize();
+        java = NULL;
+        Py_XDECREF(method_handler);
+        LOG_I("Python runtime stopped.");
+    } else {
+        LOG_E("Python runtime doesn't appear to be running");
+    }
 }
 
 
@@ -946,16 +960,16 @@ JNIEXPORT void JNICALL Java_org_pybee_Python_stop(JNIEnv *env, jobject thisObj) 
  * This method converts the Python method invocation into a call on the
  * method dispatch method that has been registered as part of the runtime.
  *************************************************************************/
-JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke(JNIEnv *env, jobject thisObj, jobject proxy, jobject method, jobjectArray args) {
-    // LOG_D("Invocation");
+JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke(JNIEnv *env, jobject thisObj, jobject proxy, jobject method, jobjectArray jargs) {
+    LOG_D("Invocation");
 
     jclass PythonInstance = (*env)->FindClass(env, "org/pybee/PythonInstance");
-    // LOG_D("PythonInstance: %ld", (long)PythonInstance);
+    LOG_D("PythonInstance: %ld", (long)PythonInstance);
     jfieldID PythonInstance__id = (*env)->GetFieldID(env, PythonInstance, "id", "J");
-    // LOG_D("id: %ld", (long)PythonInstance__id);
+    LOG_D("id: %ld", (long)PythonInstance__id);
 
     long instance = (*env)->GetLongField(env, thisObj, PythonInstance__id);
-    // LOG_D("instance: %ld", instance);
+    LOG_D("instance: %ld", instance);
 
     jclass Method = (*env)->FindClass(env, "java/lang/reflect/Method");
     jmethodID method__getName = (*env)->GetMethodID(env, Method, "getName", "()Ljava/lang/String;");
@@ -964,25 +978,48 @@ JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke(JNIEnv *env, jobj
 
     LOG_D("Native invocation %ld :: %s", instance, (*env)->GetStringUTFChars(env, method_name, NULL));
 
-    // LOG_D("Args: %ld", (long)args);
-    if (args) {
-        jsize argc = (*env)->GetArrayLength(env, args);
-        // LOG_D("There are %d arguments", argc);
-        // LOG_I("Event handler");
+    PyGILState_STATE gstate;
+    gstate = PyGILState_Ensure();
 
-        void *argv[argc];
-        int i;
-        for (i = 0; i < argc; i++) {
-            argv[i] = (void *)(*env)->GetObjectArrayElement(env, args, i);
+    PyObject *result;
+    PyObject *pargs = PyTuple_New(3);
+    PyObject *pinstance = PyInt_FromLong(instance);
+    PyObject *pmethod_name = PyUnicode_FromFormat("%s", (*env)->GetStringUTFChars(env, method_name, NULL));
+    PyObject *args;
+
+    if (jargs) {
+        jsize argc = (*env)->GetArrayLength(env, jargs);
+        LOG_D("There are %d arguments", argc);
+
+        args = PyTuple_New(argc);
+        size_t i;
+        for (i = 0; i != argc; ++i) {
+            PyTuple_SET_ITEM(args, i, PyInt_FromLong((unsigned long)(*env)->GetObjectArrayElement(env, jargs, i)));
         }
-
-        (*method_handler)(instance, (*env)->GetStringUTFChars(env, method_name, NULL), argc, argv);
+    } else {
+        LOG_D("There are no arguments");
+        args = PyTuple_New(0);
     }
-    else {
-        // LOG_D("There are no arguments");
-        (*method_handler)(instance, (*env)->GetStringUTFChars(env, method_name, NULL), 0, NULL);
-    }
-    // LOG_D("Native invocation done.");
+    LOG_D("Made arguments tuple");
 
+    PyTuple_SET_ITEM(pargs, 0, pinstance);
+    PyTuple_SET_ITEM(pargs, 1, pmethod_name);
+    PyTuple_SET_ITEM(pargs, 2, args);
+
+    result = PyObject_CallObject(method_handler, pargs);
+
+    Py_DECREF(pargs);
+
+    if (result == NULL) {
+        LOG_E("Error invoking callback");
+        PyErr_Print();
+        PyErr_Clear();
+    } else {
+        LOG_D("Callback invoked");
+        Py_DECREF(result);
+    }
+    LOG_D("Native invocation done.");
+
+    PyGILState_Release(gstate);
     return NULL;
 }

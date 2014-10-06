@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, unicode_literals
-import bootstrap
 
 import math
 from unittest import TestCase
@@ -217,13 +216,8 @@ class JNITest(TestCase):
             ])
 
     def test_inner(self):
-        "Inner classes can be accessed, instantiated and invoked"
+        "Inner classes can be accessed"
 
-        Example = JavaClass('org/pybee/test/Example')
         Inner = JavaClass('org/pybee/test/Example$Inner')
 
         self.assertEqual(Inner.INNER_CONSTANT, 1234)
-
-        # obj = Inner()
-        # self.assertEqual(obj.the_answer(True), 42)
-        # self.assertEqual(obj.the_answer(False), 54)

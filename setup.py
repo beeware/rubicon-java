@@ -42,5 +42,4 @@ setup(
         'Topic :: Software Development :: User Interfaces',
         'Topic :: Software Development :: Widget Sets',
     ],
-    test_suite='tests',
 )

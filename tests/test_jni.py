@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, unicode_literals
-import bootstrap
 
-import math
 from unittest import TestCase
 
 from rubicon.java import java, jstring, cast, jdouble
