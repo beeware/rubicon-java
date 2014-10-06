@@ -12,10 +12,10 @@ public class Python {
     public static native int run(String script);
     public static native void stop();
 
-    public static Object proxy(Class cls, long id) {
+    public static Object proxy(Class cls, long instance) {
         Object pinstance = Proxy.newProxyInstance(cls.getClassLoader(),
                                new Class<?>[] {cls},
-                               new PythonInstance(id));
+                               new PythonInstance(instance));
         return pinstance;
     }
 }

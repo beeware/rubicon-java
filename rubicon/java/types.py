@@ -9,7 +9,6 @@ __all__ = [
     'jbooleanArray', 'jbyteArray', 'jcharArray', 'jshortArray', 'jintArray', 'jlongArray', 'jfloatArray', 'jdoubleArray', 'jobjectArray',
     'jweak', 'JNINativeMethod', 'JNINativeMethod_p',
     'JavaVM', 'JavaVM_p', 'JNIEnv',
-    'DISPATCH_FUNCTION'
 ]
 
 jboolean = c_bool
@@ -17,7 +16,7 @@ jbyte = c_byte
 jchar = c_wchar
 jshort = c_short
 jint = c_int
-jlong = c_long
+jlong = c_longlong
 jfloat = c_float
 jdouble = c_double
 
@@ -101,5 +100,3 @@ JavaVM_p = POINTER(JavaVM)
 
 class JNIEnv(c_void_p):
     pass
-
-DISPATCH_FUNCTION = CFUNCTYPE(None, c_long, c_char_p, c_int, POINTER(c_void_p))

@@ -465,6 +465,8 @@ class _ReflectionAPI(object):
                     if result.value is None:
                         raise RuntimeError("Couldn't find Java class '%s'" % args[1])
 
+                    result = cast(java.NewGlobalRef(result), jclass)
+
                 elif args[0] == 'GetMethodID':
                     klass = getattr(self, args[1])
                     result = java.GetMethodID(klass, *args[2:])

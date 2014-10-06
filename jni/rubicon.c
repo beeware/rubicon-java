@@ -965,7 +965,7 @@ JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke(JNIEnv *env, jobj
 
     jclass PythonInstance = (*env)->FindClass(env, "org/pybee/PythonInstance");
     LOG_D("PythonInstance: %ld", (long)PythonInstance);
-    jfieldID PythonInstance__id = (*env)->GetFieldID(env, PythonInstance, "id", "J");
+    jfieldID PythonInstance__id = (*env)->GetFieldID(env, PythonInstance, "instance", "J");
     LOG_D("id: %ld", (long)PythonInstance__id);
 
     long instance = (*env)->GetLongField(env, thisObj, PythonInstance__id);

@@ -5,11 +5,10 @@ import java.lang.reflect.Method;
 
 
 public class PythonInstance implements InvocationHandler {
-    public long id;
+    public long instance;
 
-    public PythonInstance(long instance_id) {
-        System.out.println("CREATED PYTHON INSTANCE" + instance_id);
-        id = instance_id;
+    public PythonInstance(long inst) {
+        instance = inst;
     }
 
     public native Object invoke(Object proxy, Method method, Object[] args) throws Throwable;

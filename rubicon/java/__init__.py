@@ -18,8 +18,7 @@ _proxy_cache = {}
 
 def dispatch(instance, method, args):
     try:
-        print (_proxy_cache)
-        print ("PYTHON SIDE DISPATCH", instance, method, args)
+        # print ("PYTHON SIDE DISPATCH", instance, method, args)
         pyinstance = _proxy_cache[instance]
         signatures = pyinstance._methods.get(method)
         if len(signatures) == 1:
@@ -276,11 +275,12 @@ def dispatch_cast(raw, type_signature):
     elif type_signature.startswith('L'):
         # Check for NULL return values
         if jobject(raw).value:
+            gref = java.NewGlobalRef(jobject(raw))
             try:
                 klass = _class_cache[type_signature[1:-1]]
             except KeyError:
                 klass = JavaClass(type_signature[1:-1])
-            return klass(jni=jobject(raw))
+            return klass(jni=gref)
         return None
 
     raise ValueError("Don't know how to convert argument with type signature '%s'" % type_signature)
@@ -515,7 +515,9 @@ class JavaInstance(object):
                 jni = java.NewObject(klass, constructor, *convert_args(args, match_types))
                 if not jni:
                     raise RuntimeError("Couldn't instantiate Java instance of %s." % self.__class__)
-
+                jni = cast(java.NewGlobalRef(jni), jclass)
+                if jni.value is None:
+                    raise RuntimeError("Unable to create global reference to instance.")
 
             except KeyError as e:
                 raise ValueError(
@@ -605,6 +607,9 @@ class JavaClass(type):
         java_class = java.FindClass(self.__dict__['_descriptor'])
         if java_class.value is None:
             raise UnknownClassException(self.__dict__['_descriptor'])
+        java_class = cast(java.NewGlobalRef(java_class), jclass)
+        if java_class.value is None:
+            raise RuntimeError("Unable to create global reference to class.")
 
         # This is just:
         #   self._jni = java_class
@@ -823,7 +828,13 @@ class JavaProxy(object):
     def __init__(self):
         # Create a Java-side proxy for this Python-side object
         klass = self.__class__._jni
-        self._jni = java.CallStaticObjectMethod(reflect.Python, reflect.Python__proxy, klass, jlong(id(self)))
+        jni = java.CallStaticObjectMethod(reflect.Python, reflect.Python__proxy, klass, jlong(id(self)))
+        if jni.value is None:
+            raise RuntimeError("Unable to create proxy instance.")
+        jni = cast(java.NewGlobalRef(jni), jclass)
+        if jni.value is None:
+            raise RuntimeError("Unable to create global reference to proxy instance.")
+        self._jni = jni
 
         # Register this Python instance with the proxy cache
         # This is a weak reference because _proxy_cache is a registry,
@@ -864,6 +875,9 @@ class JavaInterface(type):
         java_class = java.FindClass(self.__dict__['_descriptor'])
         if java_class is None:
             raise UnknownClassException(self.__dict__['_descriptor'])
+        java_class = cast(java.NewGlobalRef(java_class), jclass)
+        if java_class.value is None:
+            raise RuntimeError("Unable to create global reference to class.")
 
         ##################################################################
         # Load the methods for the class
