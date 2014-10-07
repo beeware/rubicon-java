@@ -1,6 +1,7 @@
-package org.pybee.test;
+package org.pybee.rubicon.test;
 
-import org.pybee.Python;
+import org.pybee.rubicon.Python;
+
 
 public class Thing {
     static public int static_int_field = 11;

@@ -1,4 +1,4 @@
-package org.pybee.test;
+package org.pybee.rubicon.test;
 
 
 public class BaseExample {

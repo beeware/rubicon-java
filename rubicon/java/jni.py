@@ -425,7 +425,7 @@ class _ReflectionAPI(object):
             'Modifier__isStatic': ('GetStaticMethodID', 'Modifier', 'isStatic', '(I)Z'),
             'Modifier__isPublic': ('GetStaticMethodID', 'Modifier', 'isPublic', '(I)Z'),
 
-            'Python': ('FindClass', 'org/pybee/Python'),
+            'Python': ('FindClass', 'org/pybee/rubicon/Python'),
             'Python__proxy': ('GetStaticMethodID', 'Python', 'proxy', '(Ljava/lang/Class;J)Ljava/lang/Object;'),
 
             'Boolean': ('FindClass', 'java/lang/Boolean'),

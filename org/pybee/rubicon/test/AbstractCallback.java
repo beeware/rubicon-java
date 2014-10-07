@@ -1,4 +1,5 @@
-package org.pybee.test;
+package org.pybee.rubicon.test;
+
 
 public abstract class AbstractCallback implements ICallback {
     public AbstractCallback() {

@@ -805,7 +805,7 @@ jobjectRefType GetObjectRefType(jobject obj) {
 /**************************************************************************
  * Method to start the Python runtime.
  *************************************************************************/
-JNIEXPORT jint JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj, jstring pythonHome, jstring pythonPath, jstring rubiconLib) {
+JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_start(JNIEnv *env, jobject thisObj, jstring pythonHome, jstring pythonPath, jstring rubiconLib) {
     int ret = 0;
     char pythonPathVar[512];
     char rubiconLibVar[256];
@@ -918,7 +918,7 @@ JNIEXPORT jint JNICALL Java_org_pybee_Python_start(JNIEnv *env, jobject thisObj,
 /**************************************************************************
  * Method to stop the Python runtime.
  *************************************************************************/
-JNIEXPORT jint JNICALL Java_org_pybee_Python_run(JNIEnv *env, jobject thisObj, jstring appName) {
+JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_run(JNIEnv *env, jobject thisObj, jstring appName) {
     int ret = 0;
 
     // Search for and start entry script
@@ -941,7 +941,7 @@ JNIEXPORT jint JNICALL Java_org_pybee_Python_run(JNIEnv *env, jobject thisObj, j
 /**************************************************************************
  * Method to stop the Python runtime.
  *************************************************************************/
-JNIEXPORT void JNICALL Java_org_pybee_Python_stop(JNIEnv *env, jobject thisObj) {
+JNIEXPORT void JNICALL Java_org_pybee_rubicon_Python_stop(JNIEnv *env, jobject thisObj) {
     if (java) {
         LOG_D("Finalizing Python runtime...");
         Py_Finalize();
@@ -960,10 +960,10 @@ JNIEXPORT void JNICALL Java_org_pybee_Python_stop(JNIEnv *env, jobject thisObj) 
  * This method converts the Python method invocation into a call on the
  * method dispatch method that has been registered as part of the runtime.
  *************************************************************************/
-JNIEXPORT jobject JNICALL Java_org_pybee_PythonInstance_invoke(JNIEnv *env, jobject thisObj, jobject proxy, jobject method, jobjectArray jargs) {
+JNIEXPORT jobject JNICALL Java_org_pybee_rubicon_PythonInstance_invoke(JNIEnv *env, jobject thisObj, jobject proxy, jobject method, jobjectArray jargs) {
     LOG_D("Invocation");
 
-    jclass PythonInstance = (*env)->FindClass(env, "org/pybee/PythonInstance");
+    jclass PythonInstance = (*env)->FindClass(env, "org/pybee/rubicon/PythonInstance");
     LOG_D("PythonInstance: %ld", (long)PythonInstance);
     jfieldID PythonInstance__id = (*env)->GetFieldID(env, PythonInstance, "instance", "J");
     LOG_D("id: %ld", (long)PythonInstance__id);

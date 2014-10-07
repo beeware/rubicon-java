@@ -1,4 +1,5 @@
-package org.pybee.test;
+package org.pybee.rubicon.test;
+
 
 public interface ICallback {
     public void poke(Example example, int value);

@@ -1,9 +1,9 @@
-package org.pybee.test;
+package org.pybee.rubicon.test;
 
-import org.pybee.Python;
+import org.pybee.rubicon.Python;
+
 
 public class Test {
-
     public static void main(String [] args) {
         if (Python.start(null, ".", null) != 0) {
             System.err.println("Got an error initializing Python");

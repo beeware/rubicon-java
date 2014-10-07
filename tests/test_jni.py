@@ -22,7 +22,7 @@ class JNITest(TestCase):
         self.assertIsNone(UnknownClass.value)
 
         # A class that does exist, that we can then search for non-existent methods
-        Example = java.FindClass("org/pybee/test/Example")
+        Example = java.FindClass("org/pybee/rubicon/test/Example")
         self.assertIsNotNone(Example.value)
 
         # Fields and Methods (static and non-static)
@@ -40,7 +40,7 @@ class JNITest(TestCase):
     def test_object_lifecycle(self):
         "The basic lifecycle operations of an object can be performed"
         # Get a reference to the org.pybee.test.Example class
-        Example = java.FindClass("org/pybee/test/Example")
+        Example = java.FindClass("org/pybee/rubicon/test/Example")
         self.assertIsNotNone(Example.value)
 
         # Find the default constructor
@@ -126,7 +126,7 @@ class JNITest(TestCase):
     def test_static(self):
         "Static methods and fields can be invoked"
         # Get a reference to the org.pybee.test.Example class
-        Example = java.FindClass("org/pybee/test/Example")
+        Example = java.FindClass("org/pybee/rubicon/test/Example")
         self.assertIsNotNone(Example.value)
 
         # Find the BaseExample.set_static_base_int_field() method on Example
@@ -177,7 +177,7 @@ class JNITest(TestCase):
         s = "Woop"
         java_string = java.NewStringUTF(s.encode('utf-8'))
 
-        Example = java.FindClass("org/pybee/test/Example")
+        Example = java.FindClass("org/pybee/rubicon/test/Example")
         self.assertIsNotNone(Example.value)
 
         # Find the default constructor
@@ -199,7 +199,7 @@ class JNITest(TestCase):
     def test_float_method(self):
         "A Java float can be created, and the content returned"
         # This string contains unicode characters
-        Example = java.FindClass("org/pybee/test/Example")
+        Example = java.FindClass("org/pybee/rubicon/test/Example")
         self.assertIsNotNone(Example.value)
 
         # Find the default constructor

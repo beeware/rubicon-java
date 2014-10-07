@@ -4,21 +4,21 @@ JAVA_HOME=$(shell /usr/libexec/java_home)
 
 all: dist/rubicon.jar dist/librubicon.dylib dist/test.jar
 
-dist/rubicon.jar: org/pybee/Python.class org/pybee/PythonInstance.class
+dist/rubicon.jar: org/pybee/rubicon/Python.class org/pybee/rubicon/PythonInstance.class
 	mkdir -p dist
-	jar -cvf dist/rubicon.jar org/pybee/Python.class org/pybee/PythonInstance.class
+	jar -cvf dist/rubicon.jar org/pybee/rubicon/Python.class org/pybee/rubicon/PythonInstance.class
 
-dist/test.jar: org/pybee/test/BaseExample.class org/pybee/test/Example.class org/pybee/test/ICallback.class org/pybee/test/AbstractCallback.class org/pybee/test/Thing.class org/pybee/test/Test.class
+dist/test.jar: org/pybee/rubicon/test/BaseExample.class org/pybee/rubicon/test/Example.class org/pybee/rubicon/test/ICallback.class org/pybee/rubicon/test/AbstractCallback.class org/pybee/rubicon/test/Thing.class org/pybee/rubicon/test/Test.class
 	mkdir -p dist
-	jar -cvf dist/test.jar org/pybee/test/*.class
+	jar -cvf dist/test.jar org/pybee/rubicon/test/*.class
 
 dist/librubicon.dylib: jni/rubicon.o
 	mkdir -p dist
 	gcc -shared -lPython -o $@ $<
 
 clean:
-	rm -f org/pybee/test/*.class
-	rm -f org/pybee/*.class
+	rm -f org/pybee/rubicon/test/*.class
+	rm -f org/pybee/rubicon/*.class
 	rm -f jni/*.o
 	rm -rf dist
 

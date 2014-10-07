@@ -1,7 +1,9 @@
-package org.pybee.test;
+package org.pybee.rubicon.test;
 
 import java.lang.Math;
-import org.pybee.Python;
+
+import org.pybee.rubicon.Python;
+
 
 public class Example extends BaseExample {
     static public int static_int_field = 11;

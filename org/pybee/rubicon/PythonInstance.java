@@ -1,4 +1,4 @@
-package org.pybee;
+package org.pybee.rubicon;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
