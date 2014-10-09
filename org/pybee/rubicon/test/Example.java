@@ -16,6 +16,10 @@ public class Example extends BaseExample {
         return static_int_field;
     }
 
+    public enum Stuff {
+        FOO, BAR, WHIZ;
+    }
+
     public int int_field;
     private ICallback callback;
     public Thing theThing;
@@ -49,6 +53,16 @@ public class Example extends BaseExample {
 
     public double area_of_circle(double diameter) {
         return diameter * Math.PI;
+    }
+
+    public String label(Stuff value) {
+        switch (value)
+        {
+            case FOO: return "Foo";
+            case BAR: return "Bar";
+            case WHIZ: return "Whiz";
+            default: return "Unknown";
+        }
     }
 
     public void set_thing(Thing thing) {

@@ -138,6 +138,17 @@ class JNITest(TestCase):
         example = Example()
         self.assertEqual(example.area_of_circle(1.5), 1.5 * math.pi)
 
+    def test_enum_method(self):
+        "A method with enum arguments can be handled."
+        Example = JavaClass('org/pybee/rubicon/test/Example')
+        example = Example()
+
+        Stuff = JavaClass('org/pybee/rubicon/test/Example$Stuff')
+
+        self.assertEqual(example.label(Stuff.FOO), "Foo")
+        self.assertEqual(example.label(Stuff.BAR), "Bar")
+        self.assertEqual(example.label(Stuff.WHIZ), "Whiz")
+
     def test_object_return(self):
         "If a method or field returns an object, you get an instance of that type returned"
         Example = JavaClass('org/pybee/rubicon/test/Example')
