@@ -49,10 +49,8 @@ def convert_args(args, type_names):
     converted = []
     for type_name, arg in zip(type_names, args):
         if isinstance(arg, jboolean):
-            arg_types.append(['Z'])
             converted.append(arg)
         elif isinstance(arg, bool):
-            arg_types.append(['Z'])
             converted.append(jboolean(arg))
         elif isinstance(arg, jbyte):
             converted.append(arg)
@@ -276,10 +274,12 @@ def dispatch_cast(raw, type_signature):
         # Check for NULL return values
         if jobject(raw).value:
             gref = java.NewGlobalRef(jobject(raw))
+            # print ("Return type", type_signature)
             try:
                 klass = _class_cache[type_signature[1:-1]]
             except KeyError:
                 klass = JavaClass(type_signature[1:-1])
+            # print("Create returned instance")
             return klass(jni=gref)
         return None
 
@@ -497,6 +497,7 @@ class JavaField(object):
 
 class JavaInstance(object):
     def __init__(self, *args, **kwargs):
+        # print ("Creating Java instance of ", self.__class__)
         jni = kwargs.pop('jni', None)
         if kwargs:
             raise ValueError("Can't construct instance of %s using keywork arguments." % (self.__class__))
@@ -586,24 +587,35 @@ class UnknownClassException(Exception):
 
 class JavaClass(type):
     def __new__(cls, descriptor):
-        java_class = super(JavaClass, cls).__new__(cls, descriptor.encode('utf-8'), (JavaInstance,), {
-                '_descriptor': descriptor,
-                '_types': [],
-                '_constructors': {},
-                '_members': {
-                    'fields': {},
-                    'methods': {},
-                },
-                '_static': {
-                    'fields': {},
-                    'methods': {},
-                }
-            })
-        # Cache the class instance, so we don't have to recreate it
-        _class_cache[descriptor] = java_class
+        # print ("Creating Java class", descriptor)
+        try:
+            java_class = _class_cache[descriptor]
+        except KeyError:
+            java_class = super(JavaClass, cls).__new__(cls, descriptor.encode('utf-8'), (JavaInstance,), {
+                    '_descriptor': descriptor,
+                    '_types': [],
+                    '_constructors': {},
+                    '_members': {
+                        'fields': {},
+                        'methods': {},
+                    },
+                    '_static': {
+                        'fields': {},
+                        'methods': {},
+                    }
+                })
+            # Cache the class instance, so we don't have to recreate it
+            _class_cache[descriptor] = java_class
         return java_class
 
     def _load(self):
+        try:
+            self.__dict__['_jni']
+            # print ("Java class", self.__dict__['_descriptor'], "already loaded")
+            return
+        except KeyError:
+            # print ("Loading Java class", self.__dict__['_descriptor'])
+            pass
         java_class = java.FindClass(self.__dict__['_descriptor'])
         if java_class.value is None:
             raise UnknownClassException(self.__dict__['_descriptor'])
@@ -632,14 +644,18 @@ class JavaClass(type):
             modifiers = java.CallIntMethod(constructor, reflect.Constructor__getModifiers)
             public = java.CallStaticBooleanMethod(reflect.Modifier, reflect.Modifier__isPublic, modifiers)
 
-            params = java.CallObjectMethod(constructor, reflect.Constructor__getParameterTypes)
-            params = cast(params, jobjectArray)
 
             if public:
                 # We now know that a constructor exists, and we know the signature
                 # of those constructors. However, we won't resolve the method
                 # implementing the constructor until we need it.
+                params = java.CallObjectMethod(constructor, reflect.Constructor__getParameterTypes)
+                params = cast(params, jobjectArray)
+
+                # print("  %s: registering constructor" % self.__dict__['_descriptor'])
                 self.__dict__['_constructors'][signature_for_params(params)] = None
+            # else:
+                # print("  %s: ignoring non-public constructor" % self.__dict__['_descriptor'])
 
             java.DeleteLocalRef(params)
             java.DeleteLocalRef(constructor)
@@ -657,36 +673,42 @@ class JavaClass(type):
         for i in range(0, method_count):
             java_method = java.GetObjectArrayElement(methods, i)
 
-            name = java.CallObjectMethod(java_method, reflect.Method__getName)
-            name_str = java.GetStringUTFChars(cast(name, jstring), None)
-
             modifiers = java.CallIntMethod(java_method, reflect.Method__getModifiers)
-            static = java.CallStaticBooleanMethod(reflect.Modifier, reflect.Modifier__isStatic, modifiers)
             public = java.CallStaticBooleanMethod(reflect.Modifier, reflect.Modifier__isPublic, modifiers)
 
-            params = java.CallObjectMethod(java_method, reflect.Method__getParameterTypes)
-            params = cast(params, jobjectArray)
-
-            java_type = java.CallObjectMethod(java_method, reflect.Method__getReturnType)
-            type_name = java.CallObjectMethod(java_type, reflect.Class__getName)
-            return_type_name = java.GetStringUTFChars(cast(type_name, jstring), None)
             if public:
+                static = java.CallStaticBooleanMethod(reflect.Modifier, reflect.Modifier__isStatic, modifiers)
+
+                name = java.CallObjectMethod(java_method, reflect.Method__getName)
+                name_str = java.GetStringUTFChars(cast(name, jstring), None)
+
+                params = java.CallObjectMethod(java_method, reflect.Method__getParameterTypes)
+                params = cast(params, jobjectArray)
+
+                java_type = java.CallObjectMethod(java_method, reflect.Method__getReturnType)
+                type_name = java.CallObjectMethod(java_type, reflect.Class__getName)
+                return_type_name = java.GetStringUTFChars(cast(type_name, jstring), None)
                 if static:
+                    # print("  %s: Registering static method %s" % (self.__dict__['_descriptor'], name_str))
                     self.__dict__['_static']['methods'].setdefault(name_str, StaticJavaMethod(
                             java_class=self,
                             name=name_str,
                         )).add(signature_for_params(params), signature_for_type_name(return_type_name))
 
                 else:
+                    # print("  %s: Registering method %s" % (self.__dict__['_descriptor'], name_str))
                     self.__dict__['_members']['methods'].setdefault(name_str, JavaMethod(
                             java_class=self,
                             name=name_str,
                         )).add(signature_for_params(params), signature_for_type_name(return_type_name))
 
-            java.DeleteLocalRef(type_name)
-            java.DeleteLocalRef(java_type)
-            java.DeleteLocalRef(params)
-            java.DeleteLocalRef(name)
+                java.DeleteLocalRef(type_name)
+                java.DeleteLocalRef(java_type)
+                java.DeleteLocalRef(params)
+                java.DeleteLocalRef(name)
+            # else:
+                # print("  %s: ignoring non-public method" % self.__dict__['_descriptor'])
+
             java.DeleteLocalRef(java_method)
         java.DeleteLocalRef(methods)
 
@@ -702,20 +724,22 @@ class JavaClass(type):
         for i in range(0, field_count):
             java_field = java.GetObjectArrayElement(fields, i)
 
-            name = java.CallObjectMethod(java_field, reflect.Field__getName)
-            name_str = java.GetStringUTFChars(cast(name, jstring), None)
-
             modifiers = java.CallIntMethod(java_field, reflect.Field__getModifiers)
-            static = java.CallStaticBooleanMethod(reflect.Modifier, reflect.Modifier__isStatic, modifiers)
             public = java.CallStaticBooleanMethod(reflect.Modifier, reflect.Modifier__isPublic, modifiers)
 
-            java_type = java.CallObjectMethod(java_field, reflect.Field__getType)
-            type_name = java.CallObjectMethod(java_type, reflect.Class__getName)
-
-            signature = signature_for_type_name(java.GetStringUTFChars(cast(type_name, jstring), None))
-
             if public:
+                name = java.CallObjectMethod(java_field, reflect.Field__getName)
+                name_str = java.GetStringUTFChars(cast(name, jstring), None)
+
+                static = java.CallStaticBooleanMethod(reflect.Modifier, reflect.Modifier__isStatic, modifiers)
+
+                java_type = java.CallObjectMethod(java_field, reflect.Field__getType)
+                type_name = java.CallObjectMethod(java_type, reflect.Class__getName)
+
+                signature = signature_for_type_name(java.GetStringUTFChars(cast(type_name, jstring), None))
+
                 if static:
+                    # print("  %s: Registering static field %s" % (self.__dict__['_descriptor'], name_str))
                     wrapper = StaticJavaField(
                         java_class=self,
                         name=name_str,
@@ -723,6 +747,7 @@ class JavaClass(type):
                     )
                     self.__dict__['_static']['fields'][name_str] = wrapper
                 else:
+                    # print("  %s: Registering field %s" % (self.__dict__['_descriptor'], name_str))
                     wrapper = JavaField(
                         java_class=self,
                         name=name_str,
@@ -730,9 +755,12 @@ class JavaClass(type):
                     )
                     self.__dict__['_members']['fields'][name_str] = wrapper
 
-            java.DeleteLocalRef(type_name)
-            java.DeleteLocalRef(java_type)
-            java.DeleteLocalRef(name)
+                java.DeleteLocalRef(type_name)
+                java.DeleteLocalRef(java_type)
+                java.DeleteLocalRef(name)
+            # else:
+                # print("  %s: ignoring non-public field" % self.__dict__['_descriptor'])
+
             java.DeleteLocalRef(java_field)
         java.DeleteLocalRef(fields)
 
@@ -756,6 +784,7 @@ class JavaClass(type):
             name = java.CallObjectMethod(java_interface, reflect.Class__getName)
             name_str = java.GetStringUTFChars(cast(name, jstring), None)
 
+            # print("  %s: adding interface alternate %s" % (self.__dict__['_descriptor'], name_str))
             self.__dict__['_types'].append('L%s;' % name_str.replace('.', '/'))
 
             java.DeleteLocalRef(name)
@@ -768,6 +797,7 @@ class JavaClass(type):
             name = java.CallObjectMethod(java_superclass, reflect.Class__getName)
             name_str = java.GetStringUTFChars(cast(name, jstring), None)
 
+            # print("  %s: adding superclass alternate %s" % (self.__dict__['_descriptor'], name_str))
             self.__dict__['_types'].append('L%s;' % name_str.replace('.', '/'))
 
             java.DeleteLocalRef(name)
@@ -776,15 +806,15 @@ class JavaClass(type):
             java.DeleteLocalRef(java_superclass)
             java_superclass = super2
         java.DeleteLocalRef(java_superclass)
+        # print("  %s: Done" % self.__dict__['_descriptor'])
 
     def __getattr__(self, name):
         # First, try to get the _jni attribute.
         # If this attribute doesn't exist, try to load the JNI
         # representation of the class.
-        try:
-            self.__dict__['_jni']
-        except KeyError:
-            self._load()
+        # print ("GETATTR %s on JavaClass %s" % (name, self.__dict__))
+        self._load()
+
         try:
             return self.__dict__['_static']['fields'][name].get()
         except KeyError:
@@ -801,10 +831,10 @@ class JavaClass(type):
             raise AttributeError("Java class '%s' has no attribute '%s'" % (self.__dict__['_descriptor'], name))
 
     def __setattr__(self, name, value):
-        # First, try to get the _jni attribute.
-        # If this attribute doesn't exist, try to load the JNI
-        # representation of the class.
+        # Make sure the class if fully loaded.
+        # If it already has been, this will a near no-op.
         try:
+            # print ("SETATTR %s on JavaClass %s" % (name, self.__dict__))
             self.__dict__['_jni']
         except KeyError:
             self._load()
@@ -827,6 +857,7 @@ class JavaClass(type):
 class JavaProxy(object):
     def __init__(self):
         # Create a Java-side proxy for this Python-side object
+        # print("Create new Java Interface instance ", self.__class__)
         klass = self.__class__._jni
         jni = java.CallStaticObjectMethod(reflect.Python, reflect.Python__proxy, klass, jlong(id(self)))
         if jni.value is None:
@@ -857,6 +888,7 @@ class JavaInterface(type):
     def __new__(cls, *args):
         if len(args) == 1:
             descriptor, = args
+            # print("Creating Java Interface " + descriptor)
             java_class = super(JavaInterface, cls).__new__(cls, descriptor.encode('utf-8'), (JavaProxy,), {
                     '_descriptor': descriptor,
                     '_types': ['L%s;' % descriptor],
@@ -865,6 +897,7 @@ class JavaInterface(type):
             return java_class
         else:
             name, bases, attrs = args
+            # print("Creating Java Interface " + bases[-1].__dict__['_descriptor'])
             attrs['_descriptor'] = bases[-1].__dict__['_descriptor']
             attrs['_types'] = ['L%s;' % attrs['_descriptor']]
             attrs['_methods'] = {}
@@ -872,6 +905,13 @@ class JavaInterface(type):
             return java_class
 
     def _load(self):
+        try:
+            self.__dict__['_jni']
+            # print("Java Interface", self.__dict__['_descriptor'], "already loaded")
+            return
+        except KeyError:
+            pass
+            # print("Loading Java Interface " + self.__dict__['_descriptor'])
         java_class = java.FindClass(self.__dict__['_descriptor'])
         if java_class is None:
             raise UnknownClassException(self.__dict__['_descriptor'])
@@ -890,31 +930,32 @@ class JavaInterface(type):
         method_count = java.GetArrayLength(methods)
         for i in range(0, method_count):
             java_method = java.GetObjectArrayElement(methods, i)
-
-            name = java.CallObjectMethod(java_method, reflect.Method__getName)
-            name_str = java.GetStringUTFChars(cast(name, jstring), None)
-
             modifiers = java.CallIntMethod(java_method, reflect.Method__getModifiers)
-            static = java.CallStaticBooleanMethod(reflect.Modifier, reflect.Modifier__isStatic, modifiers)
+
             public = java.CallStaticBooleanMethod(reflect.Modifier, reflect.Modifier__isPublic, modifiers)
-
-            params = java.CallObjectMethod(java_method, reflect.Method__getParameterTypes)
-            params = cast(params, jobjectArray)
-
             if public:
+                static = java.CallStaticBooleanMethod(reflect.Modifier, reflect.Modifier__isStatic, modifiers)
                 if not static:
+                    name = java.CallObjectMethod(java_method, reflect.Method__getName)
+                    name_str = java.GetStringUTFChars(cast(name, jstring), None)
+
+                    params = java.CallObjectMethod(java_method, reflect.Method__getParameterTypes)
+                    params = cast(params, jobjectArray)
+
+                    # print("  %s: registering static method %s", (self.__dict__['_descriptor'], name_str))
                     self.__dict__['_methods'].setdefault(name_str, set()).add(type_names_for_params(params))
+            #     else:
+            #         print("  %s: ignoring non-static method" % self.__dict__['_descriptor'])
+            # else:
+            #     print("  %s: ignoring private method" % self.__dict__['_descriptor'])
 
         self._jni = java_class
 
     def __getattr__(self, name):
-        # First, try to get the _jni attribute.
-        # If this attribute doesn't exist, try to load the JNI
-        # representation of the class.
-        try:
-            self.__dict__['_jni']
-        except KeyError:
-            self._load()
+        # Make sure the class if fully loaded.
+        # If it already has been, this will a near no-op.
+        # print ("GETATTR %s on JavaInterface %s" % (name, self.__dict__))
+        self._load()
 
         try:
             return super(JavaInterface, self).__getattribute__(name)
