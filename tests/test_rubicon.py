@@ -164,7 +164,6 @@ class JNITest(TestCase):
 
     def test_interface(self):
         "An Java interface can be defined in Python and proxied."
-        # ICallback = JavaInterface('org/pybee/rubicon/test/ICallback')
         ICallback = JavaInterface('org/pybee/rubicon/test/ICallback')
 
         results = {}
@@ -207,9 +206,8 @@ class JNITest(TestCase):
         "A class is aware of it's type heirarchy"
         Example = JavaClass('org/pybee/rubicon/test/Example')
 
-        Example._load()
         self.assertEqual(
-            Example.__dict__['_types'],
+            Example.__dict__['_alternates'],
             [
                 "Lorg/pybee/rubicon/test/Example;",
                 "Lorg/pybee/rubicon/test/BaseExample;",
@@ -217,9 +215,8 @@ class JNITest(TestCase):
             ])
 
         AbstractCallback = JavaClass('org/pybee/rubicon/test/AbstractCallback')
-        AbstractCallback._load()
         self.assertEqual(
-            AbstractCallback.__dict__['_types'],
+            AbstractCallback.__dict__['_alternates'],
             [
                 "Lorg/pybee/rubicon/test/AbstractCallback;",
                 "Lorg/pybee/rubicon/test/ICallback;",

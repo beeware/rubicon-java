@@ -402,7 +402,6 @@ class _ReflectionAPI(object):
             'Class__getName': ('GetMethodID', 'Class', 'getName', '()Ljava/lang/String;'),
             'Class__getConstructors': ('GetMethodID', 'Class', 'getConstructors', '()[Ljava/lang/reflect/Constructor;'),
             'Class__getMethods': ('GetMethodID', 'Class', 'getMethods', '()[Ljava/lang/reflect/Method;'),
-            'Class__getFields': ('GetMethodID', 'Class', 'getFields', '()[Ljava/lang/reflect/Field;'),
             'Class__getInterfaces': ('GetMethodID', 'Class', 'getInterfaces', '()[Ljava/lang/Class;'),
             'Class__getSuperclass': ('GetMethodID', 'Class', 'getSuperclass', '()Ljava/lang/Class;'),
 
@@ -427,6 +426,8 @@ class _ReflectionAPI(object):
 
             'Python': ('FindClass', 'org/pybee/rubicon/Python'),
             'Python__proxy': ('GetStaticMethodID', 'Python', 'proxy', '(Ljava/lang/Class;J)Ljava/lang/Object;'),
+            'Python__getField': ('GetStaticMethodID', 'Python', 'getField', '(Ljava/lang/Class;Ljava/lang/String;Z)Ljava/lang/reflect/Field;'),
+            'Python__getMethods': ('GetStaticMethodID', 'Python', 'getMethods', '(Ljava/lang/Class;Ljava/lang/String;Z)[Ljava/lang/reflect/Method;'),
 
             'Boolean': ('FindClass', 'java/lang/Boolean'),
             'Boolean__booleanValue': ('GetMethodID', 'Boolean', 'booleanValue', '()Z'),
