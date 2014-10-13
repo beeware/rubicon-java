@@ -6,6 +6,8 @@ import org.pybee.rubicon.Python;
 
 
 public class Example extends BaseExample {
+
+    /* Static fields and methods */
     static public int static_int_field = 11;
 
     static public void set_static_int_field(int value) {
@@ -16,14 +18,17 @@ public class Example extends BaseExample {
         return static_int_field;
     }
 
+    /* An inner enumerated type */
     public enum Stuff {
         FOO, BAR, WHIZ;
     }
 
+    /* Public member fields and method */
     public int int_field;
     private ICallback callback;
     public Thing theThing;
 
+    /* Polymorphic constructors */
     public Example() {
         super(22);
         int_field = 33;
@@ -39,6 +44,12 @@ public class Example extends BaseExample {
         int_field = value;
     }
 
+    protected Example(String value) {
+        // A protected constructor - it exists, but can't be accessed by Python.
+        super(999);
+    }
+
+    /* Accessor/mutator methods */
     public void set_int_field(int value) {
         int_field = value;
     }
@@ -47,6 +58,7 @@ public class Example extends BaseExample {
         return int_field;
     }
 
+    /* Float/Double argument/return value handling */
     public float area_of_square(float size) {
         return size * size;
     }
@@ -55,6 +67,7 @@ public class Example extends BaseExample {
         return diameter * Math.PI;
     }
 
+    /* Enum argument handling */
     public String label(Stuff value) {
         switch (value)
         {
@@ -65,6 +78,7 @@ public class Example extends BaseExample {
         }
     }
 
+    /* Handling of object references. */
     public void set_thing(Thing thing) {
         theThing = thing;
     }
@@ -73,10 +87,43 @@ public class Example extends BaseExample {
         return theThing;
     }
 
+    /* String argument/return value handling */
     public String duplicate_string(String in) {
         return in + in;
     }
 
+    /* Polymorphism handling */
+    public String doubler(String in) {
+        return in + in;
+    }
+
+    public int doubler(int in) {
+        return in + in;
+    }
+
+    public long doubler(long in) {
+        return in + in;
+    }
+
+    public static String tripler(String in) {
+        return in + in + in;
+    }
+
+    public static int tripler(int in) {
+        return in + in + in;
+    }
+
+    public static long tripler(long in) {
+        return in + in + in;
+    }
+
+    /* Interface visiblity */
+    protected void invisible_method(int value) {}
+    protected static void static_invisible_method(int value) {}
+    protected int invisible_field;
+    protected static int static_invisible_field;
+
+    /* Callback handling */
     public void set_callback(ICallback cb) {
         callback = cb;
     }
@@ -89,10 +136,12 @@ public class Example extends BaseExample {
         callback.peek(this, value);
     }
 
+    /* General utility - converting objects to string */
     public String toString() {
         return "This is a Java Example object";
     }
 
+    /* Inner classes */
     public class Inner {
         public final static int INNER_CONSTANT = 1234;
 

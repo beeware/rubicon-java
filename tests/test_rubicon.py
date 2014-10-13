@@ -75,7 +75,111 @@ class JNITest(TestCase):
         self.assertEqual(Example.get_static_base_int_field(), 2288)
         self.assertEqual(Example.get_static_int_field(), 2299)
 
-    def test_multiple_constructor(self):
+    def test_non_existent_field(self):
+        "An attribute error is raised if you invoke a non-existent field."
+        Example = JavaClass('org/pybee/rubicon/test/Example')
+
+        obj1 = Example()
+
+        # Non-existent fields raise an error.
+        with self.assertRaises(AttributeError):
+            obj1.field_doesnt_exist
+
+        # Cache warming doesn't affect anything.
+        with self.assertRaises(AttributeError):
+            obj1.field_doesnt_exist
+
+    def test_non_existent_method(self):
+        "An attribute error is raised if you invoke a non-existent method."
+        Example = JavaClass('org/pybee/rubicon/test/Example')
+
+        obj1 = Example()
+
+        # Non-existent methods raise an error.
+        with self.assertRaises(AttributeError):
+            obj1.method_doesnt_exist()
+
+        # Cache warming doesn't affect anything.
+        with self.assertRaises(AttributeError):
+            obj1.method_doesnt_exist()
+
+    def test_non_existent_static_field(self):
+        "An attribute error is raised if you invoke a non-existent static field."
+        Example = JavaClass('org/pybee/rubicon/test/Example')
+
+        # Non-existent fields raise an error.
+        with self.assertRaises(AttributeError):
+            Example.static_field_doesnt_exist
+
+        # Cache warming doesn't affect anything.
+        with self.assertRaises(AttributeError):
+            Example.static_field_doesnt_exist
+
+    def test_non_existent_static_method(self):
+        "An attribute error is raised if you invoke a non-existent static method."
+        Example = JavaClass('org/pybee/rubicon/test/Example')
+
+        # Non-existent methods raise an error.
+        with self.assertRaises(AttributeError):
+            Example.static_method_doesnt_exist()
+
+        # Cache warming doesn't affect anything.
+        with self.assertRaises(AttributeError):
+            Example.static_method_doesnt_exist()
+
+    def test_protected_field(self):
+        "An attribute error is raised if you invoke a non-public field."
+        Example = JavaClass('org/pybee/rubicon/test/Example')
+
+        obj1 = Example()
+
+        # Non-public fields raise an error.
+        with self.assertRaises(AttributeError):
+            obj1.invisible_field
+
+        # Cache warming doesn't affect anything.
+        with self.assertRaises(AttributeError):
+            obj1.invisible_field
+
+    def test_protected_method(self):
+        "An attribute error is raised if you invoke a non-public method."
+        Example = JavaClass('org/pybee/rubicon/test/Example')
+
+        obj1 = Example()
+
+        # Non-public methods raise an error.
+        with self.assertRaises(AttributeError):
+            obj1.invisible_method()
+
+        # Cache warming doesn't affect anything.
+        with self.assertRaises(AttributeError):
+            obj1.invisible_method()
+
+    def test_protected_static_field(self):
+        "An attribute error is raised if you invoke a non-public static field."
+        Example = JavaClass('org/pybee/rubicon/test/Example')
+
+        # Non-public fields raise an error.
+        with self.assertRaises(AttributeError):
+            Example.static_invisible_field
+
+        # Cache warming doesn't affect anything.
+        with self.assertRaises(AttributeError):
+            Example.static_invisible_field
+
+    def test_protected_static_method(self):
+        "An attribute error is raised if you invoke a non-public static method."
+        Example = JavaClass('org/pybee/rubicon/test/Example')
+
+        # Non-public methods raise an error.
+        with self.assertRaises(AttributeError):
+            Example.static_invisible_method()
+
+        # Cache warming doesn't affect anything.
+        with self.assertRaises(AttributeError):
+            Example.static_invisible_method()
+
+    def test_polymorphic_constructor(self):
         "Check that the right constructor is activated based on arguments used"
         Example = JavaClass('org/pybee/rubicon/test/Example')
 
@@ -91,6 +195,34 @@ class JNITest(TestCase):
 
         self.assertEqual(obj3.base_int_field, 3342)
         self.assertEqual(obj3.int_field, 3337)
+
+        # Protected constructors can't be invoked
+        with self.assertRaises(ValueError):
+            Example("Hello")
+
+    def test_polymorphic_method(self):
+        "Check that the right method is activated based on arguments used"
+        Example = JavaClass('org/pybee/rubicon/test/Example')
+
+        obj1 = Example()
+
+        self.assertEqual(obj1.doubler(42), 84)
+        self.assertEqual(obj1.doubler("wibble"), "wibblewibble")
+
+        # If arguments don't match available options, an error is raised
+        with self.assertRaises(ValueError):
+            obj1.doubler(1.234)
+
+    def test_polymorphic_static_method(self):
+        "Check that the right static method is activated based on arguments used"
+        Example = JavaClass('org/pybee/rubicon/test/Example')
+
+        self.assertEqual(Example.tripler(42), 126)
+        self.assertEqual(Example.tripler("wibble"), "wibblewibblewibble")
+
+        # If arguments don't match available options, an error is raised
+        with self.assertRaises(ValueError):
+            Example.tripler(1.234)
 
     def test_static_access_non_static(self):
         "An instance field/method cannot be accessed from the static context"

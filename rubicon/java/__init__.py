@@ -17,6 +17,22 @@ _class_cache = {}
 _proxy_cache = {}
 
 def dispatch(instance, method, args):
+    """The mechanism by which Java can invoke methods in Python.
+
+    This method should be invoked with an:
+     * an ID for a Python object
+     * a string representing a method name, and
+     * a (void *) arrary of arguments. The arguments should be memory
+       references to JNI objects.
+
+    The ID is used to look up the instance from the cache of proxy instances
+    that have been instantiated; Python method lookup is then used to invoke
+    the appropriate method, and provide the arguments (after casting to
+    valid Python objects).
+
+    This method has no return value, so it can only be used to represent Java
+    interface methods with no return value.
+    """
     try:
         # print ("PYTHON SIDE DISPATCH", instance, method, args)
         pyinstance = _proxy_cache[instance]
@@ -44,7 +60,12 @@ def dispatch(instance, method, args):
 ###########################################################################
 
 def convert_args(args, type_names):
-    """Convert the list of arguments to be in a format compliant with the JNI signature.
+    """Convert a list of arguments to be in a format compliant with the JNI signature.
+
+    This means:
+     * casting primitives into the apprpriate jXXX ctypes objects,
+     * Strings into Java string objects, and
+     * JavaInstance/JavaProxy objects into their JNI references.
     """
     converted = []
     for type_name, arg in zip(type_names, args):
@@ -81,7 +102,7 @@ def convert_args(args, type_names):
         elif isinstance(arg, jdouble):
             converted.append(arg)
         elif isinstance(arg, basestring):
-            converted.append(java.NewStringUTF(arg))
+            converted.append(java.NewStringUTF(arg.encode('utf-8')))
         elif isinstance(arg, (JavaInstance, JavaProxy)):
             converted.append(arg._jni)
         else:
@@ -93,19 +114,29 @@ def convert_args(args, type_names):
 def select_polymorph(polymorphs, args):
     """Determine the polymorphic signature that will match a given argument list.
 
-    polymorphs should be a dictionary, keyed by JNI signature.
-    The values in the dictionary are not used, only returned by this method.
+    This is the mechanism used to reconcile Java's strict-typing polymorphism with
+    Python's unique-name, weak typing polymorphism. When invoking a method on the
+    Python side, the number and types of the arguments provided are used to determine
+    which Java method will be invoked.
 
-    args is a list of arguments that have been passed to a method.
+    polymorphs should be a dictionary, keyed by the JNI signature of the arguments
+    expected by the method. The values in the dictionary are not used; this method
+    is only used to determine, which key should be used.
+
+    args is a list of arguments that have been passed to invoke the method.
 
     Returns a 3-tuple:
-     - arg_sig - the actual signature of the provided arguments
-     - match_types - the type list that was matched. This is a list of individual
-        type signatures, not a string form like arg_sig, but the contents will
-        be the same as arg_sig if all the arguments match. However, if a
-        superclass or interface types matches, that will be returned.
-     - polymorph - the value from the input polymorphs that matched. Equivalent
-        to polymorphs[match_types]
+     * arg_sig - the actual signature of the provided arguments
+     * match_types - the type list that was matched. This is a list of individual
+       type signatures; not in string form like arg_sig, but as a list where each
+       element is the type for a particular argument. (i.e.,
+        ['I', 'Ljava/lang/String;', 'Z'], not 'ILjava/langString;Z').
+
+       The contents of match_types will be the same as arg_sig if there is a
+       direct match in polymorphs; if there isn't, the signature of the matching
+       polymorph will be returned.
+     * polymorph - the value from the input polymorphs that matched. Equivalent
+       to polymorphs[match_types]
     """
     arg_types = []
     if len(args) == 0:
@@ -154,7 +185,10 @@ def select_polymorph(polymorphs, args):
 
 
 def signature_for_type_name(type_name):
-    """Determine the signature for a given data type
+    """Determine the JNI signature for a given single data type.
+
+    This means a one character representation for primitives, and an
+    L<class name>; representation for classes (including String).
 
     """
     if type_name == 'void':
@@ -182,9 +216,10 @@ def signature_for_type_name(type_name):
 
 
 def type_names_for_params(params):
-    """Determine the Java type descriptors for an array of Java parameters.
+    """Return the Java type descriptors list matching an array of Java parameters.
 
-    This is used when registering interfaces.
+    This is used when registering interfaces. The params list is converted into a
+    tuple, where each element is the JNI type of the parameter.
     """
     param_count = java.GetArrayLength(params)
 
@@ -208,7 +243,7 @@ def type_names_for_params(params):
 
 
 def signature_for_params(params):
-    """Determine the Java-style signature for an array of Java parameters.
+    """Determine the JNI-style signature string for an array of Java parameters.
 
     This is used to convert a Method declaration into a string signature
     that can be used for later lookup.
@@ -217,13 +252,23 @@ def signature_for_params(params):
 
 
 def return_cast(raw, return_signature):
+    """Convert the return value from a JNI call into a Python value.
+
+    The raw value is the value returned by the JNI call; the value returned
+    by this method will be converted to match the provided signature.
+
+    Primitive types are returned in the right format, and are not modified.
+    Strings are turned into Python unicode objects.
+    Objects are provided as JNI references, which are wrapped into an
+    instance of the relevant JavaClass.
+    """
     if return_signature in ('V', 'Z', 'B', 'C', 'S', 'I', 'J', 'F', 'D'):
         return raw
 
     elif return_signature == 'Ljava/lang/String;':
         # Check for NULL return values
         if raw.value:
-            return java.GetStringUTFChars(cast(raw, jstring), None)
+            return java.GetStringUTFChars(cast(raw, jstring), None).decode('utf-8')
         return None
 
     elif return_signature.startswith('L'):
@@ -240,6 +285,13 @@ def return_cast(raw, return_signature):
 
 
 def dispatch_cast(raw, type_signature):
+    """Convert a raw argument provided via a callback into a Python object matching the provided signature.
+
+    This is used by the callback dispatch mechanism. The values passed back will
+    be raw pointers to Java objects (even primitives are passed as pointers).
+    They need to be converted into Python objects to be passed to the proxied
+    interface implementation.
+    """
     if type_signature == 'Z':
         return java.CallBooleanMethod(jobject(raw), reflect.Boolean__booleanValue)
 
@@ -267,7 +319,7 @@ def dispatch_cast(raw, type_signature):
     elif type_signature == 'Ljava/lang/String;':
         # Check for NULL return values
         if c_void_p(raw).value:
-            return java.GetStringUTFChars(cast(raw, jstring), None)
+            return java.GetStringUTFChars(cast(raw, jstring), None).decode('utf-8')
         return None
 
     elif type_signature.startswith('L'):
@@ -285,14 +337,18 @@ def dispatch_cast(raw, type_signature):
 
     raise ValueError("Don't know how to convert argument with type signature '%s'" % type_signature)
 
-# [ type = type[]
-# ( arg-types ) ret-type = method type
 
 ###########################################################################
 # Representations of Java Methods
 ###########################################################################
 
 class StaticJavaMethod(object):
+    """The representation for a static method on a Java object
+
+    Constructor requires:
+     * java_class - the Python representation of the Java class
+     * name - the method name being invoked.
+    """
     def __init__(self, java_class, name):
         self.java_class = java_class
         self.name = name
@@ -337,7 +393,7 @@ class StaticJavaMethod(object):
             )
             return return_cast(result, polymorph['return_signature'])
         except KeyError as e:
-            raise AttributeError(
+            raise ValueError(
                 "Can't find Java static method '%s.%s' matching argument signature '%s'. Options are: %s" % (
                         self.java_class.__dict__['_descriptor'],
                         self.name,
@@ -390,7 +446,7 @@ class JavaMethod(object):
             )
             return return_cast(result, polymorph['return_signature'])
         except KeyError as e:
-            raise AttributeError(
+            raise ValueError(
                 "Can't find Java instance method '%s.%s' matching argument signature '%s'. Options are: %s" % (
                         self.java_class.__dict__['_descriptor'],
                         self.name,
@@ -578,7 +634,7 @@ class JavaInstance(object):
                 constructors = {}
                 constructors_j = java.CallObjectMethod(self.__class__.__dict__['_jni'], reflect.Class__getConstructors)
                 if constructors_j.value is None:
-                    raise RuntimeError("Couldn't get constructors_j for '%s'" % self)
+                    raise RuntimeError("Couldn't get constructor for '%s'" % self)
                 constructors_j = cast(constructors_j, jobjectArray)
 
                 constructor_count = java.GetArrayLength(constructors_j)
@@ -652,6 +708,8 @@ class JavaInstance(object):
 
     def __getattr__(self, name):
         # print ("GETATTR %s on JavaInstance %s %s" % (name, self.__dict__, self.__class__.__dict__))
+        # print ("GETATTR %s on JavaInstance" % name)
+        # First try to find a field match
         try:
             # print ("%s: Known fields %s" % (self.__class__.__dict__['_descriptor'], self.__class__.__dict__['_members']['fields']))
             field_wrapper = self.__class__.__dict__['_members']['fields'][name]
@@ -663,6 +721,7 @@ class JavaInstance(object):
         if field_wrapper:
             return field_wrapper.get(self)
 
+        # Then try to find a method match
         try:
             # print ("%s: Known methods %s" % (self.__class__.__dict__['_descriptor'], self.__class__.__dict__['_members']['methods']))
             method_wrapper = self.__class__.__dict__['_members']['methods'][name]
@@ -678,6 +737,7 @@ class JavaInstance(object):
 
     def __setattr__(self, name, value):
         # print ("SETATTR %s on JavaInstance %s %s" % (name, self.__dict__, self.__class__.__dict__))
+        # Try to find a field match.
         try:
             field_wrapper = self.__class__.__dict__['_members']['fields'][name]
         except KeyError:
@@ -775,11 +835,7 @@ class JavaClass(type):
         return java_class
 
     def __getattr__(self, name):
-        # print ("GETATTR %s on JavaClass %s" % (name, self.__dict__))
-
-        # if name in ('_jni', '_static', '_member', '_descriptor', '_alternates'):
-        #     return super(JavaClass, self).__getattribute__(name)
-
+        # print ("GETATTR %s on JavaClass %s" % (name, self))
         # First, try to find a field match
         try:
             # print ("%s: Known static fields %s" % (self.__dict__['_descriptor'], self.__dict__['_static']['fields']))
@@ -805,13 +861,14 @@ class JavaClass(type):
             return method_wrapper
 
         # If that didn't work, try an attribute on the object itself
-        try:
-            return super(JavaClass, self).__getattribute__(name)
-        except AttributeError:
-            raise AttributeError("Java class '%s' has no attribute '%s'" % (self.__dict__['_descriptor'], name))
+        # try:
+        #     return super(JavaClass, self).__getattribute__(name)
+        # except AttributeError:
+        raise AttributeError("Java class '%s' has no attribute '%s'" % (self.__dict__['_descriptor'], name))
 
     def __setattr__(self, name, value):
-        # print ("SETATTR %s on JavaClass %s" % (name, self.__dict__))
+        # print ("SETATTR %s on JavaClass %s" % (name, self))
+        # Try to find a field match
         try:
             # print ("%s: Known static fields %s" % (self.__dict__['_descriptor'], self.__dict__['_static']['fields']))
             field_wrapper = self.__dict__['_static']['fields'][name]
@@ -912,10 +969,10 @@ class JavaInterface(type):
                     params = java.CallObjectMethod(java_method, reflect.Method__getParameterTypes)
                     params = cast(params, jobjectArray)
 
-                    # print("  %s: registering static method %s", (self.__dict__['_descriptor'], name_str))
+                    # print("  %s: registering interface method %s", (self.__dict__['_descriptor'], name_str))
                     java_class._methods.setdefault(name_str, set()).add(type_names_for_params(params))
             #     else:
-            #         print("  %s: ignoring non-static method" % self.__dict__['_descriptor'])
+            #         print("  %s: ignoring static method" % self.__dict__['_descriptor'])
             # else:
             #     print("  %s: ignoring private method" % self.__dict__['_descriptor'])
 
