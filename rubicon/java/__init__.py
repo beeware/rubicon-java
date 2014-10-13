@@ -978,12 +978,5 @@ class JavaInterface(type):
 
         return java_class
 
-    def __getattr__(self, name):
-        # print ("GETATTR %s on JavaInterface %s" % (name, self.__dict__))
-        try:
-            return super(JavaInterface, self).__getattribute__(name)
-        except AttributeError:
-            raise AttributeError("Java interface '%s' has no attribute '%s'" % (self.__dict__['_descriptor'], name))
-
     def __repr__(self):
         return "<JavaInterface: %s>" % self._descriptor
