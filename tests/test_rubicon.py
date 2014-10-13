@@ -355,6 +355,18 @@ class JNITest(TestCase):
                 "Ljava/lang/Object;",
             ])
 
+        String = JavaClass('java/lang/String')
+
+        self.assertEqual(
+            String.__dict__['_alternates'],
+            [
+                "Ljava/lang/String;",
+                "Ljava/io/Serializable;",
+                "Ljava/lang/Comparable;",
+                "Ljava/lang/CharSequence;",
+                "Ljava/lang/Object;",
+            ])
+
     def test_inner(self):
         "Inner classes can be accessed"
 
