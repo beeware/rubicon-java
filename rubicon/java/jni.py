@@ -416,9 +416,7 @@ class _ReflectionAPI(object):
             'Method__getModifiers': ('GetMethodID', 'Method', 'getModifiers', '()I'),
 
             'Field': ('FindClass', 'java/lang/reflect/Field'),
-            'Field__getName': ('GetMethodID', 'Field', 'getName', '()Ljava/lang/String;'),
             'Field__getType': ('GetMethodID', 'Field', 'getType', '()Ljava/lang/Class;'),
-            'Field__getModifiers': ('GetMethodID', 'Field', 'getModifiers', '()I'),
 
             'Modifier': ('FindClass', 'java/lang/reflect/Modifier'),
             'Modifier__isStatic': ('GetStaticMethodID', 'Modifier', 'isStatic', '(I)Z'),
