@@ -165,7 +165,13 @@ def select_polymorph(polymorphs, args):
             elif isinstance(arg, jdouble):
                 arg_types.append(['D'])
             elif isinstance(arg, basestring):
-                arg_types.append(['Ljava/lang/String;', 'Ljava/lang/Object;'])
+                arg_types.append([
+                    "Ljava/lang/String;",
+                    "Ljava/io/Serializable;",
+                    "Ljava/lang/Comparable;",
+                    "Ljava/lang/CharSequence;",
+                    "Ljava/lang/Object;",
+                ])
             elif isinstance(arg, (JavaInstance, JavaProxy)):
                 arg_types.append(arg.__class__.__dict__['_alternates'])
             else:
