@@ -818,6 +818,7 @@ JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_start(JNIEnv *env, jobject 
     putenv("PYTHONOPTIMIZE=2");
     putenv("PYTHONDONTWRITEBYTECODE=1");
     putenv("PYTHONNOUSERSITE=1");
+    putenv("TARGET_ANDROID=1");
 
     if (pythonHome) {
         LOG_D("PYTHONHOME=%s", (*env)->GetStringUTFChars(env, pythonHome, NULL));
