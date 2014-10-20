@@ -59,6 +59,12 @@ class JNITest(TestCase):
         "A static field on a class can be accessed and mutated"
         Example = JavaClass('org/pybee/rubicon/test/Example')
 
+        Example.set_static_base_int_field(1)
+        Example.set_static_int_field(11)
+
+        self.assertEqual(Example.static_base_int_field, 1)
+        self.assertEqual(Example.static_int_field, 11)
+
         Example.static_base_int_field = 1188
         Example.static_int_field = 1199
 
