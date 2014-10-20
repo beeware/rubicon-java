@@ -16,6 +16,9 @@ dist/librubicon.dylib: jni/rubicon.o
 	mkdir -p dist
 	gcc -shared -lPython -o $@ $<
 
+test: all
+	java org.pybee.rubicon.test.Test
+
 clean:
 	rm -f org/pybee/rubicon/test/*.class
 	rm -f org/pybee/rubicon/*.class
