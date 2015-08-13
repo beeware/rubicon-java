@@ -1,5 +1,8 @@
 #include <jni.h>
 #include <stdio.h>
+#ifdef LIBPYTHON_RTLD_GLOBAL
+#include <dlfcn.h>
+#endif
 
 #include "python2.7/Python.h"
 
@@ -812,6 +815,11 @@ JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_start(JNIEnv *env, jobject 
 
     LOG_I("Start Python runtime...");
     java = env;
+
+#ifdef LIBPYTHON_RTLD_GLOBAL
+    // make libpython symbols availiable for everyone
+    dlopen("libpython2.7.so", RTLD_LAZY|RTLD_GLOBAL|RTLD_NOLOAD);
+#endif
 
     // Special environment to prefer .pyo, and don't write bytecode if .py are found
     // because the process will not have write attribute on the device.
