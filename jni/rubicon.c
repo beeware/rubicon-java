@@ -4,7 +4,7 @@
 #include <dlfcn.h>
 #endif
 
-#include "python2.7/Python.h"
+#include "Python.h"
 
 #include "rubicon.h"
 
@@ -71,7 +71,7 @@ static PyObject *android_error(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
-static PyMethodDef AndroidMethods[] = {
+static PyMethodDef android_methods[] = {
     {"verbose", android_verbose, METH_VARARGS, "Write a VERBOSE message to the Android system log."},
     {"debug", android_debug, METH_VARARGS, "Write a DEBUG message to the Android system log."},
     {"info", android_info, METH_VARARGS, "Write an INFO message to the Android system log."},
@@ -80,9 +80,19 @@ static PyMethodDef AndroidMethods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-PyMODINIT_FUNC initandroid(void) {
-    (void) Py_InitModule("android", AndroidMethods);
+static struct PyModuleDef android_definition = {
+    PyModuleDef_HEAD_INIT,
+    "android",
+    "A module exposing Android functionality.",
+    -1,
+    android_methods
+};
+
+PyMODINIT_FUNC init_android(void) {
+    // Py_Initialize();
+    return PyModule_Create(&android_definition);
 }
+
 #else
 
 
@@ -106,7 +116,7 @@ PyMODINIT_FUNC initandroid(void) {
 JNIEnv *java = NULL;
 
 // The Python method dispatch handler
-static PyObject *method_handler = NULL;
+// static PyObject *method_handler = NULL;
 
 /**************************************************************************
  * Wrappers around JNI methods, bound to the JNIEnv associated with the
@@ -808,29 +818,35 @@ jobjectRefType GetObjectRefType(jobject obj) {
 /**************************************************************************
  * Method to start the Python runtime.
  *************************************************************************/
-JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_start(JNIEnv *env, jobject thisObj, jstring pythonHome, jstring pythonPath, jstring rubiconLib) {
+JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_init(JNIEnv *env, jobject thisObj, jstring pythonHome, jstring pythonPath, jstring rubiconLib) {
     int ret = 0;
-    char pythonPathVar[512];
+    char pythonPathVar[1024];
+#ifdef ANDROID
     char rubiconLibVar[256];
+#endif
 
     LOG_I("Start Python runtime...");
     java = env;
 
 #ifdef LIBPYTHON_RTLD_GLOBAL
-    // make libpython symbols availiable for everyone
-    dlopen("libpython2.7.so", RTLD_LAZY|RTLD_GLOBAL|RTLD_NOLOAD);
+    // make libpython symbols available for everyone
+    // dlopen("libpython3.6m.so", RTLD_LAZY|RTLD_GLOBAL|RTLD_NOLOAD);
 #endif
 
     // Special environment to prefer .pyo, and don't write bytecode if .py are found
     // because the process will not have write attribute on the device.
-    putenv("PYTHONOPTIMIZE=2");
+    putenv("PYTHONOPTIMIZE=1");
     putenv("PYTHONDONTWRITEBYTECODE=1");
-    putenv("PYTHONNOUSERSITE=1");
-    putenv("TARGET_ANDROID=1");
+    putenv("PYTHONUNBUFFERED=1");
+    // putenv("TARGET_ANDROID=1");
 
     if (pythonHome) {
         LOG_D("PYTHONHOME=%s", (*env)->GetStringUTFChars(env, pythonHome, NULL));
-        Py_SetPythonHome((char *)(*env)->GetStringUTFChars(env, pythonHome, NULL));
+        const char *python_home;
+        wchar_t *wpython_home;
+        python_home = (*env)->GetStringUTFChars(env, pythonHome, NULL);
+        wpython_home = Py_DecodeLocale(python_home, NULL);
+        Py_SetPythonHome(wpython_home);
     } else {
         LOG_D("Using default PYTHONHOME");
     }
@@ -853,27 +869,28 @@ JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_start(JNIEnv *env, jobject 
     } else {
         LOG_D("Not setting RUBICON_LIBRARY");
     }
+
+    // Initialize and bootstrap the Android logging module
+    LOG_I("Initializing Android logging module...");
+    PyImport_AppendInittab("android", init_android);
+    // PyImport_ImportModule("android");
 #endif
 
     // putenv("PYTHONVERBOSE=1");
 
     LOG_I("Initializing Python runtime...");
     Py_Initialize();
-    // PySys_SetArgv(argc, argv);
 
+    LOG_I("Initializing Python threads...");
     // If other modules are using threads, we need to initialize them before.
     PyEval_InitThreads();
 
 #ifdef ANDROID
-    // Initialize and bootstrap the Android logging module
-    LOG_I("Initializing Android logging module...");
-    initandroid();
-
     LOG_D("Bootstrap Android logging...");
     ret = PyRun_SimpleString(
         "import sys\n" \
         "import android\n" \
-        "class LogFile(object):\n" \
+        "class LogFile:\n" \
         "    def __init__(self, level):\n" \
         "        self.buffer = ''\n" \
         "        self.level = level\n" \
@@ -895,30 +912,30 @@ JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_start(JNIEnv *env, jobject 
     }
 #endif
 
-    LOG_I("Import rubicon...");
-    PyObject *rubicon;
+    // LOG_I("Import rubicon...");
+    // PyObject *rubicon;
 
-    rubicon = PyImport_ImportModule("rubicon.java");
-    if (rubicon == NULL) {
-        LOG_E("Couldn't import rubicon python module");
-        PyErr_Print();
-        PyErr_Clear();
-        java = NULL;
-        return -1;
-    }
-    LOG_D("Got rubicon python module");
+    // rubicon = PyImport_ImportModule("rubicon.java");
+    // if (rubicon == NULL) {
+    //     LOG_E("Couldn't import rubicon python module");
+    //     PyErr_Print();
+    //     PyErr_Clear();
+    //     java = NULL;
+    //     return -1;
+    // }
+    // LOG_D("Got rubicon python module");
 
-    method_handler = PyObject_GetAttrString(rubicon, "dispatch");
-    if (method_handler == NULL) {
-        LOG_E("Couldn't find method dipatch handler");
-        PyErr_Print();
-        PyErr_Clear();
-        java = NULL;
-        return -2;
-    }
-    LOG_D("Got method dispatch handler");
+    // method_handler = PyObject_GetAttrString(rubicon, "dispatch");
+    // if (method_handler == NULL) {
+    //     LOG_E("Couldn't find method dipatch handler");
+    //     PyErr_Print();
+    //     PyErr_Clear();
+    //     java = NULL;
+    //     return -2;
+    // }
+    // LOG_D("Got method dispatch handler");
 
-    Py_DECREF(rubicon);
+    // Py_DECREF(rubicon);
 
     LOG_D("Python runtime started.");
     return ret;
@@ -927,22 +944,49 @@ JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_start(JNIEnv *env, jobject 
 /**************************************************************************
  * Method to stop the Python runtime.
  *************************************************************************/
-JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_run(JNIEnv *env, jobject thisObj, jstring appName) {
+JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_run(JNIEnv *env, jobject thisObj, jstring script, jobjectArray args) {
     int ret = 0;
+    int python_argc, i;
 
-    // Search for and start entry script
-    const char* appNameStr = (*env)->GetStringUTFChars(env, appName, NULL);
-    LOG_D("Running %s", appNameStr);
-    FILE* fd = fopen(appNameStr, "r");
-    if (fd == NULL) {
-        ret = 1;
-        LOG_E("Unable to open %s", appNameStr);
-    } else {
-        ret = PyRun_SimpleFileEx(fd, appNameStr, 1);
-        if (ret != 0) {
-            LOG_E("Application quit abnormally!");
-        }
-    }
+    const char* script_str = (*env)->GetStringUTFChars(env, script, NULL);
+    LOG_D("Running '%s'...", script_str);
+
+    // // Construct argv for the script
+    // if (args) {
+    //     python_argc = (*env)->GetArrayLength(env, args) + 1;
+    // } else {
+    //     python_argc = 1;
+    // }
+    // LOG_D("There are %d arguments", python_argc);
+
+    // wchar_t** python_argv = PyMem_RawMalloc(sizeof(wchar_t) * python_argc);
+    // python_argv[0] = Py_DecodeLocale(script_str, NULL);
+    // LOG_D("ARG 0: %s", script_str);
+    // for (i = 1; i < python_argc; i++) {
+    //     jobject arg = (*env)->GetObjectArrayElement(env, args, i - 1);
+    //     const char* arg_str = (*env)->GetStringUTFChars(env, arg, NULL);
+    //     python_argv[i] = Py_DecodeLocale(arg_str, NULL);
+    //     LOG_D("ARG %d: %s", i, arg_str);
+    // }
+    // PySys_SetArgv(python_argc, python_argv);
+
+    // // Search for and start entry script
+    // FILE* fd = fopen(script_str, "r");
+    // if (fd == NULL) {
+    //     ret = 1;
+    //     LOG_E("Unable to open %s", script_str);
+    // } else {
+    //     ret = PyRun_SimpleFileEx(fd, script_str, 1);
+    //     if (ret != 0) {
+    //         LOG_E("Application quit abnormally!");
+    //     }
+    // }
+
+    // // Clean up memory allocated for args.
+    // for (i = 0; i < python_argc; i++) {
+    //     PyMem_RawFree(python_argv[i]);
+    // }
+    // PyMem_RawFree(python_argv);
 
     return ret;
 }
@@ -950,12 +994,12 @@ JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_run(JNIEnv *env, jobject th
 /**************************************************************************
  * Method to stop the Python runtime.
  *************************************************************************/
-JNIEXPORT void JNICALL Java_org_pybee_rubicon_Python_stop(JNIEnv *env, jobject thisObj) {
+JNIEXPORT void JNICALL Java_org_beeware_rubicon_Python_stop(JNIEnv *env, jobject thisObj) {
     if (java) {
         LOG_D("Finalizing Python runtime...");
         Py_Finalize();
         java = NULL;
-        Py_XDECREF(method_handler);
+        // Py_XDECREF(method_handler);
         LOG_I("Python runtime stopped.");
     } else {
         LOG_E("Python runtime doesn't appear to be running");
@@ -969,66 +1013,66 @@ JNIEXPORT void JNICALL Java_org_pybee_rubicon_Python_stop(JNIEnv *env, jobject t
  * This method converts the Python method invocation into a call on the
  * method dispatch method that has been registered as part of the runtime.
  *************************************************************************/
-JNIEXPORT jobject JNICALL Java_org_pybee_rubicon_PythonInstance_invoke(JNIEnv *env, jobject thisObj, jobject proxy, jobject method, jobjectArray jargs) {
+JNIEXPORT jobject JNICALL Java_org_beeware_rubicon_PythonInstance_invoke(JNIEnv *env, jobject thisObj, jobject proxy, jobject method, jobjectArray jargs) {
     LOG_D("Invocation");
 
-    jclass PythonInstance = (*env)->FindClass(env, "org/pybee/rubicon/PythonInstance");
-    LOG_D("PythonInstance: %ld", (long)PythonInstance);
-    jfieldID PythonInstance__id = (*env)->GetFieldID(env, PythonInstance, "instance", "J");
-    LOG_D("id: %ld", (long)PythonInstance__id);
+    // jclass PythonInstance = (*env)->FindClass(env, "org/beeware/rubicon/PythonInstance");
+    // LOG_D("PythonInstance: %ld", (long)PythonInstance);
+    // jfieldID PythonInstance__id = (*env)->GetFieldID(env, PythonInstance, "instance", "J");
+    // LOG_D("id: %ld", (long)PythonInstance__id);
 
-    long instance = (*env)->GetLongField(env, thisObj, PythonInstance__id);
-    LOG_D("instance: %ld", instance);
+    // long instance = (*env)->GetLongField(env, thisObj, PythonInstance__id);
+    // LOG_D("instance: %ld", instance);
 
-    jclass Method = (*env)->FindClass(env, "java/lang/reflect/Method");
-    jmethodID method__getName = (*env)->GetMethodID(env, Method, "getName", "()Ljava/lang/String;");
+    // jclass Method = (*env)->FindClass(env, "java/lang/reflect/Method");
+    // jmethodID method__getName = (*env)->GetMethodID(env, Method, "getName", "()Ljava/lang/String;");
 
-    jobject method_name = (*env)->CallObjectMethod(env, method, method__getName);
+    // jobject method_name = (*env)->CallObjectMethod(env, method, method__getName);
 
-    LOG_D("Native invocation %ld :: %s", instance, (*env)->GetStringUTFChars(env, method_name, NULL));
+    // LOG_D("Native invocation %ld :: %s", instance, (*env)->GetStringUTFChars(env, method_name, NULL));
 
-    PyGILState_STATE gstate;
-    gstate = PyGILState_Ensure();
+    // PyGILState_STATE gstate;
+    // gstate = PyGILState_Ensure();
 
-    PyObject *result;
-    PyObject *pargs = PyTuple_New(3);
-    PyObject *pinstance = PyInt_FromLong(instance);
-    PyObject *pmethod_name = PyUnicode_FromFormat("%s", (*env)->GetStringUTFChars(env, method_name, NULL));
-    PyObject *args;
+    // PyObject *result;
+    // PyObject *pargs = PyTuple_New(3);
+    // PyObject *pinstance = PyLong_FromLong(instance);
+    // PyObject *pmethod_name = PyUnicode_FromFormat("%s", (*env)->GetStringUTFChars(env, method_name, NULL));
+    // PyObject *args;
 
-    if (jargs) {
-        jsize argc = (*env)->GetArrayLength(env, jargs);
-        LOG_D("There are %d arguments", argc);
+    // if (jargs) {
+    //     jsize argc = (*env)->GetArrayLength(env, jargs);
+    //     LOG_D("There are %d arguments", argc);
 
-        args = PyTuple_New(argc);
-        size_t i;
-        for (i = 0; i != argc; ++i) {
-            PyTuple_SET_ITEM(args, i, PyInt_FromLong((unsigned long)(*env)->GetObjectArrayElement(env, jargs, i)));
-        }
-    } else {
-        LOG_D("There are no arguments");
-        args = PyTuple_New(0);
-    }
-    LOG_D("Made arguments tuple");
+    //     args = PyTuple_New(argc);
+    //     jsize i;
+    //     for (i = 0; i != argc; ++i) {
+    //         PyTuple_SET_ITEM(args, i, PyLong_FromLong((unsigned long)(*env)->GetObjectArrayElement(env, jargs, i)));
+    //     }
+    // } else {
+    //     LOG_D("There are no arguments");
+    //     args = PyTuple_New(0);
+    // }
+    // LOG_D("Made arguments tuple");
 
-    PyTuple_SET_ITEM(pargs, 0, pinstance);
-    PyTuple_SET_ITEM(pargs, 1, pmethod_name);
-    PyTuple_SET_ITEM(pargs, 2, args);
+    // PyTuple_SET_ITEM(pargs, 0, pinstance);
+    // PyTuple_SET_ITEM(pargs, 1, pmethod_name);
+    // PyTuple_SET_ITEM(pargs, 2, args);
 
-    result = PyObject_CallObject(method_handler, pargs);
+    // result = PyObject_CallObject(method_handler, pargs);
 
-    Py_DECREF(pargs);
+    // Py_DECREF(pargs);
 
-    if (result == NULL) {
-        LOG_E("Error invoking callback");
-        PyErr_Print();
-        PyErr_Clear();
-    } else {
-        LOG_D("Callback invoked");
-        Py_DECREF(result);
-    }
-    LOG_D("Native invocation done.");
+    // if (result == NULL) {
+    //     LOG_E("Error invoking callback");
+    //     PyErr_Print();
+    //     PyErr_Clear();
+    // } else {
+    //     LOG_D("Callback invoked");
+    //     Py_DECREF(result);
+    // }
+    // LOG_D("Native invocation done.");
 
-    PyGILState_Release(gstate);
+    // PyGILState_Release(gstate);
     return NULL;
 }

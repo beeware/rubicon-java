@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function, division, unicode_literals
-
 import math
 from unittest import TestCase
 
@@ -347,18 +344,18 @@ class JNITest(TestCase):
         self.assertEqual(
             Example.__dict__['_alternates'],
             [
-                "Lorg/pybee/rubicon/test/Example;",
-                "Lorg/pybee/rubicon/test/BaseExample;",
-                "Ljava/lang/Object;",
+                b"Lorg/pybee/rubicon/test/Example;",
+                b"Lorg/pybee/rubicon/test/BaseExample;",
+                b"Ljava/lang/Object;",
             ])
 
         AbstractCallback = JavaClass('org/pybee/rubicon/test/AbstractCallback')
         self.assertEqual(
             AbstractCallback.__dict__['_alternates'],
             [
-                "Lorg/pybee/rubicon/test/AbstractCallback;",
-                "Lorg/pybee/rubicon/test/ICallback;",
-                "Ljava/lang/Object;",
+                b"Lorg/pybee/rubicon/test/AbstractCallback;",
+                b"Lorg/pybee/rubicon/test/ICallback;",
+                b"Ljava/lang/Object;",
             ])
 
         String = JavaClass('java/lang/String')
@@ -366,11 +363,11 @@ class JNITest(TestCase):
         self.assertEqual(
             String.__dict__['_alternates'],
             [
-                "Ljava/lang/String;",
-                "Ljava/io/Serializable;",
-                "Ljava/lang/Comparable;",
-                "Ljava/lang/CharSequence;",
-                "Ljava/lang/Object;",
+                b"Ljava/lang/String;",
+                b"Ljava/io/Serializable;",
+                b"Ljava/lang/Comparable;",
+                b"Ljava/lang/CharSequence;",
+                b"Ljava/lang/Object;",
             ])
 
     def test_inner(self):

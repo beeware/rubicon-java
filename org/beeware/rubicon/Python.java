@@ -1,4 +1,4 @@
-package org.pybee.rubicon;
+package org.beeware.rubicon;
 
 import java.lang.reflect.Proxy;
 
@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+
+import android.util.Log;
 
 
 public class Python {
@@ -24,7 +26,10 @@ public class Python {
     private static Map<Class, Map<String, Set<Method>>> _staticMethods;
 
     static {
+        System.out.println("LOAD LIBRARY");
+        Log.d("Python", "Load rubicon library...");
         System.loadLibrary("rubicon");
+        Log.d("Python", "Rubicon loaded.");
 
         _instanceMethods = new HashMap<Class, Map<String, Set<Method>>>();
         _staticMethods = new HashMap<Class, Map<String, Set<Method>>>();
@@ -42,15 +47,16 @@ public class Python {
      *                   the Rubicon library
      * @return The proxy object.
      */
-    public static native int start(String pythonHome, String pythonPath, String rubiconLib);
+    public static native int init(String pythonHome, String pythonPath, String rubiconLib);
 
     /**
      * Create a proxy implementation that directs towards a Python instance.
      *
      * @param script The path to the Python script to run
+     * @param args The value for argv to pass to the script
      * @return 0 on success; non-zero on failure.
      */
-    public static native int run(String script);
+    public static native int run(String script, String [] args);
 
     /**
      * Stop the Python runtime.

@@ -1,4 +1,4 @@
-from unittest.main import TestProgram
+from unittest.main import main, TestProgram
 
 if __name__ == '__main__':
-    TestProgram(argv=[__file__,'discover'], verbosity=2)
+    main(module=None)

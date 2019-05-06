@@ -143,23 +143,20 @@ Testing
 
 To run the Rubicon test suite:
 
-1. Configure your shell environment so that the Python, Java, and Rubicon
-   dynamic libraries can be discovered by the dynamic linker.
-
-   * On OSX, using Python 2.7.7 built under Homebrew::
-
-        export DYLD_LIBRARY_PATH=/usr/local/Cellar/python/2.7.7_2/Frameworks/Python.framework/Versions/2.7/lib/:`/usr/libexec/java_home`/jre/lib/server:./dist
-
-2. Build the libraries::
+1. Build the libraries::
 
     $ make clean
     $ make all
 
-3. Run the test suite::
+2. To run the test suite::
 
-    $ java org.pybee.rubicon.test.Test
+    $ java -Djava.library.path=./dist -cp ./dist/rubicon.jar:dist/test.jar org.pybee.rubicon.test.Test
 
-This is a Python test suite, invoked via Java.
+   or, to run a specific test:
+
+    $ java -Djava.library.path=./dist -cp ./dist/rubicon.jar:dist/test.jar org.pybee.rubicon.test.Test tests.test_rubicon.JNITest.test_simple_object
+
+   This is a Python test suite, invoked via Java.
 
 .. Documentation
 .. -------------
