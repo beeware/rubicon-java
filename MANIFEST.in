@@ -1,8 +1,0 @@
-include LICENSE
-include Makefile
-include README.rst
-include tox.ini
-recursive-include jni *.h
-recursive-include jni *.c
-recursive-include org *.java
-recursive-include tests *.py
