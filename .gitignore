@@ -1,2 +1,15 @@
 /.externalNativeBuild
 /build
+*.pyc
+*~
+.*.sw[op]
+*.egg-info
+*.class
+*.o
+.coverage
+dist
+build
+_build
+distribute-*
+local
+.tox
