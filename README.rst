@@ -1,6 +1,6 @@
-.. image:: http://pybee.org/project/projects/bridges/rubicon/rubicon.png
+.. image:: http://beeware.org/project/projects/bridges/rubicon/rubicon.png
     :width: 72px
-    :target: https://pybee.org/rubicon
+    :target: https://beeware.org/rubicon
 
 Rubicon-Java
 ============
@@ -15,13 +15,13 @@ Rubicon-Java
     :target: https://pypi.python.org/pypi/rubicon-java
 
 .. image:: https://img.shields.io/pypi/l/rubicon-java.svg
-    :target: https://github.com/pybee/rubicon-java/blob/master/LICENSE
+    :target: https://github.com/beeware/rubicon-java/blob/master/LICENSE
 
-.. image:: https://travis-ci.org/pybee/rubicon-java.svg?branch=master
-    :target: https://travis-ci.org/pybee/rubicon-java
+.. image:: https://travis-ci.org/beeware/rubicon-java.svg?branch=master
+    :target: https://travis-ci.org/beeware/rubicon-java
 
-.. image:: https://badges.gitter.im/pybee/general.svg
-    :target: https://gitter.im/pybee/general
+.. image:: https://badges.gitter.im/beeware/general.svg
+    :target: https://gitter.im/beeware/general
 
 Rubicon-Java is a bridge between the Java Runtime Environment and Python.
 It enables you to:
@@ -75,7 +75,7 @@ To use Rubicon-Java, you'll need to ensure:
 
 The Rubicon bridge starts on the Java side. Import the Python object::
 
-    import org.pybee.rubicon.Python;
+    import org.beeware.rubicon.Python;
 
 Then start the Python interpreter, and run a Python file::
 
@@ -106,12 +106,12 @@ In your Python script, you can then reference Java objects::
 
     # Then instantiate the Java class, using the API
     # that is exposed in Java.
-    >>> url = URL("http://pybee.org")
+    >>> url = URL("http://beeware.org")
 
     # You can then call methods on the Java object as if it
     # were a Python object.
     >>> print url.getHost()
-    pybee.org
+    beeware.org
 
 It's also possible to provide implementations of Java Interfaces in Python.
 For example, lets say you want to create a Swing Button, and you want to
@@ -150,11 +150,11 @@ To run the Rubicon test suite:
 
 2. To run the test suite::
 
-    $ java -Djava.library.path=./dist -cp ./dist/rubicon.jar:dist/test.jar org.pybee.rubicon.test.Test
+    $ java -Djava.library.path=./dist -cp ./dist/rubicon.jar:dist/test.jar org.beeware.rubicon.test.Test
 
    or, to run a specific test:
 
-    $ java -Djava.library.path=./dist -cp ./dist/rubicon.jar:dist/test.jar org.pybee.rubicon.test.Test tests.test_rubicon.JNITest.test_simple_object
+    $ java -Djava.library.path=./dist -cp ./dist/rubicon.jar:dist/test.jar org.beeware.rubicon.test.Test tests.test_rubicon.JNITest.test_simple_object
 
    This is a Python test suite, invoked via Java.
 
@@ -170,7 +170,7 @@ Rubicon is part of the `BeeWare suite`_. You can talk to the community through:
 
 * `@pybeeware on Twitter`_
 
-* The `pybee/general`_ channel on Gitter.
+* The `beeware/general`_ channel on Gitter.
 
 We foster a welcoming and respectful community as described in our
 `BeeWare Community Code of Conduct`_.
@@ -181,11 +181,11 @@ Contributing
 If you experience problems with this backend, `log them on GitHub`_. If you
 want to contribute code, please `fork the code`_ and `submit a pull request`_.
 
-.. _BeeWare suite: http://pybee.org
+.. _BeeWare suite: http://beeware.org
 .. _Read The Docs: http://rubicon-java.readthedocs.org
 .. _@pybeeware on Twitter: https://twitter.com/pybeeware
-.. _pybee/general: https://gitter.im/pybee/general
-.. _BeeWare Community Code of Conduct: http://pybee.org/community/behavior/
-.. _log them on Github: https://github.com/pybee/rubicon-java/issues
-.. _fork the code: https://github.com/pybee/rubicon-java
-.. _submit a pull request: https://github.com/pybee/rubicon-java/pulls
+.. _beeware/general: https://gitter.im/beeware/general
+.. _BeeWare Community Code of Conduct: http://beeware.org/community/behavior/
+.. _log them on Github: https://github.com/beeware/rubicon-java/issues
+.. _fork the code: https://github.com/beeware/rubicon-java
+.. _submit a pull request: https://github.com/beeware/rubicon-java/pulls
