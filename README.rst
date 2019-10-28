@@ -1,4 +1,4 @@
-.. image:: http://beeware.org/project/projects/bridges/rubicon/rubicon.png
+.. image:: https://beeware.org/project/projects/bridges/rubicon/rubicon.png
     :width: 72px
     :target: https://beeware.org/rubicon
 
