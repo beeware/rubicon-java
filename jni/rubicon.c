@@ -1016,63 +1016,63 @@ JNIEXPORT void JNICALL Java_org_beeware_rubicon_Python_stop(JNIEnv *env, jobject
 JNIEXPORT jobject JNICALL Java_org_beeware_rubicon_PythonInstance_invoke(JNIEnv *env, jobject thisObj, jobject proxy, jobject method, jobjectArray jargs) {
     LOG_D("Invocation");
 
-    // jclass PythonInstance = (*env)->FindClass(env, "org/beeware/rubicon/PythonInstance");
-    // LOG_D("PythonInstance: %ld", (long)PythonInstance);
-    // jfieldID PythonInstance__id = (*env)->GetFieldID(env, PythonInstance, "instance", "J");
-    // LOG_D("id: %ld", (long)PythonInstance__id);
+    jclass PythonInstance = (*env)->FindClass(env, "org/beeware/rubicon/PythonInstance");
+    LOG_D("PythonInstance: %ld", (long)PythonInstance);
+    jfieldID PythonInstance__id = (*env)->GetFieldID(env, PythonInstance, "instance", "J");
+    LOG_D("id: %ld", (long)PythonInstance__id);
 
-    // long instance = (*env)->GetLongField(env, thisObj, PythonInstance__id);
-    // LOG_D("instance: %ld", instance);
+    long instance = (*env)->GetLongField(env, thisObj, PythonInstance__id);
+    LOG_D("instance: %ld", instance);
 
-    // jclass Method = (*env)->FindClass(env, "java/lang/reflect/Method");
-    // jmethodID method__getName = (*env)->GetMethodID(env, Method, "getName", "()Ljava/lang/String;");
+    jclass Method = (*env)->FindClass(env, "java/lang/reflect/Method");
+    jmethodID method__getName = (*env)->GetMethodID(env, Method, "getName", "()Ljava/lang/String;");
 
-    // jobject method_name = (*env)->CallObjectMethod(env, method, method__getName);
+    jobject method_name = (*env)->CallObjectMethod(env, method, method__getName);
 
-    // LOG_D("Native invocation %ld :: %s", instance, (*env)->GetStringUTFChars(env, method_name, NULL));
+    LOG_D("Native invocation %ld :: %s", instance, (*env)->GetStringUTFChars(env, method_name, NULL));
 
-    // PyGILState_STATE gstate;
-    // gstate = PyGILState_Ensure();
+    PyGILState_STATE gstate;
+    gstate = PyGILState_Ensure();
 
-    // PyObject *result;
-    // PyObject *pargs = PyTuple_New(3);
-    // PyObject *pinstance = PyLong_FromLong(instance);
-    // PyObject *pmethod_name = PyUnicode_FromFormat("%s", (*env)->GetStringUTFChars(env, method_name, NULL));
-    // PyObject *args;
+    PyObject *result;
+    PyObject *pargs = PyTuple_New(3);
+    PyObject *pinstance = PyLong_FromLong(instance);
+    PyObject *pmethod_name = PyUnicode_FromFormat("%s", (*env)->GetStringUTFChars(env, method_name, NULL));
+    PyObject *args;
 
-    // if (jargs) {
-    //     jsize argc = (*env)->GetArrayLength(env, jargs);
-    //     LOG_D("There are %d arguments", argc);
+    if (jargs) {
+        jsize argc = (*env)->GetArrayLength(env, jargs);
+        LOG_D("There are %d arguments", argc);
 
-    //     args = PyTuple_New(argc);
-    //     jsize i;
-    //     for (i = 0; i != argc; ++i) {
-    //         PyTuple_SET_ITEM(args, i, PyLong_FromLong((unsigned long)(*env)->GetObjectArrayElement(env, jargs, i)));
-    //     }
-    // } else {
-    //     LOG_D("There are no arguments");
-    //     args = PyTuple_New(0);
-    // }
-    // LOG_D("Made arguments tuple");
+        args = PyTuple_New(argc);
+        jsize i;
+        for (i = 0; i != argc; ++i) {
+            PyTuple_SET_ITEM(args, i, PyLong_FromLong((unsigned long)(*env)->GetObjectArrayElement(env, jargs, i)));
+        }
+    } else {
+        LOG_D("There are no arguments");
+        args = PyTuple_New(0);
+    }
+    LOG_D("Made arguments tuple");
 
-    // PyTuple_SET_ITEM(pargs, 0, pinstance);
-    // PyTuple_SET_ITEM(pargs, 1, pmethod_name);
-    // PyTuple_SET_ITEM(pargs, 2, args);
+    PyTuple_SET_ITEM(pargs, 0, pinstance);
+    PyTuple_SET_ITEM(pargs, 1, pmethod_name);
+    PyTuple_SET_ITEM(pargs, 2, args);
 
-    // result = PyObject_CallObject(method_handler, pargs);
+    result = PyObject_CallObject(method_handler, pargs);
 
-    // Py_DECREF(pargs);
+    Py_DECREF(pargs);
 
-    // if (result == NULL) {
-    //     LOG_E("Error invoking callback");
-    //     PyErr_Print();
-    //     PyErr_Clear();
-    // } else {
-    //     LOG_D("Callback invoked");
-    //     Py_DECREF(result);
-    // }
-    // LOG_D("Native invocation done.");
+    if (result == NULL) {
+        LOG_E("Error invoking callback");
+        PyErr_Print();
+        PyErr_Clear();
+    } else {
+        LOG_D("Callback invoked");
+        Py_DECREF(result);
+    }
+    LOG_D("Native invocation done.");
 
-    // PyGILState_Release(gstate);
+    PyGILState_Release(gstate);
     return NULL;
 }
