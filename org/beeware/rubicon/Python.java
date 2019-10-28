@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-import android.util.Log;
+// import android.util.Log;
 
 
 public class Python {
@@ -27,9 +27,9 @@ public class Python {
 
     static {
         System.out.println("LOAD LIBRARY");
-        Log.d("Python", "Load rubicon library...");
+        // Log.d("Python", "Load rubicon library...");
         System.loadLibrary("rubicon");
-        Log.d("Python", "Rubicon loaded.");
+        // Log.d("Python", "Rubicon loaded.");
 
         _instanceMethods = new HashMap<Class, Map<String, Set<Method>>>();
         _staticMethods = new HashMap<Class, Map<String, Set<Method>>>();

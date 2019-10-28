@@ -116,7 +116,7 @@ PyMODINIT_FUNC init_android(void) {
 JNIEnv *java = NULL;
 
 // The Python method dispatch handler
-// static PyObject *method_handler = NULL;
+static PyObject *method_handler = NULL;
 
 /**************************************************************************
  * Wrappers around JNI methods, bound to the JNIEnv associated with the
@@ -912,30 +912,30 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_init(JNIEnv *env, jobject
     }
 #endif
 
-    // LOG_I("Import rubicon...");
-    // PyObject *rubicon;
+    LOG_I("Import rubicon...");
+    PyObject *rubicon;
 
-    // rubicon = PyImport_ImportModule("rubicon.java");
-    // if (rubicon == NULL) {
-    //     LOG_E("Couldn't import rubicon python module");
-    //     PyErr_Print();
-    //     PyErr_Clear();
-    //     java = NULL;
-    //     return -1;
-    // }
-    // LOG_D("Got rubicon python module");
+    rubicon = PyImport_ImportModule("rubicon.java");
+    if (rubicon == NULL) {
+        LOG_E("Couldn't import rubicon python module");
+        PyErr_Print();
+        PyErr_Clear();
+        java = NULL;
+        return -1;
+    }
+    LOG_D("Got rubicon python module");
 
-    // method_handler = PyObject_GetAttrString(rubicon, "dispatch");
-    // if (method_handler == NULL) {
-    //     LOG_E("Couldn't find method dipatch handler");
-    //     PyErr_Print();
-    //     PyErr_Clear();
-    //     java = NULL;
-    //     return -2;
-    // }
-    // LOG_D("Got method dispatch handler");
+    method_handler = PyObject_GetAttrString(rubicon, "dispatch");
+    if (method_handler == NULL) {
+        LOG_E("Couldn't find method dipatch handler");
+        PyErr_Print();
+        PyErr_Clear();
+        java = NULL;
+        return -2;
+    }
+    LOG_D("Got method dispatch handler");
 
-    // Py_DECREF(rubicon);
+    Py_DECREF(rubicon);
 
     LOG_D("Python runtime started.");
     return ret;
@@ -951,42 +951,42 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_run(JNIEnv *env, jobject 
     const char* script_str = (*env)->GetStringUTFChars(env, script, NULL);
     LOG_D("Running '%s'...", script_str);
 
-    // // Construct argv for the script
-    // if (args) {
-    //     python_argc = (*env)->GetArrayLength(env, args) + 1;
-    // } else {
-    //     python_argc = 1;
-    // }
-    // LOG_D("There are %d arguments", python_argc);
+    // Construct argv for the script
+    if (args) {
+        python_argc = (*env)->GetArrayLength(env, args) + 1;
+    } else {
+        python_argc = 1;
+    }
+    LOG_D("There are %d arguments", python_argc);
 
-    // wchar_t** python_argv = PyMem_RawMalloc(sizeof(wchar_t) * python_argc);
-    // python_argv[0] = Py_DecodeLocale(script_str, NULL);
-    // LOG_D("ARG 0: %s", script_str);
-    // for (i = 1; i < python_argc; i++) {
-    //     jobject arg = (*env)->GetObjectArrayElement(env, args, i - 1);
-    //     const char* arg_str = (*env)->GetStringUTFChars(env, arg, NULL);
-    //     python_argv[i] = Py_DecodeLocale(arg_str, NULL);
-    //     LOG_D("ARG %d: %s", i, arg_str);
-    // }
-    // PySys_SetArgv(python_argc, python_argv);
+    wchar_t** python_argv = PyMem_RawMalloc(sizeof(wchar_t) * python_argc);
+    python_argv[0] = Py_DecodeLocale(script_str, NULL);
+    LOG_D("ARG 0: %s", script_str);
+    for (i = 1; i < python_argc; i++) {
+        jobject arg = (*env)->GetObjectArrayElement(env, args, i - 1);
+        const char* arg_str = (*env)->GetStringUTFChars(env, arg, NULL);
+        python_argv[i] = Py_DecodeLocale(arg_str, NULL);
+        LOG_D("ARG %d: %s", i, arg_str);
+    }
+    PySys_SetArgv(python_argc, python_argv);
 
-    // // Search for and start entry script
-    // FILE* fd = fopen(script_str, "r");
-    // if (fd == NULL) {
-    //     ret = 1;
-    //     LOG_E("Unable to open %s", script_str);
-    // } else {
-    //     ret = PyRun_SimpleFileEx(fd, script_str, 1);
-    //     if (ret != 0) {
-    //         LOG_E("Application quit abnormally!");
-    //     }
-    // }
+    // Search for and start entry script
+    FILE* fd = fopen(script_str, "r");
+    if (fd == NULL) {
+        ret = 1;
+        LOG_E("Unable to open %s", script_str);
+    } else {
+        ret = PyRun_SimpleFileEx(fd, script_str, 1);
+        if (ret != 0) {
+            LOG_E("Application quit abnormally!");
+        }
+    }
 
-    // // Clean up memory allocated for args.
-    // for (i = 0; i < python_argc; i++) {
-    //     PyMem_RawFree(python_argv[i]);
-    // }
-    // PyMem_RawFree(python_argv);
+    // Clean up memory allocated for args.
+    for (i = 0; i < python_argc; i++) {
+        PyMem_RawFree(python_argv[i]);
+    }
+    PyMem_RawFree(python_argv);
 
     return ret;
 }
@@ -999,7 +999,7 @@ JNIEXPORT void JNICALL Java_org_beeware_rubicon_Python_stop(JNIEnv *env, jobject
         LOG_D("Finalizing Python runtime...");
         Py_Finalize();
         java = NULL;
-        // Py_XDECREF(method_handler);
+        Py_XDECREF(method_handler);
         LOG_I("Python runtime stopped.");
     } else {
         LOG_E("Python runtime doesn't appear to be running");
