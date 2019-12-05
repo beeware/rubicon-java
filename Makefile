@@ -21,24 +21,24 @@ endif
 
 all: dist/rubicon.jar dist/librubicon.$(SOEXT) dist/test.jar
 
-dist/rubicon.jar: org/pybee/rubicon/Python.class org/pybee/rubicon/PythonInstance.class
+dist/rubicon.jar: org/beeware/rubicon/Python.class org/beeware/rubicon/PythonInstance.class
 	mkdir -p dist
-	jar -cvf dist/rubicon.jar org/pybee/rubicon/Python.class org/pybee/rubicon/PythonInstance.class
+	jar -cvf dist/rubicon.jar org/beeware/rubicon/Python.class org/beeware/rubicon/PythonInstance.class
 
-dist/test.jar: org/pybee/rubicon/test/BaseExample.class org/pybee/rubicon/test/Example.class org/pybee/rubicon/test/ICallback.class org/pybee/rubicon/test/AbstractCallback.class org/pybee/rubicon/test/Thing.class org/pybee/rubicon/test/Test.class
+dist/test.jar: org/beeware/rubicon/test/BaseExample.class org/beeware/rubicon/test/Example.class org/beeware/rubicon/test/ICallback.class org/beeware/rubicon/test/AbstractCallback.class org/beeware/rubicon/test/Thing.class org/beeware/rubicon/test/Test.class
 	mkdir -p dist
-	jar -cvf dist/test.jar org/pybee/rubicon/test/*.class
+	jar -cvf dist/test.jar org/beeware/rubicon/test/*.class
 
 dist/librubicon.$(SOEXT): jni/rubicon.o
 	mkdir -p dist
 	gcc -shared -o $@ $< $(PYLDFLAGS)
 
 test: all
-	java org.pybee.rubicon.test.Test
+	java org.beeware.rubicon.test.Test
 
 clean:
-	rm -f org/pybee/rubicon/test/*.class
-	rm -f org/pybee/rubicon/*.class
+	rm -f org/beeware/rubicon/test/*.class
+	rm -f org/beeware/rubicon/*.class
 	rm -f jni/*.o
 	rm -rf dist
 

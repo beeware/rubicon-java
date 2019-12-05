@@ -23,7 +23,7 @@ setup(
     long_description=long_description,
     author='Russell Keith-Magee',
     author_email='russell@keith-magee.com',
-    url='http://pybee.org/rubicon',
+    url='http://beeware.org/rubicon',
     packages=find_packages(exclude=['tests']),
     namespace_packages=['rubicon'],
     license='New BSD',

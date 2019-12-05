@@ -1,8 +1,8 @@
-package org.pybee.rubicon.test;
+package org.beeware.rubicon.test;
 
 import java.lang.Math;
 
-import org.pybee.rubicon.Python;
+import org.beeware.rubicon.Python;
 
 
 public class Example extends BaseExample {
