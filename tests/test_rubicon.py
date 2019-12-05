@@ -28,7 +28,7 @@ class JNITest(TestCase):
 
     def test_field(self):
         "A field on an instance can be accessed and mutated"
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         obj = Example()
 
@@ -43,7 +43,7 @@ class JNITest(TestCase):
 
     def test_method(self):
         "An instance method can be invoked."
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         obj = Example()
         self.assertEqual(obj.get_base_int_field(), 22)
@@ -57,7 +57,7 @@ class JNITest(TestCase):
 
     def test_static_field(self):
         "A static field on a class can be accessed and mutated"
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         Example.set_static_base_int_field(1)
         Example.set_static_int_field(11)
@@ -73,7 +73,7 @@ class JNITest(TestCase):
 
     def test_static_method(self):
         "A static method on a class can be invoked."
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         Example.set_static_base_int_field(2288)
         Example.set_static_int_field(2299)
@@ -83,7 +83,7 @@ class JNITest(TestCase):
 
     def test_non_existent_field(self):
         "An attribute error is raised if you invoke a non-existent field."
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         obj1 = Example()
 
@@ -97,7 +97,7 @@ class JNITest(TestCase):
 
     def test_non_existent_method(self):
         "An attribute error is raised if you invoke a non-existent method."
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         obj1 = Example()
 
@@ -111,7 +111,7 @@ class JNITest(TestCase):
 
     def test_non_existent_static_field(self):
         "An attribute error is raised if you invoke a non-existent static field."
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         # Non-existent fields raise an error.
         with self.assertRaises(AttributeError):
@@ -123,7 +123,7 @@ class JNITest(TestCase):
 
     def test_non_existent_static_method(self):
         "An attribute error is raised if you invoke a non-existent static method."
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         # Non-existent methods raise an error.
         with self.assertRaises(AttributeError):
@@ -135,7 +135,7 @@ class JNITest(TestCase):
 
     def test_protected_field(self):
         "An attribute error is raised if you invoke a non-public field."
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         obj1 = Example()
 
@@ -149,7 +149,7 @@ class JNITest(TestCase):
 
     def test_protected_method(self):
         "An attribute error is raised if you invoke a non-public method."
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         obj1 = Example()
 
@@ -163,7 +163,7 @@ class JNITest(TestCase):
 
     def test_protected_static_field(self):
         "An attribute error is raised if you invoke a non-public static field."
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         # Non-public fields raise an error.
         with self.assertRaises(AttributeError):
@@ -175,7 +175,7 @@ class JNITest(TestCase):
 
     def test_protected_static_method(self):
         "An attribute error is raised if you invoke a non-public static method."
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         # Non-public methods raise an error.
         with self.assertRaises(AttributeError):
@@ -187,7 +187,7 @@ class JNITest(TestCase):
 
     def test_polymorphic_constructor(self):
         "Check that the right constructor is activated based on arguments used"
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         obj1 = Example()
         obj2 = Example(2242)
@@ -208,7 +208,7 @@ class JNITest(TestCase):
 
     def test_polymorphic_method(self):
         "Check that the right method is activated based on arguments used"
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         obj1 = Example()
 
@@ -221,7 +221,7 @@ class JNITest(TestCase):
 
     def test_polymorphic_static_method(self):
         "Check that the right static method is activated based on arguments used"
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         self.assertEqual(Example.tripler(42), 126)
         self.assertEqual(Example.tripler("wibble"), "wibblewibblewibble")
@@ -232,7 +232,7 @@ class JNITest(TestCase):
 
     def test_static_access_non_static(self):
         "An instance field/method cannot be accessed from the static context"
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         obj = Example()
 
@@ -244,7 +244,7 @@ class JNITest(TestCase):
 
     def test_non_static_access_static(self):
         "A static field/method cannot be accessed from an instance context"
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         with self.assertRaises(AttributeError):
             Example.int_field
@@ -254,34 +254,34 @@ class JNITest(TestCase):
 
     def test_string_argument(self):
         "A method with a string argument can be passed."
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
         example = Example()
         self.assertEqual(example.duplicate_string("Wagga"), "WaggaWagga")
 
     def test_string_return(self):
         "If a method or field returns a string, you get a Python string back"
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
         example = Example()
         self.assertEqual(example.toString(), "This is a Java Example object")
 
     def test_float_method(self):
         "A method with a float arguments can be handled."
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
         example = Example()
         self.assertEqual(example.area_of_square(1.5), 2.25)
 
     def test_double_method(self):
         "A method with a double arguments can be handled."
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
         example = Example()
         self.assertEqual(example.area_of_circle(1.5), 1.5 * math.pi)
 
     def test_enum_method(self):
         "A method with enum arguments can be handled."
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
         example = Example()
 
-        Stuff = JavaClass('org/pybee/rubicon/test/Example$Stuff')
+        Stuff = JavaClass('org/beeware/rubicon/test/Example$Stuff')
 
         self.assertEqual(example.label(Stuff.FOO), "Foo")
         self.assertEqual(example.label(Stuff.BAR), "Bar")
@@ -289,10 +289,10 @@ class JNITest(TestCase):
 
     def test_object_return(self):
         "If a method or field returns an object, you get an instance of that type returned"
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
         example = Example()
 
-        Thing = JavaClass('org/pybee/rubicon/test/Thing')
+        Thing = JavaClass('org/beeware/rubicon/test/Thing')
         thing = Thing('This is thing', 2)
 
         example.set_thing(thing)
@@ -302,7 +302,7 @@ class JNITest(TestCase):
 
     def test_interface(self):
         "An Java interface can be defined in Python and proxied."
-        ICallback = JavaInterface('org/pybee/rubicon/test/ICallback')
+        ICallback = JavaInterface('org/beeware/rubicon/test/ICallback')
 
         results = {}
 
@@ -325,7 +325,7 @@ class JNITest(TestCase):
         handler2 = MyInterface(10)
 
         # Create an Example object, and register a handler with it.
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
         example = Example()
         example.set_callback(handler2)
 
@@ -342,22 +342,22 @@ class JNITest(TestCase):
 
     def test_alternatives(self):
         "A class is aware of it's type heirarchy"
-        Example = JavaClass('org/pybee/rubicon/test/Example')
+        Example = JavaClass('org/beeware/rubicon/test/Example')
 
         self.assertEqual(
             Example.__dict__['_alternates'],
             [
-                "Lorg/pybee/rubicon/test/Example;",
-                "Lorg/pybee/rubicon/test/BaseExample;",
+                "Lorg/beeware/rubicon/test/Example;",
+                "Lorg/beeware/rubicon/test/BaseExample;",
                 "Ljava/lang/Object;",
             ])
 
-        AbstractCallback = JavaClass('org/pybee/rubicon/test/AbstractCallback')
+        AbstractCallback = JavaClass('org/beeware/rubicon/test/AbstractCallback')
         self.assertEqual(
             AbstractCallback.__dict__['_alternates'],
             [
-                "Lorg/pybee/rubicon/test/AbstractCallback;",
-                "Lorg/pybee/rubicon/test/ICallback;",
+                "Lorg/beeware/rubicon/test/AbstractCallback;",
+                "Lorg/beeware/rubicon/test/ICallback;",
                 "Ljava/lang/Object;",
             ])
 
@@ -376,6 +376,6 @@ class JNITest(TestCase):
     def test_inner(self):
         "Inner classes can be accessed"
 
-        Inner = JavaClass('org/pybee/rubicon/test/Example$Inner')
+        Inner = JavaClass('org/beeware/rubicon/test/Example$Inner')
 
         self.assertEqual(Inner.INNER_CONSTANT, 1234)

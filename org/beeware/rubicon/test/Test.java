@@ -1,6 +1,6 @@
-package org.pybee.rubicon.test;
+package org.beeware.rubicon.test;
 
-import org.pybee.rubicon.Python;
+import org.beeware.rubicon.Python;
 
 
 public class Test {

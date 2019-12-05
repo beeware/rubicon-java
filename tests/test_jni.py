@@ -22,7 +22,7 @@ class JNITest(TestCase):
         self.assertIsNone(UnknownClass.value)
 
         # A class that does exist, that we can then search for non-existent methods
-        Example = java.FindClass("org/pybee/rubicon/test/Example")
+        Example = java.FindClass("org/beeware/rubicon/test/Example")
         self.assertIsNotNone(Example.value)
 
         # Fields and Methods (static and non-static)
@@ -39,8 +39,8 @@ class JNITest(TestCase):
 
     def test_object_lifecycle(self):
         "The basic lifecycle operations of an object can be performed"
-        # Get a reference to the org.pybee.test.Example class
-        Example = java.FindClass("org/pybee/rubicon/test/Example")
+        # Get a reference to the org.beeware.test.Example class
+        Example = java.FindClass("org/beeware/rubicon/test/Example")
         self.assertIsNotNone(Example.value)
 
         # Find the default constructor
@@ -79,7 +79,7 @@ class JNITest(TestCase):
         Example__base_int_field = java.GetFieldID(Example, "base_int_field", "I")
         self.assertIsNotNone(Example__base_int_field.value)
 
-        # Create an instance of org.pybee.test.Example using the default constructor
+        # Create an instance of org.beeware.test.Example using the default constructor
         obj1 = java.NewObject(Example, Example__init)
         self.assertIsNotNone(obj1.value)
 
@@ -101,7 +101,7 @@ class JNITest(TestCase):
         self.assertEqual(java.GetIntField(obj1, Example__base_int_field), 1137)
         self.assertEqual(java.GetIntField(obj1, Example__int_field), 1142)
 
-        # Create an instance of org.pybee.test.Example using the "one int" constructor
+        # Create an instance of org.beeware.test.Example using the "one int" constructor
         obj2 = java.NewObject(Example, Example__init_i, 2242)
         self.assertIsNotNone(obj2)
 
@@ -112,7 +112,7 @@ class JNITest(TestCase):
         self.assertEqual(java.GetIntField(obj2, Example__base_int_field), 44)
         self.assertEqual(java.GetIntField(obj2, Example__int_field), 2242)
 
-        # Create an instance of org.pybee.test.Example using the "two int" constructor
+        # Create an instance of org.beeware.test.Example using the "two int" constructor
         obj3 = java.NewObject(Example, Example__init_ii, 3342, 3337)
         self.assertIsNotNone(obj3)
 
@@ -125,8 +125,8 @@ class JNITest(TestCase):
 
     def test_static(self):
         "Static methods and fields can be invoked"
-        # Get a reference to the org.pybee.test.Example class
-        Example = java.FindClass("org/pybee/rubicon/test/Example")
+        # Get a reference to the org.beeware.test.Example class
+        Example = java.FindClass("org/beeware/rubicon/test/Example")
         self.assertIsNotNone(Example.value)
 
         # Find the BaseExample.set_static_base_int_field() method on Example
@@ -177,7 +177,7 @@ class JNITest(TestCase):
         s = "Woop"
         java_string = java.NewStringUTF(s.encode('utf-8'))
 
-        Example = java.FindClass("org/pybee/rubicon/test/Example")
+        Example = java.FindClass("org/beeware/rubicon/test/Example")
         self.assertIsNotNone(Example.value)
 
         # Find the default constructor
@@ -188,7 +188,7 @@ class JNITest(TestCase):
         Example__duplicate_string = java.GetMethodID(Example, "duplicate_string", "(Ljava/lang/String;)Ljava/lang/String;")
         self.assertIsNotNone(Example__duplicate_string.value)
 
-        # Create an instance of org.pybee.test.Example using the default constructor
+        # Create an instance of org.beeware.test.Example using the default constructor
         obj1 = java.NewObject(Example, Example__init)
         self.assertIsNotNone(obj1.value)
 
@@ -199,7 +199,7 @@ class JNITest(TestCase):
     def test_float_method(self):
         "A Java float can be created, and the content returned"
         # This string contains unicode characters
-        Example = java.FindClass("org/pybee/rubicon/test/Example")
+        Example = java.FindClass("org/beeware/rubicon/test/Example")
         self.assertIsNotNone(Example.value)
 
         # Find the default constructor
@@ -210,7 +210,7 @@ class JNITest(TestCase):
         Example__area_of_square = java.GetMethodID(Example, "area_of_square", "(F)F")
         self.assertIsNotNone(Example__area_of_square.value)
 
-        # Create an instance of org.pybee.test.Example using the default constructor
+        # Create an instance of org.beeware.test.Example using the default constructor
         obj1 = java.NewObject(Example, Example__init)
         self.assertIsNotNone(obj1.value)
 

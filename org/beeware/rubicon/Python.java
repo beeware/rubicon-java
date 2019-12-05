@@ -1,4 +1,4 @@
-package org.pybee.rubicon;
+package org.beeware.rubicon;
 
 import java.lang.reflect.Proxy;
 
