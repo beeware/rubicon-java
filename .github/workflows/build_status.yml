@@ -18,7 +18,7 @@ jobs:
       - name: Environment - Setup python
         uses: actions/setup-python@v1
         with:
-          python-version: 2.7
+          python-version: 3.7
       - name: Environment - Use Java 8
         uses: actions/setup-java@v1
         with:
@@ -26,6 +26,6 @@ jobs:
       - name: Debugging - Export environment variables
         run: export
       - name: Compile
-        run: make
+        run: PYTHON_CONFIG=python3.7-config PYTHON=python3.7 make
       - name: Test
-        run: RUBICON_LIBRARY=$(pwd)/dist/librubicon.so LD_LIBRARY_PATH="$(pwd)/dist" java org.beeware.rubicon.test.Test
+        run: RUBICON_LIBRARY=$(pwd)/dist/librubicon.so LD_LIBRARY_PATH="${{env.pythonLocation}}/lib:$(pwd)/dist" java org.beeware.rubicon.test.Test

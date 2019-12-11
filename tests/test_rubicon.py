@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function, division, unicode_literals
-
 import math
 from unittest import TestCase
 
@@ -342,24 +339,24 @@ class JNITest(TestCase):
         self.assertEqual(results['int'], 47)
 
     def test_alternatives(self):
-        "A class is aware of it's type heirarchy"
+        "A class is aware of it's type hierarchy"
         Example = JavaClass('org/beeware/rubicon/test/Example')
 
         self.assertEqual(
             Example.__dict__['_alternates'],
             [
-                "Lorg/beeware/rubicon/test/Example;",
-                "Lorg/beeware/rubicon/test/BaseExample;",
-                "Ljava/lang/Object;",
+                b"Lorg/beeware/rubicon/test/Example;",
+                b"Lorg/beeware/rubicon/test/BaseExample;",
+                b"Ljava/lang/Object;",
             ])
 
         AbstractCallback = JavaClass('org/beeware/rubicon/test/AbstractCallback')
         self.assertEqual(
             AbstractCallback.__dict__['_alternates'],
             [
-                "Lorg/beeware/rubicon/test/AbstractCallback;",
-                "Lorg/beeware/rubicon/test/ICallback;",
-                "Ljava/lang/Object;",
+                b"Lorg/beeware/rubicon/test/AbstractCallback;",
+                b"Lorg/beeware/rubicon/test/ICallback;",
+                b"Ljava/lang/Object;",
             ])
 
         String = JavaClass('java/lang/String')
@@ -367,11 +364,11 @@ class JNITest(TestCase):
         self.assertEqual(
             String.__dict__['_alternates'],
             [
-                "Ljava/lang/String;",
-                "Ljava/io/Serializable;",
-                "Ljava/lang/Comparable;",
-                "Ljava/lang/CharSequence;",
-                "Ljava/lang/Object;",
+                b"Ljava/lang/String;",
+                b"Ljava/io/Serializable;",
+                b"Ljava/lang/Comparable;",
+                b"Ljava/lang/CharSequence;",
+                b"Ljava/lang/Object;",
             ])
 
     def test_inner(self):

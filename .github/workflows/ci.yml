@@ -9,7 +9,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [2.7]
+        python-version: [3.6, 3.7, 3.8]
         os: [ubuntu-18.04, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
@@ -26,6 +26,10 @@ jobs:
       - name: Debug log - Print exported environment variables
         run: export
       - name: Compile
-        run: make
+        run: PYTHON_CONFIG="python${{ matrix.python-version }}-config" PYTHON="python${{ matrix.python-version }}" make
+        env:
+          PKG_CONFIG_PATH: ${{ env.pythonLocation }}/lib/pkgconfig/
+      - name: Debugging - Show dynamic linker information for librubicon.so
+        run: LD_LIBRARY_PATH="${{ env.pythonLocation }}/lib" ldd dist/librubicon.so || otool -L dist/librubicon.dylib
       - name: Test
-        run: RUBICON_LIBRARY="${PWD}/dist/librubicon.${{ runner.os == 'Linux' && 'so' || 'dylib' }}" ${{ runner.os == 'Linux' && 'LD_' || 'DYLD_' }}LIBRARY_PATH="$(pwd)/dist" java org.beeware.rubicon.test.Test
+        run: RUBICON_LIBRARY="${PWD}/dist/librubicon.${{ runner.os == 'Linux' && 'so' || 'dylib' }}" ${{ runner.os == 'Linux' && 'LD_' || 'DYLD_' }}LIBRARY_PATH="${{env.pythonLocation}}/lib:$(pwd)/dist" java org.beeware.rubicon.test.Test

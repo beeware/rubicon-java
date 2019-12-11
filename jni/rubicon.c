@@ -4,7 +4,8 @@
 #include <dlfcn.h>
 #endif
 
-#include "python2.7/Python.h"
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
 
 #include "rubicon.h"
 
@@ -71,28 +72,39 @@ static PyObject *android_error(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
-static PyMethodDef AndroidMethods[] = {
+static PyMethodDef android_methods[] = {
     {"verbose", android_verbose, METH_VARARGS, "Write a VERBOSE message to the Android system log."},
     {"debug", android_debug, METH_VARARGS, "Write a DEBUG message to the Android system log."},
     {"info", android_info, METH_VARARGS, "Write an INFO message to the Android system log."},
     {"warn", android_warn, METH_VARARGS, "Write a WARN message to the Android system log."},
     {"error", android_error, METH_VARARGS, "Write an ERROR message to the Android system log."},
-    {NULL, NULL, 0, NULL}
-};
+    {NULL, NULL, 0, NULL}};
+
+static struct PyModuleDef android_definition = {
+    PyModuleDef_HEAD_INIT,
+    "android",
+    "A module exposing Android functionality.",
+    -1,
+    android_methods};
 
 PyMODINIT_FUNC initandroid(void) {
-    (void) Py_InitModule("android", AndroidMethods);
+    (void)Py_InitModule("android", &android_definition);
 }
 #else
-
 
 #define LOG_V(...) printf("");
 #define LOG_D(...) printf("");
 // #define LOG_V(...) printf(__VA_ARGS__); printf("\n")
 // #define LOG_D(...) printf(__VA_ARGS__); printf("\n")
-#define LOG_I(...) printf(__VA_ARGS__); printf("\n")
-#define LOG_W(...) printf(__VA_ARGS__); printf("\n")
-#define LOG_E(...) printf(__VA_ARGS__); printf("\n")
+#define LOG_I(...)       \
+    printf(__VA_ARGS__); \
+    printf("\n")
+#define LOG_W(...)       \
+    printf(__VA_ARGS__); \
+    printf("\n")
+#define LOG_E(...)       \
+    printf(__VA_ARGS__); \
+    printf("\n")
 
 #endif
 
@@ -209,7 +221,7 @@ jclass GetObjectClass(jobject obj) {
     return (*java)->GetObjectClass(java, obj);
 }
 jboolean IsInstanceOf(jobject obj, jclass cls) {
-    return (*java)->IsInstanceOf(java,obj,cls);
+    return (*java)->IsInstanceOf(java, obj, cls);
 }
 
 jmethodID GetMethodID(jclass cls, const char *name, const char *sig) {
@@ -319,7 +331,7 @@ jbyte CallNonvirtualByteMethod(jobject obj, jclass cls, jmethodID methodID, ...)
     va_end(args);
     return result;
 }
-jchar CallNonvirtualCharMethod(jobject obj, jclass cls,jmethodID methodID, ...) {
+jchar CallNonvirtualCharMethod(jobject obj, jclass cls, jmethodID methodID, ...) {
     va_list args;
     jchar result;
     va_start(args, methodID);
@@ -331,7 +343,7 @@ jshort CallNonvirtualShortMethod(jobject obj, jclass cls, jmethodID methodID, ..
     va_list args;
     jshort result;
     va_start(args, methodID);
-    result = (*java)->CallNonvirtualShortMethodV(java,obj,cls, methodID,args);
+    result = (*java)->CallNonvirtualShortMethodV(java, obj, cls, methodID, args);
     va_end(args);
     return result;
 }
@@ -347,7 +359,7 @@ jlong CallNonvirtualLongMethod(jobject obj, jclass cls, jmethodID methodID, ...)
     va_list args;
     jlong result;
     va_start(args, methodID);
-    result = (*java)->CallNonvirtualLongMethodV(java,obj,cls, methodID,args);
+    result = (*java)->CallNonvirtualLongMethodV(java, obj, cls, methodID, args);
     va_end(args);
     return result;
 }
@@ -355,7 +367,7 @@ jfloat CallNonvirtualFloatMethod(jobject obj, jclass cls, jmethodID methodID, ..
     va_list args;
     jfloat result;
     va_start(args, methodID);
-    result = (*java)->CallNonvirtualFloatMethodV(java,obj,cls, methodID,args);
+    result = (*java)->CallNonvirtualFloatMethodV(java, obj, cls, methodID, args);
     va_end(args);
     return result;
 }
@@ -363,7 +375,7 @@ jdouble CallNonvirtualDoubleMethod(jobject obj, jclass cls, jmethodID methodID, 
     va_list args;
     jdouble result;
     va_start(args, methodID);
-    result = (*java)->CallNonvirtualDoubleMethodV(java,obj,cls, methodID,args);
+    result = (*java)->CallNonvirtualDoubleMethodV(java, obj, cls, methodID, args);
     va_end(args);
     return result;
 }
@@ -549,31 +561,31 @@ jdouble GetStaticDoubleField(jclass cls, jfieldID fieldID) {
 }
 
 void SetStaticObjectField(jclass cls, jfieldID fieldID, jobject value) {
-  (*java)->SetStaticObjectField(java, cls, fieldID, value);
+    (*java)->SetStaticObjectField(java, cls, fieldID, value);
 }
 void SetStaticBooleanField(jclass cls, jfieldID fieldID, jboolean value) {
-  (*java)->SetStaticBooleanField(java, cls, fieldID, value);
+    (*java)->SetStaticBooleanField(java, cls, fieldID, value);
 }
 void SetStaticByteField(jclass cls, jfieldID fieldID, jbyte value) {
-  (*java)->SetStaticByteField(java, cls, fieldID, value);
+    (*java)->SetStaticByteField(java, cls, fieldID, value);
 }
 void SetStaticCharField(jclass cls, jfieldID fieldID, jchar value) {
-  (*java)->SetStaticCharField(java, cls, fieldID, value);
+    (*java)->SetStaticCharField(java, cls, fieldID, value);
 }
 void SetStaticShortField(jclass cls, jfieldID fieldID, jshort value) {
-  (*java)->SetStaticShortField(java, cls, fieldID, value);
+    (*java)->SetStaticShortField(java, cls, fieldID, value);
 }
 void SetStaticIntField(jclass cls, jfieldID fieldID, jint value) {
-  (*java)->SetStaticIntField(java, cls, fieldID, value);
+    (*java)->SetStaticIntField(java, cls, fieldID, value);
 }
 void SetStaticLongField(jclass cls, jfieldID fieldID, jlong value) {
-  (*java)->SetStaticLongField(java, cls, fieldID, value);
+    (*java)->SetStaticLongField(java, cls, fieldID, value);
 }
 void SetStaticFloatField(jclass cls, jfieldID fieldID, jfloat value) {
-  (*java)->SetStaticFloatField(java, cls, fieldID, value);
+    (*java)->SetStaticFloatField(java, cls, fieldID, value);
 }
 void SetStaticDoubleField(jclass cls, jfieldID fieldID, jdouble value) {
-  (*java)->SetStaticDoubleField(java, cls, fieldID, value);
+    (*java)->SetStaticDoubleField(java, cls, fieldID, value);
 }
 
 jstring NewString(const jchar *unicode, jsize len) {
@@ -595,10 +607,10 @@ jstring NewStringUTF(const char *utf) {
 jsize GetStringUTFLength(jstring str) {
     return (*java)->GetStringUTFLength(java, str);
 }
-const char* GetStringUTFChars(jstring str, jboolean *isCopy) {
+const char *GetStringUTFChars(jstring str, jboolean *isCopy) {
     return (*java)->GetStringUTFChars(java, str, isCopy);
 }
-void ReleaseStringUTFChars(jstring str, const char* chars) {
+void ReleaseStringUTFChars(jstring str, const char *chars) {
     (*java)->ReleaseStringUTFChars(java, str, chars);
 }
 
@@ -641,28 +653,28 @@ jdoubleArray NewDoubleArray(jsize len) {
     return (*java)->NewDoubleArray(java, len);
 }
 
-jboolean * GetBooleanArrayElements(jbooleanArray array, jboolean *isCopy) {
+jboolean *GetBooleanArrayElements(jbooleanArray array, jboolean *isCopy) {
     return (*java)->GetBooleanArrayElements(java, array, isCopy);
 }
-jbyte * GetByteArrayElements(jbyteArray array, jboolean *isCopy) {
+jbyte *GetByteArrayElements(jbyteArray array, jboolean *isCopy) {
     return (*java)->GetByteArrayElements(java, array, isCopy);
 }
-jchar * GetCharArrayElements(jcharArray array, jboolean *isCopy) {
+jchar *GetCharArrayElements(jcharArray array, jboolean *isCopy) {
     return (*java)->GetCharArrayElements(java, array, isCopy);
 }
-jshort * GetShortArrayElements(jshortArray array, jboolean *isCopy) {
+jshort *GetShortArrayElements(jshortArray array, jboolean *isCopy) {
     return (*java)->GetShortArrayElements(java, array, isCopy);
 }
-jint * GetIntArrayElements(jintArray array, jboolean *isCopy) {
+jint *GetIntArrayElements(jintArray array, jboolean *isCopy) {
     return (*java)->GetIntArrayElements(java, array, isCopy);
 }
-jlong * GetLongArrayElements(jlongArray array, jboolean *isCopy) {
+jlong *GetLongArrayElements(jlongArray array, jboolean *isCopy) {
     return (*java)->GetLongArrayElements(java, array, isCopy);
 }
-jfloat * GetFloatArrayElements(jfloatArray array, jboolean *isCopy) {
+jfloat *GetFloatArrayElements(jfloatArray array, jboolean *isCopy) {
     return (*java)->GetFloatArrayElements(java, array, isCopy);
 }
-jdouble * GetDoubleArrayElements(jdoubleArray array, jboolean *isCopy) {
+jdouble *GetDoubleArrayElements(jdoubleArray array, jboolean *isCopy) {
     return (*java)->GetDoubleArrayElements(java, array, isCopy);
 }
 
@@ -756,7 +768,7 @@ jint MonitorExit(jobject obj) {
 }
 
 jint GetJavaVM(JavaVM **vm) {
-    return (*java)->GetJavaVM(java,vm);
+    return (*java)->GetJavaVM(java, vm);
 }
 
 void GetStringRegion(jstring str, jsize start, jsize len, jchar *buf) {
@@ -791,10 +803,10 @@ jboolean ExceptionCheck() {
     return (*java)->ExceptionCheck(java);
 }
 
-jobject NewDirectByteBuffer(void* address, jlong capacity) {
+jobject NewDirectByteBuffer(void *address, jlong capacity) {
     return (*java)->NewDirectByteBuffer(java, address, capacity);
 }
-void* GetDirectBufferAddress(jobject buf) {
+void *GetDirectBufferAddress(jobject buf) {
     return (*java)->GetDirectBufferAddress(java, buf);
 }
 jlong GetDirectBufferCapacity(jobject buf) {
@@ -804,11 +816,10 @@ jobjectRefType GetObjectRefType(jobject obj) {
     return (*java)->GetObjectRefType(java, obj);
 }
 
-
 /**************************************************************************
  * Method to start the Python runtime.
  *************************************************************************/
-JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_start(JNIEnv *env, jobject thisObj, jstring pythonHome, jstring pythonPath, jstring rubiconLib) {
+JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_init(JNIEnv *env, jobject thisObj, jstring pythonHome, jstring pythonPath, jstring rubiconLib) {
     int ret = 0;
     char pythonPathVar[512];
     char rubiconLibVar[256];
@@ -818,19 +829,22 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_start(JNIEnv *env, jobjec
 
 #ifdef LIBPYTHON_RTLD_GLOBAL
     // make libpython symbols availiable for everyone
-    dlopen("libpython2.7.so", RTLD_LAZY|RTLD_GLOBAL|RTLD_NOLOAD);
+    dlopen(LIBPYTHON_RTLD_GLOBAL, RTLD_LAZY | RTLD_GLOBAL);
 #endif
 
     // Special environment to prefer .pyo, and don't write bytecode if .py are found
     // because the process will not have write attribute on the device.
-    putenv("PYTHONOPTIMIZE=2");
+    putenv("PYTHONOPTIMIZE=1");
     putenv("PYTHONDONTWRITEBYTECODE=1");
-    putenv("PYTHONNOUSERSITE=1");
-    putenv("TARGET_ANDROID=1");
+    putenv("PYTHONUNBUFFERED=1");
 
     if (pythonHome) {
         LOG_D("PYTHONHOME=%s", (*env)->GetStringUTFChars(env, pythonHome, NULL));
-        Py_SetPythonHome((char *)(*env)->GetStringUTFChars(env, pythonHome, NULL));
+        const char *python_home;
+        wchar_t *wpython_home;
+        python_home = (*env)->GetStringUTFChars(env, pythonHome, NULL);
+        wpython_home = Py_DecodeLocale(python_home, NULL);
+        Py_SetPythonHome(wpython_home);
     } else {
         LOG_D("Using default PYTHONHOME");
     }
@@ -853,14 +867,18 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_start(JNIEnv *env, jobjec
     } else {
         LOG_D("Not setting RUBICON_LIBRARY");
     }
+
+    // Initialize and bootstrap the Android logging module
+    LOG_I("Initializing Android logging module...");
+    PyImport_AppendInittab("android", init_android);
 #endif
 
     // putenv("PYTHONVERBOSE=1");
 
     LOG_I("Initializing Python runtime...");
     Py_Initialize();
-    // PySys_SetArgv(argc, argv);
 
+    LOG_I("Initializing Python threads...");
     // If other modules are using threads, we need to initialize them before.
     PyEval_InitThreads();
 
@@ -871,22 +889,22 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_start(JNIEnv *env, jobjec
 
     LOG_D("Bootstrap Android logging...");
     ret = PyRun_SimpleString(
-        "import sys\n" \
-        "import android\n" \
-        "class LogFile(object):\n" \
-        "    def __init__(self, level):\n" \
-        "        self.buffer = ''\n" \
-        "        self.level = level\n" \
-        "    def write(self, s):\n" \
-        "        s = self.buffer + s\n" \
-        "        lines = s.split(\"\\n\")\n" \
-        "        for line in lines[:-1]:\n" \
-        "            self.level(line)\n" \
-        "        self.buffer = lines[-1]\n" \
-        "    def flush(self):\n" \
-        "        return\n" \
-        "sys.stdout = LogFile(android.info)\n" \
-        "sys.stderr = LogFile(android.error)\n" \
+        "import sys\n"
+        "import android\n"
+        "class LogFile:\n"
+        "    def __init__(self, level):\n"
+        "        self.buffer = ''\n"
+        "        self.level = level\n"
+        "    def write(self, s):\n"
+        "        s = self.buffer + s\n"
+        "        lines = s.split(\"\\n\")\n"
+        "        for line in lines[:-1]:\n"
+        "            self.level(line)\n"
+        "        self.buffer = lines[-1]\n"
+        "    def flush(self):\n"
+        "        return\n"
+        "sys.stdout = LogFile(android.info)\n"
+        "sys.stderr = LogFile(android.error)\n"
         "print 'Android Logging bootstrap active.'");
     if (ret != 0) {
         LOG_E("Exception during logging bootstrap.");
@@ -910,7 +928,7 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_start(JNIEnv *env, jobjec
 
     method_handler = PyObject_GetAttrString(rubicon, "dispatch");
     if (method_handler == NULL) {
-        LOG_E("Couldn't find method dipatch handler");
+        LOG_E("Couldn't find method dispatch handler");
         PyErr_Print();
         PyErr_Clear();
         java = NULL;
@@ -925,24 +943,52 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_start(JNIEnv *env, jobjec
 }
 
 /**************************************************************************
- * Method to stop the Python runtime.
+ * Method to start the Python runtime.
  *************************************************************************/
-JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_run(JNIEnv *env, jobject thisObj, jstring appName) {
+JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_run(JNIEnv *env, jobject thisObj, jstring script, jobjectArray args) {
     int ret = 0;
 
+    int python_argc, i;
+
+    const char *script_str = (*env)->GetStringUTFChars(env, script, NULL);
+    LOG_D("Running '%s'...", script_str);
+
+    // Construct argv for the script
+    if (args) {
+        python_argc = (*env)->GetArrayLength(env, args) + 1;
+    } else {
+        python_argc = 1;
+    }
+    LOG_D("There are %d arguments", python_argc);
+
+    wchar_t **python_argv = PyMem_RawMalloc(sizeof(wchar_t) * python_argc);
+    python_argv[0] = Py_DecodeLocale(script_str, NULL);
+    LOG_D("ARG 0: %s", script_str);
+    for (i = 1; i < python_argc; i++) {
+        jobject arg = (*env)->GetObjectArrayElement(env, args, i - 1);
+        const char *arg_str = (*env)->GetStringUTFChars(env, arg, NULL);
+        python_argv[i] = Py_DecodeLocale(arg_str, NULL);
+        LOG_D("ARG %d: %s", i, arg_str);
+    }
+    PySys_SetArgv(python_argc, python_argv);
+
     // Search for and start entry script
-    const char* appNameStr = (*env)->GetStringUTFChars(env, appName, NULL);
-    LOG_D("Running %s", appNameStr);
-    FILE* fd = fopen(appNameStr, "r");
+    FILE *fd = fopen(script_str, "r");
     if (fd == NULL) {
         ret = 1;
-        LOG_E("Unable to open %s", appNameStr);
+        LOG_E("Unable to open %s", script_str);
     } else {
-        ret = PyRun_SimpleFileEx(fd, appNameStr, 1);
+        ret = PyRun_SimpleFileEx(fd, script_str, 1);
         if (ret != 0) {
             LOG_E("Application quit abnormally!");
         }
     }
+
+    // Clean up memory allocated for args.
+    for (i = 0; i < python_argc; i++) {
+        PyMem_RawFree(python_argv[i]);
+    }
+    PyMem_RawFree(python_argv);
 
     return ret;
 }
@@ -961,7 +1007,6 @@ JNIEXPORT void JNICALL Java_org_beeware_rubicon_Python_stop(JNIEnv *env, jobject
         LOG_E("Python runtime doesn't appear to be running");
     }
 }
-
 
 /**************************************************************************
  * Implementation of the InvocationHandler used by all Python objects.
@@ -992,7 +1037,7 @@ JNIEXPORT jobject JNICALL Java_org_beeware_rubicon_PythonInstance_invoke(JNIEnv 
 
     PyObject *result;
     PyObject *pargs = PyTuple_New(3);
-    PyObject *pinstance = PyInt_FromLong(instance);
+    PyObject *pinstance = PyLong_FromLong(instance);
     PyObject *pmethod_name = PyUnicode_FromFormat("%s", (*env)->GetStringUTFChars(env, method_name, NULL));
     PyObject *args;
 
@@ -1001,9 +1046,9 @@ JNIEXPORT jobject JNICALL Java_org_beeware_rubicon_PythonInstance_invoke(JNIEnv 
         LOG_D("There are %d arguments", argc);
 
         args = PyTuple_New(argc);
-        size_t i;
+        jsize i;
         for (i = 0; i != argc; ++i) {
-            PyTuple_SET_ITEM(args, i, PyInt_FromLong((unsigned long)(*env)->GetObjectArrayElement(env, jargs, i)));
+            PyTuple_SET_ITEM(args, i, PyLong_FromLong((unsigned long)(*env)->GetObjectArrayElement(env, jargs, i)));
         }
     } else {
         LOG_D("There are no arguments");

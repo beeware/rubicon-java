@@ -18,65 +18,65 @@ class JNITest(TestCase):
     def test_non_existent(self):
         "Non-existent classes/methods/fields return None from Find/Get APIs"
         # A class that doesn't exist
-        UnknownClass = java.FindClass("java/XXX")
+        UnknownClass = java.FindClass(b"java/XXX")
         self.assertIsNone(UnknownClass.value)
 
         # A class that does exist, that we can then search for non-existent methods
-        Example = java.FindClass("org/beeware/rubicon/test/Example")
+        Example = java.FindClass(b"org/beeware/rubicon/test/Example")
         self.assertIsNotNone(Example.value)
 
         # Fields and Methods (static and non-static)
-        self.assertIsNone(java.GetMethodID(Example, "xxx", "()V").value)
-        self.assertIsNone(java.GetStaticMethodID(Example, "xxx", "()V").value)
-        self.assertIsNone(java.GetFieldID(Example, "xxx", "I").value)
-        self.assertIsNone(java.GetStaticFieldID(Example, "xxx", "I").value)
+        self.assertIsNone(java.GetMethodID(Example, b"xxx", b"()V").value)
+        self.assertIsNone(java.GetStaticMethodID(Example, b"xxx", b"()V").value)
+        self.assertIsNone(java.GetFieldID(Example, b"xxx", b"I").value)
+        self.assertIsNone(java.GetStaticFieldID(Example, b"xxx", b"I").value)
 
         # Bad descriptors for existing fields/methods also fail.
-        self.assertIsNone(java.GetMethodID(Example, "get_int_field", "()D").value)
-        self.assertIsNone(java.GetStaticMethodID(Example, "get_static_int_field", "()D").value)
-        self.assertIsNone(java.GetFieldID(Example, "int_field", "D").value)
-        self.assertIsNone(java.GetStaticFieldID(Example, "static_int_field", "D").value)
+        self.assertIsNone(java.GetMethodID(Example, b"get_int_field", b"()D").value)
+        self.assertIsNone(java.GetStaticMethodID(Example, b"get_static_int_field", b"()D").value)
+        self.assertIsNone(java.GetFieldID(Example, b"int_field", b"D").value)
+        self.assertIsNone(java.GetStaticFieldID(Example, b"static_int_field", b"D").value)
 
     def test_object_lifecycle(self):
         "The basic lifecycle operations of an object can be performed"
         # Get a reference to the org.beeware.test.Example class
-        Example = java.FindClass("org/beeware/rubicon/test/Example")
+        Example = java.FindClass(b"org/beeware/rubicon/test/Example")
         self.assertIsNotNone(Example.value)
 
         # Find the default constructor
-        Example__init = java.GetMethodID(Example, "<init>", "()V")
+        Example__init = java.GetMethodID(Example, b"<init>", b"()V")
         self.assertIsNotNone(Example__init.value)
 
         # Find the 'one int' constructor
-        Example__init_i = java.GetMethodID(Example, "<init>", "(I)V")
+        Example__init_i = java.GetMethodID(Example, b"<init>", b"(I)V")
         self.assertIsNotNone(Example__init_i.value)
 
         # Find the 'two int' constructor
-        Example__init_ii = java.GetMethodID(Example, "<init>", "(II)V")
+        Example__init_ii = java.GetMethodID(Example, b"<init>", b"(II)V")
         self.assertIsNotNone(Example__init_ii.value)
 
         # Find the BaseExample.set_base_int_field() method on Example
-        Example__set_base_int_field = java.GetMethodID(Example, "set_base_int_field", "(I)V")
+        Example__set_base_int_field = java.GetMethodID(Example, b"set_base_int_field", b"(I)V")
         self.assertIsNotNone(Example__set_base_int_field.value)
 
         # Find the Example.get_base_int_field() method on Example
-        Example__get_base_int_field = java.GetMethodID(Example, "get_base_int_field", "()I")
+        Example__get_base_int_field = java.GetMethodID(Example, b"get_base_int_field", b"()I")
         self.assertIsNotNone(Example__get_base_int_field.value)
 
         # Find the Example.set_int_field() method
-        Example__set_int_field = java.GetMethodID(Example, "set_int_field", "(I)V")
+        Example__set_int_field = java.GetMethodID(Example, b"set_int_field", b"(I)V")
         self.assertIsNotNone(Example__set_int_field.value)
 
         # Find the Example.get_int_field() method
-        Example__get_int_field = java.GetMethodID(Example, "get_int_field", "()I")
+        Example__get_int_field = java.GetMethodID(Example, b"get_int_field", b"()I")
         self.assertIsNotNone(Example__get_int_field.value)
 
         # Find Example.int_field
-        Example__int_field = java.GetFieldID(Example, "int_field", "I")
+        Example__int_field = java.GetFieldID(Example, b"int_field", b"I")
         self.assertIsNotNone(Example__int_field.value)
 
         # Find Example.base_int_field
-        Example__base_int_field = java.GetFieldID(Example, "base_int_field", "I")
+        Example__base_int_field = java.GetFieldID(Example, b"base_int_field", b"I")
         self.assertIsNotNone(Example__base_int_field.value)
 
         # Create an instance of org.beeware.test.Example using the default constructor
@@ -126,31 +126,31 @@ class JNITest(TestCase):
     def test_static(self):
         "Static methods and fields can be invoked"
         # Get a reference to the org.beeware.test.Example class
-        Example = java.FindClass("org/beeware/rubicon/test/Example")
+        Example = java.FindClass(b"org/beeware/rubicon/test/Example")
         self.assertIsNotNone(Example.value)
 
         # Find the BaseExample.set_static_base_int_field() method on Example
-        Example__set_static_base_int_field = java.GetStaticMethodID(Example, "set_static_base_int_field", "(I)V")
+        Example__set_static_base_int_field = java.GetStaticMethodID(Example, b"set_static_base_int_field", b"(I)V")
         self.assertIsNotNone(Example__set_static_base_int_field.value)
 
         # Find the Example.get_static_base_int_field() method on Example
-        Example__get_static_base_int_field = java.GetStaticMethodID(Example, "get_static_base_int_field", "()I")
+        Example__get_static_base_int_field = java.GetStaticMethodID(Example, b"get_static_base_int_field", b"()I")
         self.assertIsNotNone(Example__get_static_base_int_field.value)
 
         # Find the Example.set_static_int_field() method
-        Example__set_static_int_field = java.GetStaticMethodID(Example, "set_static_int_field", "(I)V")
+        Example__set_static_int_field = java.GetStaticMethodID(Example, b"set_static_int_field", b"(I)V")
         self.assertIsNotNone(Example__set_static_int_field.value)
 
         # Find the Example.get_static_int_field() method
-        Example__get_static_int_field = java.GetStaticMethodID(Example, "get_static_int_field", "()I")
+        Example__get_static_int_field = java.GetStaticMethodID(Example, b"get_static_int_field", b"()I")
         self.assertIsNotNone(Example__get_static_int_field.value)
 
         # Find Example.static_int_field
-        Example__static_int_field = java.GetStaticFieldID(Example, "static_int_field", "I")
+        Example__static_int_field = java.GetStaticFieldID(Example, b"static_int_field", b"I")
         self.assertIsNotNone(Example__static_int_field.value)
 
         # Find Example.static_base_int_field
-        Example__static_base_int_field = java.GetStaticFieldID(Example, "static_base_int_field", "I")
+        Example__static_base_int_field = java.GetStaticFieldID(Example, b"static_base_int_field", b"I")
         self.assertIsNotNone(Example__static_base_int_field.value)
 
         # Use the get_static_int_field and get_static_base_int_field methods
@@ -177,15 +177,15 @@ class JNITest(TestCase):
         s = "Woop"
         java_string = java.NewStringUTF(s.encode('utf-8'))
 
-        Example = java.FindClass("org/beeware/rubicon/test/Example")
+        Example = java.FindClass(b"org/beeware/rubicon/test/Example")
         self.assertIsNotNone(Example.value)
 
         # Find the default constructor
-        Example__init = java.GetMethodID(Example, "<init>", "()V")
+        Example__init = java.GetMethodID(Example, b"<init>", b"()V")
         self.assertIsNotNone(Example__init.value)
 
         # Find the Example.duplicate_string() method on Example
-        Example__duplicate_string = java.GetMethodID(Example, "duplicate_string", "(Ljava/lang/String;)Ljava/lang/String;")
+        Example__duplicate_string = java.GetMethodID(Example, b"duplicate_string", b"(Ljava/lang/String;)Ljava/lang/String;")
         self.assertIsNotNone(Example__duplicate_string.value)
 
         # Create an instance of org.beeware.test.Example using the default constructor
@@ -199,15 +199,15 @@ class JNITest(TestCase):
     def test_float_method(self):
         "A Java float can be created, and the content returned"
         # This string contains unicode characters
-        Example = java.FindClass("org/beeware/rubicon/test/Example")
+        Example = java.FindClass(b"org/beeware/rubicon/test/Example")
         self.assertIsNotNone(Example.value)
 
         # Find the default constructor
-        Example__init = java.GetMethodID(Example, "<init>", "()V")
+        Example__init = java.GetMethodID(Example, b"<init>", b"()V")
         self.assertIsNotNone(Example__init.value)
 
         # Find the Example.area_of_square() method on Example
-        Example__area_of_square = java.GetMethodID(Example, "area_of_square", "(F)F")
+        Example__area_of_square = java.GetMethodID(Example, b"area_of_square", b"(F)F")
         self.assertIsNotNone(Example__area_of_square.value)
 
         # Create an instance of org.beeware.test.Example using the default constructor

@@ -1,22 +1,42 @@
-
-JAVAC := javac
-CFLAGS :=
-
-uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
-
-ifeq ($(uname_S),Linux)
-	JAVA_HOME:=$(shell sh -c 'dirname $$(dirname $$(readlink -e $$(which $(JAVAC))))')
-	JAVA_PLATFORM := $(JAVA_HOME)/include/linux
-	CFLAGS := -fPIC
-	CFLAGS += -DLIBPYTHON_RTLD_GLOBAL=1
-	SOEXT := so
-	PYLDFLAGS :=  $(shell sh -c 'python-config --ldflags')
+# You can set PYTHON and PYTHON_CONFIG to a specific python-config binary if you want to build
+# against a specific version of Python.
+ifndef PYTHON_CONFIG
+	PYTHON_CONFIG := python-config
 endif
-ifeq ($(uname_S),Darwin)
-	JAVA_HOME := $(shell /usr/libexec/java_home)
-	JAVA_PLATFORM := $(JAVA_HOME)/include/darwin
+ifndef PYTHON
+	PYTHON := python
+endif
+
+CFLAGS := $(shell $(PYTHON_CONFIG) --cflags) -fPIC
+PYTHON_VERSION := $(shell ${PYTHON} -c 'import sysconfig; print(sysconfig.get_config_var("VERSION"))')
+# Add --embed on Python 3.8; see https://docs.python.org/3/whatsnew/3.8.html#debug-build-uses-the-same-abi-as-release-build
+PYTHON_CONFIG_EXTRA_FLAGS := $(shell if [ "${PYTHON_VERSION}" = "3.8" ] ; then echo --embed ; fi )
+# Get Python LDFLAGS for our use, but remove macOS Python's -stack_size configuration, since it only applies to executables.
+LDFLAGS := $(shell $(PYTHON_CONFIG) --ldflags ${PYTHON_CONFIG_EXTRA_FLAGS} | sed 'sX-Wl,-stack_size,1000000XXg')
+LOWERCASE_OS := $(shell uname -s | tr '[A-Z]' '[a-z]')
+
+ifdef JAVA_HOME
+	JAVAC := $(JAVA_HOME)/bin/javac
+else
+	JAVAC := $(shell which javac)
+	ifeq ($(wildcard /usr/libexec/java_home),)
+		JAVA_HOME := $(shell realpath $(JAVAC))
+	else
+		JAVA_HOME := $(shell /usr/libexec/java_home)
+	endif
+endif
+JAVA_PLATFORM := $(JAVA_HOME)/include/$(LOWERCASE_OS)
+
+ifeq ($(LOWERCASE_OS),linux)
+	SOEXT := so
+	# This is based on how PYTHON_LDVERSION is computed in the python3.x-config script bundled with Python.
+	# We implement it here rather than calling python3.x-config because there is no way to ask python3.x-config
+	# to provide just this value.
+	PYTHON_ABIFLAGS := $(shell ${PYTHON} -c 'import sysconfig; print(sysconfig.get_config_var("ABIFLAGS"))')
+	PYTHON_LDVERSION := ${PYTHON_VERSION}${PYTHON_ABIFLAGS}
+	CFLAGS += -DLIBPYTHON_RTLD_GLOBAL=\"libpython${PYTHON_LDVERSION}.so\"
+else ifeq ($(LOWERCASE_OS),darwin)
 	SOEXT := dylib
-	PYLDFLAGS := -lPython
 endif
 
 all: dist/rubicon.jar dist/librubicon.$(SOEXT) dist/test.jar
@@ -31,7 +51,7 @@ dist/test.jar: org/beeware/rubicon/test/BaseExample.class org/beeware/rubicon/te
 
 dist/librubicon.$(SOEXT): jni/rubicon.o
 	mkdir -p dist
-	gcc -shared -o $@ $< $(PYLDFLAGS)
+	gcc -shared -o $@ $< $(LDFLAGS)
 
 test: all
 	java org.beeware.rubicon.test.Test
@@ -47,4 +67,3 @@ clean:
 
 %.o : %.c
 	gcc -c $(CFLAGS) -Isrc -I$(JAVA_HOME)/include -I$(JAVA_PLATFORM) -o $@ $<
-
