@@ -1,22 +1,24 @@
+CFLAGS := $(shell python-config --cflags) -fPIC
+LDFLAGS := $(shell python-config --ldflags)
+LOWERCASE_OS := $(shell uname -s | tr '[A-Z]' '[a-z]')
 
-JAVAC := javac
-CFLAGS :=
-
-uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
-
-ifeq ($(uname_S),Linux)
-	JAVA_HOME:=$(shell sh -c 'dirname $$(dirname $$(readlink -e $$(which $(JAVAC))))')
-	JAVA_PLATFORM := $(JAVA_HOME)/include/linux
-	CFLAGS := -fPIC
-	CFLAGS += -DLIBPYTHON_RTLD_GLOBAL=1
-	SOEXT := so
-	PYLDFLAGS :=  $(shell sh -c 'python-config --ldflags')
+ifdef JAVA_HOME
+	JAVAC := $(JAVA_HOME)/bin/javac
+else
+	JAVAC := $(shell which javac)
+	ifeq ($(wildcard /usr/libexec/java_home),)
+		JAVA_HOME := $(shell realpath $(JAVAC))
+	else
+		JAVA_HOME := $(shell /usr/libexec/java_home)
+	endif
 endif
-ifeq ($(uname_S),Darwin)
-	JAVA_HOME := $(shell /usr/libexec/java_home)
-	JAVA_PLATFORM := $(JAVA_HOME)/include/darwin
+JAVA_PLATFORM := $(JAVA_HOME)/include/$(LOWERCASE_OS)
+
+ifeq ($(LOWERCASE_OS),linux)
+	SOEXT := so
+	CFLAGS += -DLIBPYTHON_RTLD_GLOBAL=1
+else ifeq ($(LOWERCASE_OS),darwin)
 	SOEXT := dylib
-	PYLDFLAGS := -lPython
 endif
 
 all: dist/rubicon.jar dist/librubicon.$(SOEXT) dist/test.jar
@@ -31,7 +33,7 @@ dist/test.jar: org/beeware/rubicon/test/BaseExample.class org/beeware/rubicon/te
 
 dist/librubicon.$(SOEXT): jni/rubicon.o
 	mkdir -p dist
-	gcc -shared -o $@ $< $(PYLDFLAGS)
+	gcc -shared -o $@ $< $(LDFLAGS)
 
 test: all
 	java org.beeware.rubicon.test.Test
@@ -47,4 +49,3 @@ clean:
 
 %.o : %.c
 	gcc -c $(CFLAGS) -Isrc -I$(JAVA_HOME)/include -I$(JAVA_PLATFORM) -o $@ $<
-
