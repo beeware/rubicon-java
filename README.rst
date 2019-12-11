@@ -6,22 +6,28 @@ Rubicon-Java
 ============
 
 .. image:: https://img.shields.io/pypi/pyversions/rubicon-java.svg
-    :target: https://pypi.python.org/pypi/rubicon-java
+   :target: https://pypi.python.org/pypi/rubicon-java
+   :alt: Python Versions
 
 .. image:: https://img.shields.io/pypi/v/rubicon-java.svg
-    :target: https://pypi.python.org/pypi/rubicon-java
+   :target: https://pypi.python.org/pypi/rubicon-java
+   :alt: Project version
 
 .. image:: https://img.shields.io/pypi/status/rubicon-java.svg
-    :target: https://pypi.python.org/pypi/rubicon-java
+   :target: https://pypi.python.org/pypi/rubicon-java
+   :alt: Project status
 
 .. image:: https://img.shields.io/pypi/l/rubicon-java.svg
-    :target: https://github.com/beeware/rubicon-java/blob/master/LICENSE
+   :target: https://github.com/beeware/rubicon-java/blob/master/LICENSE
+   :alt: License
 
-.. image:: https://travis-ci.org/beeware/rubicon-java.svg?branch=master
-    :target: https://travis-ci.org/beeware/rubicon-java
+.. image:: https://github.com/beeware/toga/workflows/Build%20status/badge.svg
+   :target: https://github.com/beeware/toga/actions
+   :alt: Build Status
 
 .. image:: https://badges.gitter.im/beeware/general.svg
-    :target: https://gitter.im/beeware/general
+   :target: https://gitter.im/beeware/general
+   :alt: Gitter chat room
 
 Rubicon-Java is a bridge between the Java Runtime Environment and Python.
 It enables you to:

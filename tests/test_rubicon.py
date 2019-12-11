@@ -57,29 +57,30 @@ class JNITest(TestCase):
 
     def test_static_field(self):
         "A static field on a class can be accessed and mutated"
-        Example = JavaClass('org/beeware/rubicon/test/Example')
+        with ExampleClassWithCleanup() as Example:
+            Example.set_static_base_int_field(1)
+            Example.set_static_int_field(11)
 
-        Example.set_static_base_int_field(1)
-        Example.set_static_int_field(11)
+            self.assertEqual(Example.static_base_int_field, 1)
+            self.assertEqual(Example.static_int_field, 11)
 
-        self.assertEqual(Example.static_base_int_field, 1)
-        self.assertEqual(Example.static_int_field, 11)
+            Example.static_base_int_field = 1188
+            Example.static_int_field = 1199
 
-        Example.static_base_int_field = 1188
-        Example.static_int_field = 1199
-
-        self.assertEqual(Example.static_base_int_field, 1188)
-        self.assertEqual(Example.static_int_field, 1199)
+            self.assertEqual(Example.static_base_int_field, 1188)
+            self.assertEqual(Example.static_int_field, 1199)
 
     def test_static_method(self):
         "A static method on a class can be invoked."
-        Example = JavaClass('org/beeware/rubicon/test/Example')
+        with ExampleClassWithCleanup() as Example:
+            initial_base = Example.get_static_base_int_field()
+            initial = Example.get_static_int_field()
 
-        Example.set_static_base_int_field(2288)
-        Example.set_static_int_field(2299)
+            Example.set_static_base_int_field(2288)
+            Example.set_static_int_field(2299)
 
-        self.assertEqual(Example.get_static_base_int_field(), 2288)
-        self.assertEqual(Example.get_static_int_field(), 2299)
+            self.assertEqual(Example.get_static_base_int_field(), 2288)
+            self.assertEqual(Example.get_static_int_field(), 2299)
 
     def test_non_existent_field(self):
         "An attribute error is raised if you invoke a non-existent field."
@@ -379,3 +380,22 @@ class JNITest(TestCase):
         Inner = JavaClass('org/beeware/rubicon/test/Example$Inner')
 
         self.assertEqual(Inner.INNER_CONSTANT, 1234)
+
+class ExampleClassWithCleanup(object):
+    '''Returns the `Example` JavaClass, wrapped in a context manager
+    to save/restore two class fields.
+
+    Use this instead of `JavaClass('org/beeware/rubicon/test/Example')` when
+    you want to mutate the static fields from tests.
+    '''
+
+    def __enter__(self):
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        self._initial_base = Example.get_static_base_int_field()
+        self._initial = Example.get_static_int_field()
+        self._klass = Example
+        return Example
+
+    def __exit__(self, *args):
+        self._klass.set_static_base_int_field(self._initial_base)
+        self._klass.set_static_int_field(self._initial)

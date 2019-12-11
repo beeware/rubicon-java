@@ -1,0 +1,29 @@
+name: CI
+on:
+  pull_request
+
+jobs:
+  build:
+    name: Unit tests
+    runs-on: ubuntu-18.04
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [2.7]
+    steps:
+      - name: Environment - checkout code
+        uses: actions/checkout@master
+      - name: Environment - Setup python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Environment - Use Java 8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 8
+      - name: Debugging - Export environment variables
+        run: export
+      - name: Compile
+        run: make
+      - name: Test
+        run: RUBICON_LIBRARY=$(pwd)/dist/librubicon.so LD_LIBRARY_PATH="$(pwd)/dist" java org.beeware.rubicon.test.Test
