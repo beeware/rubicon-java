@@ -1,3 +1,4 @@
+# Test rubicon-java on all supported operating systems & Python versions.
 name: CI
 on:
   pull_request
@@ -22,13 +23,9 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 8
-      - name: Debugging - Export environment variables
+      - name: Debug log - Print exported environment variables
         run: export
       - name: Compile
         run: make
-      - name: Test - Linux
-        if: matrix.os == 'ubuntu-18.04'
-        run: RUBICON_LIBRARY=$(pwd)/dist/librubicon.so LD_LIBRARY_PATH="$(pwd)/dist" java org.beeware.rubicon.test.Test
-      - name: Test - Mac
-        if: matrix.os == 'macos-latest'
-        run: RUBICON_LIBRARY=$(pwd)/dist/librubicon.dylib DYLD_LIBRARY_PATH="$(pwd)/dist" java org.beeware.rubicon.test.Test
+      - name: Test
+        run: RUBICON_LIBRARY="${PWD}/dist/librubicon.${{ runner.os == 'Linux' && 'so' || 'dylib' }}" ${{ runner.os == 'Linux' && 'LD_' || 'DYLD_' }}LIBRARY_PATH="$(pwd)/dist" java org.beeware.rubicon.test.Test
