@@ -27,5 +27,5 @@ jobs:
         run: export
       - name: Compile
         run: make
-      - name: Test - Linux
+      - name: Test
         run: RUBICON_LIBRARY=$(pwd)/dist/librubicon.so LD_LIBRARY_PATH="$(pwd)/dist" java org.beeware.rubicon.test.Test
