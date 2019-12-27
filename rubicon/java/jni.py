@@ -15,13 +15,12 @@ if _java_lib is None:
 
 java = cdll.LoadLibrary(_java_lib)
 
-
-JNI_VERSION_1_1 = 0x00010001
-JNI_VERSION_1_2 = 0x00010002
-JNI_VERSION_1_4 = 0x00010004
-JNI_VERSION_1_6 = 0x00010006
-
-# Standard JNI API
+# These are the parts of the JNI API we use. You can find the spec for the rest here:
+# https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/functions.html
+#
+# The JNI API has been stable for many years, so we don't bother introspecting which
+# version of Java we are running against. If an incompatible version arises one day,
+# we may need to.
 
 java.FindClass.restype = jclass
 java.FindClass.argtypes = [c_char_p]
