@@ -2,6 +2,8 @@
 # at merge time, so that we have an up-to-date GitHub Actions
 # build status badge in README.md. This is just a check that
 # nothing obviously bad has gone wrong when merging a pull request.
+#
+# Keep in sync with `ci.yml`.
 name: Build status
 on:
   push:
@@ -9,23 +11,31 @@ on:
       - master
 
 jobs:
-  build:
-    name: Unit tests
-    runs-on: ubuntu-18.04
+  smoke-linux:
+    name: Smoke test - Linux
+    strategy:
+      matrix:
+        python-version: [3.5]
+        os: [ubuntu-18.04]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Environment - checkout code
         uses: actions/checkout@master
       - name: Environment - Setup python
         uses: actions/setup-python@v1
         with:
-          python-version: 3.7
+          python-version: ${{ matrix.python-version }}
       - name: Environment - Use Java 8
         uses: actions/setup-java@v1
         with:
           java-version: 8
-      - name: Debugging - Export environment variables
+      - name: Debug log - Print exported environment variables
         run: export
       - name: Compile
-        run: PYTHON_CONFIG=python3.7-config PYTHON=python3.7 make
+        run: PYTHON_CONFIG="python${{ matrix.python-version }}-config" PYTHON="python${{ matrix.python-version }}" make
+        env:
+          PKG_CONFIG_PATH: ${{ env.pythonLocation }}/lib/pkgconfig/
+      - name: Debugging - Show dynamic linker information for librubicon.so
+        run: LD_LIBRARY_PATH="${{ env.pythonLocation }}/lib" ldd dist/librubicon.so || otool -L dist/librubicon.dylib
       - name: Test
-        run: RUBICON_LIBRARY=$(pwd)/dist/librubicon.so LD_LIBRARY_PATH="${{env.pythonLocation}}/lib:$(pwd)/dist" java org.beeware.rubicon.test.Test
+        run: RUBICON_LIBRARY="${PWD}/dist/librubicon.${{ runner.os == 'Linux' && 'so' || 'dylib' }}" ${{ runner.os == 'Linux' && 'LD_' || 'DYLD_' }}LIBRARY_PATH="${{env.pythonLocation}}/lib:$(pwd)/dist" java org.beeware.rubicon.test.Test
