@@ -11,4 +11,5 @@ _build
 distribute-*
 local
 .tox
+venv
 .vscode
