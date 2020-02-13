@@ -3,7 +3,7 @@ from __future__ import print_function, division, unicode_literals
 
 from unittest import TestCase
 
-from rubicon.java import java, jstring, cast, jdouble
+from rubicon.java import java, jstring, cast, jdouble, jlong
 
 
 class JNITest(TestCase):
@@ -217,3 +217,20 @@ class JNITest(TestCase):
         # Invoke the area method
         result = java.CallFloatMethod(obj1, Example__area_of_square, jdouble(1.5))
         self.assertEqual(result, 2.25)
+
+    def test_jlong(self):
+        """"A jlong can be created, and the content returned, even for large/small values
+        that push the boundaries of signed 64-bit integers"""
+        # Get the getter and setter
+        Example = java.FindClass(b"org/beeware/rubicon/test/Example")
+        getter = java.GetStaticMethodID(Example, b"get_static_long_field", b"()J")
+        self.assertIsNotNone(getter.value)
+        setter = java.GetStaticMethodID(Example, b"set_static_long_field", b"(J)V")
+        self.assertIsNotNone(setter.value)
+
+        for num in (0, -1, 1 << 31, 1 << 32, -1 * 1 << 32, (1 << 63 - 1), -1 * (1 << 63 - 1)):
+            # Validate rubicon.types.jlong.
+            self.assertEqual(jlong(num).value, num)
+            # Validate round trips through Java.
+            java.CallStaticVoidMethod(Example, setter, jlong(num))
+            self.assertEqual(java.CallStaticLongMethod(Example, getter), num)

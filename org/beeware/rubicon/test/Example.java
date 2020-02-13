@@ -18,6 +18,16 @@ public class Example extends BaseExample {
         return static_int_field;
     }
 
+    static public long static_long_field = 0;
+
+    static public void set_static_long_field(long value) {
+        static_long_field = value;
+    }
+
+    static public long get_static_long_field() {
+        return static_long_field;
+    }
+
     /* An inner enumerated type */
     public enum Stuff {
         FOO, BAR, WHIZ;
