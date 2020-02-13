@@ -9,7 +9,8 @@ from .types import *
 _class_cache = {}
 
 # A cache of known JavaInterface proxies. This is used by the dispatch
-# mechanism to direct callbacks to the right place.
+# mechanism to direct callbacks to the right place, keyed by jlong(id(obj)).value
+# to ensure no information loss when round-tripping to Java.
 _proxy_cache = {}
 
 
@@ -29,7 +30,7 @@ def dispatch(instance, method, args):
     """
     try:
         # print ("PYTHON SIDE DISPATCH", instance, method, args)
-        pyinstance = _proxy_cache[instance]
+        pyinstance = _proxy_cache[jlong(instance).value]
         signatures = pyinstance._methods.get(method)
 
         if len(signatures) == 1:
@@ -961,7 +962,7 @@ class JavaProxy(object):
         # not an actual user of proxy objects. If all references to the
         # proxy disappear, the proxy cache should be cleaned to avoid
         # leaking memory on objects that aren't being used.
-        _proxy_cache[id(self)] = self
+        _proxy_cache[jlong(id(self)).value] = self
 
         self._as_parameter_ = self.__jni__
 

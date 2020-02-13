@@ -1,5 +1,8 @@
-#include <jni.h>
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <stdio.h>
+
+#include <jni.h>
 #ifdef LIBPYTHON_RTLD_GLOBAL
 #include <dlfcn.h>
 #endif
@@ -1022,8 +1025,9 @@ JNIEXPORT jobject JNICALL Java_org_beeware_rubicon_PythonInstance_invoke(JNIEnv 
     jfieldID PythonInstance__id = (*env)->GetFieldID(env, PythonInstance, "instance", "J");
     LOG_D("id: %ld", (long)PythonInstance__id);
 
-    long instance = (*env)->GetLongField(env, thisObj, PythonInstance__id);
-    LOG_D("instance: %ld", instance);
+    jlong instance = (*env)->GetLongField(env, thisObj, PythonInstance__id);
+    // Since `jlong` is a signed 64-bit integer, we use a relevant macro.
+    LOG_D("instance: " PRId64, instance);
 
     jclass Method = (*env)->FindClass(env, "java/lang/reflect/Method");
     jmethodID method__getName = (*env)->GetMethodID(env, Method, "getName", "()Ljava/lang/String;");
@@ -1037,7 +1041,13 @@ JNIEXPORT jobject JNICALL Java_org_beeware_rubicon_PythonInstance_invoke(JNIEnv 
 
     PyObject *result;
     PyObject *pargs = PyTuple_New(3);
+    #if __SIZEOF_LONG_LONG__ == 8
+    PyObject *pinstance = PyLong_FromLongLong(instance);
+    #elif __SIZEOF_LONG__ == 8
     PyObject *pinstance = PyLong_FromLong(instance);
+    #else
+    #error Unable to find 8-byte integer format.
+    #endif
     PyObject *pmethod_name = PyUnicode_FromFormat("%s", (*env)->GetStringUTFChars(env, method_name, NULL));
     PyObject *args;
 
