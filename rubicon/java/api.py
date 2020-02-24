@@ -335,7 +335,7 @@ def dispatch_cast(raw, type_signature):
             try:
                 klass = _class_cache[type_signature[1:-1]]
             except KeyError:
-                klass = JavaClass(type_signature[1:-1])
+                klass = JavaClass(type_signature[1:-1].decode('utf-8'))
             # print("Create returned instance")
             return klass(__jni__=gref)
         return None
