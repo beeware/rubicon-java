@@ -834,7 +834,6 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_init(JNIEnv *env, jobject
 
     // Special environment to prefer .pyo, and don't write bytecode if .py are found
     // because the process will not have write attribute on the device.
-    putenv("PYTHONOPTIMIZE=1");
     putenv("PYTHONDONTWRITEBYTECODE=1");
     putenv("PYTHONUNBUFFERED=1");
 
