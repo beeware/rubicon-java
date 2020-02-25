@@ -1027,7 +1027,7 @@ JNIEXPORT jobject JNICALL Java_org_beeware_rubicon_PythonInstance_invoke(JNIEnv 
 
     jlong instance = (*env)->GetLongField(env, thisObj, PythonInstance__id);
     // Since `jlong` is a signed 64-bit integer, we use a relevant macro.
-    LOG_D("instance: " PRId64, instance);
+    LOG_D("instance: %" PRId64, instance);
 
     jclass Method = (*env)->FindClass(env, "java/lang/reflect/Method");
     jmethodID method__getName = (*env)->GetMethodID(env, Method, "getName", "()Ljava/lang/String;");
