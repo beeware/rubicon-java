@@ -3,11 +3,6 @@ import itertools
 from .jni import *
 from .types import *
 
-# A cache of known JavaClass instances. This is requried so that when
-# we do a return_cast() to a return type, we don't have to recreate
-# the class every time - we can re-use the existing class.
-_class_cache = {}
-
 # A cache of known JavaInterface proxies. This is used by the dispatch
 # mechanism to direct callbacks to the right place.
 _proxy_cache = {}
@@ -280,11 +275,7 @@ def return_cast(raw, return_signature):
     elif return_signature.startswith(b'L'):
         # Check for NULL return values
         if raw.value:
-            try:
-                klass = _class_cache[return_signature[1:-1]]
-            except KeyError:
-                klass = JavaClass(return_signature[1:-1].decode('utf-8'))
-            return klass(__jni__=raw)
+            return JavaClass(return_signature[1:-1].decode('utf-8'))(__jni__=raw)
         return None
 
     raise ValueError("Don't know how to cast return signature '%s'" % return_signature)
@@ -332,12 +323,8 @@ def dispatch_cast(raw, type_signature):
         if jobject(raw).value:
             gref = java.NewGlobalRef(jobject(raw))
             # print ("Return type", type_signature)
-            try:
-                klass = _class_cache[type_signature[1:-1]]
-            except KeyError:
-                klass = JavaClass(type_signature[1:-1].decode('utf-8'))
             # print("Create returned instance")
-            return klass(__jni__=gref)
+            return JavaClass(type_signature[1:-1].decode('utf-8'))(__jni__=gref)
         return None
 
     raise ValueError("Don't know how to convert argument with type signature '%s'" % type_signature)
@@ -807,84 +794,90 @@ class UnknownClassException(Exception):
 
 
 class JavaClass(type):
+    # This class returns known JavaClass instances where possible.
+    _class_cache = {}
+
     def __new__(cls, descriptor):
         # print ("Creating Java class", descriptor)
-        try:
-            descriptor = descriptor.encode('utf-8')
-            java_class = _class_cache[descriptor]
-        except KeyError:
-            jni = java.FindClass(descriptor)
-            if jni.value is None:
-                raise UnknownClassException(descriptor)
-            jni = cast(java.NewGlobalRef(jni), jclass)
-            if jni.value is None:
-                raise RuntimeError("Unable to create global reference to class.")
+        # Using str descriptor as cache key, to avoid .encode() when checking cache.
+        if descriptor in cls._class_cache:
+            return cls._class_cache[descriptor]
 
-            ##################################################################
-            # Determine the alternate types for this class
-            ##################################################################
+        # Using UTF-8 descriptor below for compatibility with Java.
+        descriptor_bytes = descriptor.encode('utf-8')
 
-            # Best option is the type itself
-            alternates = [b'L%s;' % descriptor]
+        jni = java.FindClass(descriptor_bytes)
+        if jni.value is None:
+            raise UnknownClassException(descriptor_bytes)
+        jni = cast(java.NewGlobalRef(jni), jclass)
+        if jni.value is None:
+            raise RuntimeError("Unable to create global reference to class.")
 
-            # Next preference is an interfaces
-            java_interfaces = java.CallObjectMethod(jni, reflect.Class__getInterfaces)
-            if java_interfaces.value is None:
-                raise RuntimeError("Couldn't get interfaces for '%s'" % self)
-            java_interfaces = cast(java_interfaces, jobjectArray)
+        ##################################################################
+        # Determine the alternate types for this class
+        ##################################################################
 
-            interface_count = java.GetArrayLength(java_interfaces)
-            for i in range(0, interface_count):
-                java_interface = java.GetObjectArrayElement(java_interfaces, i)
+        # Best option is the type itself
+        alternates = [b'L%s;' % descriptor_bytes]
 
-                name = java.CallObjectMethod(java_interface, reflect.Class__getName)
-                name_str = java.GetStringUTFChars(cast(name, jstring), None)
+        # Next preference is an interfaces
+        java_interfaces = java.CallObjectMethod(jni, reflect.Class__getInterfaces)
+        if java_interfaces.value is None:
+            raise RuntimeError("Couldn't get interfaces for '%s'" % self)
+        java_interfaces = cast(java_interfaces, jobjectArray)
 
-                # print("  %s: adding interface alternate %s" % (self.__dict__['_descriptor'], name_str))
-                alternates.append(b'L%s;' % name_str.replace(b'.', b'/'))
+        interface_count = java.GetArrayLength(java_interfaces)
+        for i in range(0, interface_count):
+            java_interface = java.GetObjectArrayElement(java_interfaces, i)
 
-                java.DeleteLocalRef(name)
-                java.DeleteLocalRef(java_interface)
-            java.DeleteLocalRef(java_interfaces)
+            name = java.CallObjectMethod(java_interface, reflect.Class__getName)
+            name_str = java.GetStringUTFChars(cast(name, jstring), None)
 
-            # Then check all the superclasses
-            java_superclass = java.CallObjectMethod(jni, reflect.Class__getSuperclass)
-            while java_superclass.value is not None:
-                name = java.CallObjectMethod(java_superclass, reflect.Class__getName)
-                name_str = java.GetStringUTFChars(cast(name, jstring), None)
+            # print("  %s: adding interface alternate %s" % (self.__dict__['_descriptor'], name_str))
+            alternates.append(b'L%s;' % name_str.replace(b'.', b'/'))
 
-                # print("  %s: adding superclass alternate %s" % (self.__dict__['_descriptor'], name_str))
-                alternates.append(b'L%s;' % name_str.replace(b'.', b'/'))
+            java.DeleteLocalRef(name)
+            java.DeleteLocalRef(java_interface)
+        java.DeleteLocalRef(java_interfaces)
 
-                java.DeleteLocalRef(name)
+        # Then check all the superclasses
+        java_superclass = java.CallObjectMethod(jni, reflect.Class__getSuperclass)
+        while java_superclass.value is not None:
+            name = java.CallObjectMethod(java_superclass, reflect.Class__getName)
+            name_str = java.GetStringUTFChars(cast(name, jstring), None)
 
-                super2 = java.CallObjectMethod(java_superclass, reflect.Class__getSuperclass)
-                java.DeleteLocalRef(java_superclass)
-                java_superclass = super2
+            # print("  %s: adding superclass alternate %s" % (self.__dict__['_descriptor'], name_str))
+            alternates.append(b'L%s;' % name_str.replace(b'.', b'/'))
+
+            java.DeleteLocalRef(name)
+
+            super2 = java.CallObjectMethod(java_superclass, reflect.Class__getSuperclass)
             java.DeleteLocalRef(java_superclass)
+            java_superclass = super2
+        java.DeleteLocalRef(java_superclass)
 
-            java_class = super(JavaClass, cls).__new__(
-                cls,
-                descriptor.decode('utf-8'),
-                (JavaInstance,),
-                {
-                    '_descriptor': descriptor,
-                    '__jni__': jni,
-                    '_alternates': alternates,
-                    '_constructors': None,
-                    '_members': {
-                        'fields': {},
-                        'methods': {},
-                    },
-                    '_static': {
-                        'fields': {},
-                        'methods': {},
-                    }
+        java_class = super(JavaClass, cls).__new__(
+            cls,
+            descriptor,
+            (JavaInstance,),
+            {
+                '_descriptor': descriptor_bytes,
+                '__jni__': jni,
+                '_alternates': alternates,
+                '_constructors': None,
+                '_members': {
+                    'fields': {},
+                    'methods': {},
+                },
+                '_static': {
+                    'fields': {},
+                    'methods': {},
                 }
-            )
-            # Cache the class instance, so we don't have to recreate it
-            _class_cache[descriptor] = java_class
+            }
+        )
 
+        # Cache the class instance, then return.
+        cls._class_cache[descriptor] = java_class
         return java_class
 
     def __getattr__(self, name):
