@@ -1,7 +1,7 @@
 # You can set PYTHON and PYTHON_CONFIG to a specific python-config binary if you want to build
 # against a specific version of Python.
 ifndef PYTHON_CONFIG
-	PYTHON_CONFIG := python-config
+	PYTHON_CONFIG := python3-config
 endif
 ifndef PYTHON
 	PYTHON := python
