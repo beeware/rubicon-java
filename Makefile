@@ -4,7 +4,7 @@ ifndef PYTHON_CONFIG
 	PYTHON_CONFIG := python3-config
 endif
 ifndef PYTHON
-	PYTHON := python
+	PYTHON := python3
 endif
 
 CFLAGS := $(shell $(PYTHON_CONFIG) --cflags) -fPIC
