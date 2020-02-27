@@ -74,7 +74,8 @@ jobs:
   x86:
     needs: [smoke]
     name: x86 32-bit tests
-    container: i386/ubuntu:18.04
+    container:
+      image: i386/ubuntu:18.04
     steps:
       - name: Environment - checkout code
         uses: actions/checkout@master
