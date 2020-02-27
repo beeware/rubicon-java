@@ -1,5 +1,8 @@
-#include <jni.h>
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <stdio.h>
+
+#include <jni.h>
 #ifdef LIBPYTHON_RTLD_GLOBAL
 #include <dlfcn.h>
 #endif
@@ -1021,22 +1024,30 @@ JNIEXPORT jobject JNICALL Java_org_beeware_rubicon_PythonInstance_invoke(JNIEnv 
     jfieldID PythonInstance__id = (*env)->GetFieldID(env, PythonInstance, "instance", "J");
     LOG_D("id: %ld", (long)PythonInstance__id);
 
-    long instance = (*env)->GetLongField(env, thisObj, PythonInstance__id);
-    LOG_D("instance: %ld", instance);
+    jlong instance = (*env)->GetLongField(env, thisObj, PythonInstance__id);
+    // `jlong` is always 64 bits. Use portable PRId64 macro for `ld` on 64-bit and `lld` on 32-bit.
+    LOG_D("instance: %" PRId64, instance);
 
     jclass Method = (*env)->FindClass(env, "java/lang/reflect/Method");
     jmethodID method__getName = (*env)->GetMethodID(env, Method, "getName", "()Ljava/lang/String;");
 
     jobject method_name = (*env)->CallObjectMethod(env, method, method__getName);
 
-    LOG_D("Native invocation %ld :: %s", instance, (*env)->GetStringUTFChars(env, method_name, NULL));
+    LOG_D("Native invocation %" PRId64 " :: %s", instance, (*env)->GetStringUTFChars(env, method_name, NULL));
 
     PyGILState_STATE gstate;
     gstate = PyGILState_Ensure();
 
     PyObject *result;
     PyObject *pargs = PyTuple_New(3);
-    PyObject *pinstance = PyLong_FromLong(instance);
+    #if __SIZEOF_LONG_LONG__ == 8
+    // Since `jlong` is 64 bits, we check to ensure `long long` is
+    // also 64 bits. On x86_64, both `long` and `long long` are
+    // 64-bits; on x86, only `long long` is.
+    PyObject *pinstance = PyLong_FromLongLong(instance);
+    #else
+    #error Unable to find 8-byte integer format.
+    #endif
     PyObject *pmethod_name = PyUnicode_FromFormat("%s", (*env)->GetStringUTFChars(env, method_name, NULL));
     PyObject *args;
 
