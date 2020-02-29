@@ -81,8 +81,8 @@ jobs:
         uses: actions/checkout@master
       - name: Install dependencies, compile rubicon-java, and run tests
         uses: docker://i386/ubuntu:18.04
-        # This step does everything because changes within the ubuntu-18.04-x86@0.1
-        # container (e.g., apt-get) are discarded between steps.
+        # This step does everything because changes within the container (e.g., apt-get) may be discarded between steps.
+        # Inspired by: https://github.community/t5/GitHub-Actions/Workflow-fails-when-running-steps-in-a-container/td-p/29652
         with:
           entrypoint: /bin/sh
           args: -c "apt-get update && apt-get install -y build-essential python3.7-dev openjdk-8-jdk-headless && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ PYTHON_CONFIG=python3.7-config PYTHON=python3.7 make && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ RUBICON_LIBRARY=dist/librubicon.so LD_LIBRARY_PATH=./dist java org.beeware.rubicon.test.Test"
