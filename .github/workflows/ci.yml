@@ -6,11 +6,11 @@
 # both Linux and macOS to avoid bookkeeping about macOS and Linux needing to test on different Python versions.
 #
 # Keep in sync with `build_status.yml`.
-name: CIbreak
+name: CI
 on:
   pull_request
 
-zjobs:
+jobs:
   smoke:
     name: Smoke test
     strategy:
