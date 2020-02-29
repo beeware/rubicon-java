@@ -76,11 +76,13 @@ jobs:
     needs: [smoke]
     name: x86 32-bit tests
     runs-on: ubuntu-latest
-    container: i386/ubuntu:18.04
     steps:
       - name: Environment - checkout code
         uses: actions/checkout@master
       - name: Install dependencies, compile rubicon-java, and run tests
+        uses: docker://i386/ubuntu:18.04
         # This step does everything because changes within the ubuntu-18.04-x86@0.1
         # container (e.g., apt-get) are discarded between steps.
-        run: apt-get update && apt-get install -y build-essential python3.7-dev openjdk-8-jdk-headless && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ PYTHON_CONFIG=python3.7-config PYTHON=python3.7 make && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ RUBICON_LIBRARY=dist/librubicon.so LD_LIBRARY_PATH=./dist java org.beeware.rubicon.test.Test
+        with:
+          entrypoint: /bin/sh
+          args: apt-get update && apt-get install -y build-essential python3.7-dev openjdk-8-jdk-headless && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ PYTHON_CONFIG=python3.7-config PYTHON=python3.7 make && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ RUBICON_LIBRARY=dist/librubicon.so LD_LIBRARY_PATH=./dist java org.beeware.rubicon.test.Test
