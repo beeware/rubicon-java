@@ -1,4 +1,5 @@
 import math
+import sys
 from unittest import TestCase
 
 from rubicon.java import JavaClass, JavaInterface
@@ -377,6 +378,11 @@ class JNITest(TestCase):
         Inner = JavaClass('org/beeware/rubicon/test/Example$Inner')
 
         self.assertEqual(Inner.INNER_CONSTANT, 1234)
+
+    def test_dunder_main(self):
+        "When launched from `rubicon-java`, sys.modules should have a `__main__` module."
+        self.assertEqual('module', sys.modules['__main__'].__class__.__name__)
+
 
 class ExampleClassWithCleanup(object):
     '''Returns the `Example` JavaClass, wrapped in a context manager

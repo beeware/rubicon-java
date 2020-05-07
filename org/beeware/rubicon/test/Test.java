@@ -9,7 +9,7 @@ public class Test {
             System.exit(1);
         }
 
-        if (Python.run("tests/runner.py", args) != 0) {
+        if (Python.run("tests.runner", args) != 0) {
             System.err.println("Got an error running Python script");
             System.exit(1);
         }
