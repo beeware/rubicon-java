@@ -797,7 +797,11 @@ class JavaClass(type):
     # This class returns known JavaClass instances where possible.
     _class_cache = {}
 
-    def __new__(cls, descriptor):
+    def __new__(cls, descriptor, bases=None, attrs=None):
+        if bases or attrs:
+            # The user is trying to subclass a JavaClass. This will not work because
+            # rubicon-java relies on the Java reflection APIs, which do not support that.
+            raise NotImplementedError("Unable to subclass a JavaClass.") 
         # print ("Creating Java class", descriptor)
         # Using str descriptor as cache key, to avoid .encode() when checking cache.
         if descriptor in cls._class_cache:

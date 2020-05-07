@@ -23,6 +23,14 @@ class JNITest(TestCase):
         # with self.assertRaises(Exception):
             # stack.pop()
 
+    def test_subclass_impossible(self):
+        def make_subclass():
+            Stack = JavaClass('java/util/Stack')
+            class ImpossibleStackSubclass(Stack):
+                pass
+
+        self.assertRaises(NotImplementedError, make_subclass)
+
     def test_field(self):
         "A field on an instance can be accessed and mutated"
         Example = JavaClass('org/beeware/rubicon/test/Example')
