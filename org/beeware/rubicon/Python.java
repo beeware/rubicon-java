@@ -45,10 +45,10 @@ public class Python {
     public static native int init(String pythonHome, String pythonPath, String rubiconLib);
 
     /**
-     * Create a proxy implementation that directs towards a Python instance.
+     * Run a Python module as __main__.
      *
-     * @param script The path to the Python script to run
-     * @param args   The value for argv to pass to the script
+     * @param module The name of the Python module to run. Dots are OK, e.g., myapp.main.
+     * @param args   The value for Python's sys.argv.
      * @return 0 on success; non-zero on failure.
      */
     public static native int run(String script, String[] args);

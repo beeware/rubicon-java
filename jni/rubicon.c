@@ -947,24 +947,23 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_init(JNIEnv *env, jobject
 /**************************************************************************
  * Method to start the Python runtime.
  *************************************************************************/
-JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_run(JNIEnv *env, jobject thisObj, jstring script, jobjectArray args) {
+JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_run(JNIEnv *env, jobject thisObj, jstring module, jobjectArray args) {
     int ret = 0;
 
-    int python_argc, i;
+    int i;
 
-    const char *script_str = (*env)->GetStringUTFChars(env, script, NULL);
-    LOG_D("Running '%s'...", script_str);
+    const char *module_str = (*env)->GetStringUTFChars(env, module, NULL);
+    LOG_D("Running '%s' as __main__...", module_str);
 
-    // Construct argv for the script
+    // Construct argv.
+    int python_argc = 1;  // Space for [module]
     if (args) {
-        python_argc = (*env)->GetArrayLength(env, args) + 1;
-    } else {
-        python_argc = 1;
+        python_argc += (*env)->GetArrayLength(env, args);
     }
     LOG_D("There are %d arguments", python_argc);
 
     wchar_t **python_argv = PyMem_RawMalloc(sizeof(wchar_t) * python_argc);
-    python_argv[0] = Py_DecodeLocale(script_str, NULL);
+    python_argv[0] = Py_DecodeLocale(module_str, NULL);
     LOG_D("ARG 0: %s", script_str);
     for (i = 1; i < python_argc; i++) {
         jobject arg = (*env)->GetObjectArrayElement(env, args, i - 1);
@@ -974,15 +973,47 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_run(JNIEnv *env, jobject 
     }
     PySys_SetArgv(python_argc, python_argv);
 
-    // Search for and start entry script
-    FILE *fd = fopen(script_str, "r");
-    if (fd == NULL) {
+    // Use `runpy._run_module_as_main` from the Python standard library to start the module.
+    PyObject* runpy = PyImport_ImportModule("runpy");
+    if (runpy == NULL) {
+        LOG_E("Could not import runpy module");
         ret = 1;
-        LOG_E("Unable to open %s", script_str);
-    } else {
-        ret = PyRun_SimpleFileEx(fd, script_str, 1);
-        if (ret != 0) {
+    }
+
+    PyObject* run_module_as_main;
+    if (!ret) {
+        run_module_as_main = PyObject_GetAttrString(runpy, "_run_module_as_main");
+        if (run_module_as_main == NULL) {
+            LOG_E("Could not access runpy._run_module_as_main");
+            ret = 1;
+        }
+    }
+
+    PyObject* user_module_name;
+    if (!ret) {
+        user_module_name = PyUnicode_FromWideChar(python_argv[0], wcslen(python_argv[0]));
+        if (user_module_name == NULL) {
+            LOG_E("Could not convert module name to unicode");
+            ret = 1;
+        }
+    }
+
+    PyObject* runargs;
+    if (!ret) {
+        runargs = Py_BuildValue("(Oi)", user_module_name, 0);
+        if (runargs == NULL) {
+            LOG_E("Could not create arguments for runpy._run_module_as_main");
+            ret = 1;
+        }
+    }
+
+    PyObject* result;
+    if (!ret) {
+        result = PyObject_Call(run_module_as_main, runargs, NULL);
+        if (result == NULL) {
             LOG_E("Application quit abnormally!");
+            ret = 1;
+            PyErr_Print();
         }
     }
 
