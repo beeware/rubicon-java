@@ -29,10 +29,17 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 8
-      - name: Debug log - Print exported environment variables
-        run: export
+      - name: Debug log - Print environment variables and python-config output
+        run: |
+          set -x  # To print command names along with their output
+          export
+          python${{ matrix.python-version }}-config --ldflags
+          python${{ matrix.python-version }}-config --cflags
       - name: Compile
-        run: PYTHON_CONFIG="python${{ matrix.python-version }}-config" PYTHON="python${{ matrix.python-version }}" make
+          # For the Python 3.5 and 3.7 distributions on macOS in GitHub Actions,
+          # python-config --ldflags refuses to print a -L directive. We work around
+          # that with the LIBRARY_PATH variable below.          
+        run: PYTHON_CONFIG="python${{ matrix.python-version }}-config" PYTHON="python${{ matrix.python-version }}" LIBRARY_PATH="${{ env.pythonLocation }}/lib" make
         env:
           PKG_CONFIG_PATH: ${{ env.pythonLocation }}/lib/pkgconfig/
       - name: Debugging - Show dynamic linker information for librubicon.so
@@ -60,10 +67,17 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 8
-      - name: Debug log - Print exported environment variables
-        run: export
+      - name: Debug log - Print environment variables and python-config output
+        run: |
+          set -x  # To print command names along with their output
+          export
+          python${{ matrix.python-version }}-config --ldflags
+          python${{ matrix.python-version }}-config --cflags
       - name: Compile
-        run: PYTHON_CONFIG="python${{ matrix.python-version }}-config" PYTHON="python${{ matrix.python-version }}" make
+          # For the Python 3.5 and 3.7 distributions on macOS in GitHub Actions,
+          # python-config --ldflags refuses to print a -L directive. We work around
+          # that with the LIBRARY_PATH variable below.          
+        run: PYTHON_CONFIG="python${{ matrix.python-version }}-config" PYTHON="python${{ matrix.python-version }}" LIBRARY_PATH="${{ env.pythonLocation }}/lib" make
         env:
           PKG_CONFIG_PATH: ${{ env.pythonLocation }}/lib/pkgconfig/
       - name: Debugging - Show dynamic linker information for librubicon.so
