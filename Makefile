@@ -65,7 +65,6 @@ build/test.jar: org/beeware/rubicon/test/BaseExample.class org/beeware/rubicon/t
 
 build/librubicon.$(SOEXT): jni/rubicon.o
 	mkdir -p build
-	echo PYTHON_CONFIG is $(PYTHON_CONFIG)
 	$(CC) -shared -o $@ $< $(LDFLAGS)
 
 PYTHON_LIBS_DIR := $(shell echo `dirname $(PYTHON_CONFIG)`/../lib)
@@ -90,4 +89,7 @@ clean:
 	$(JAVAC) $<
 
 %.o : %.c
+	echo PYTHON is $(which python3)
+	echo EXEC PYTHON is $(python3 -c 'import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()))')
+	echo PYTHON_CONFIG is $(PYTHON_CONFIG)
 	$(CC) -c $(CFLAGS) -Isrc -I$(JAVA_HOME)/include -I$(JAVA_PLATFORM) -o $@ $<
