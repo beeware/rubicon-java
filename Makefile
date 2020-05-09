@@ -1,7 +1,7 @@
 # Optionally read PYTHON_CONFIG from the environment to support building against a
 # specific version of Python.
 ifndef PYTHON_CONFIG
-	PYTHON_CONFIG := $(python3 -c 'import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()))')-config
+	PYTHON_CONFIG := $(shell (python3 -c "import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()))"))-config
 endif
 
 # Optionally read C compiler from the environment.
@@ -89,7 +89,4 @@ clean:
 	$(JAVAC) $<
 
 %.o : %.c
-	echo PYTHON is $(which python3)
-	echo EXEC PYTHON is $(python3 -c 'import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()))')
-	echo PYTHON_CONFIG is $(PYTHON_CONFIG)
 	$(CC) -c $(CFLAGS) -Isrc -I$(JAVA_HOME)/include -I$(JAVA_PLATFORM) -o $@ $<
