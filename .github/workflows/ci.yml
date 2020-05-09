@@ -39,7 +39,7 @@ jobs:
           # For the Python 3.5 and 3.7 distributions on macOS in GitHub Actions,
           # python-config --ldflags refuses to print a -L directive. We work around
           # that with the LIBRARY_PATH variable below.          
-        run: PYTHON_CONFIG="python${{ matrix.python-version }}-config" PYTHON="python${{ matrix.python-version }}" LIBRARY_PATH="${{ env.pythonLocation }}/lib" make
+        run: PYTHON_CONFIG="python${{ matrix.python-version }}-config" LIBRARY_PATH="${{ env.pythonLocation }}/lib" make
         env:
           PKG_CONFIG_PATH: ${{ env.pythonLocation }}/lib/pkgconfig/
       - name: Debugging - Show dynamic linker information for librubicon.so
@@ -77,7 +77,7 @@ jobs:
           # For the Python 3.5 and 3.7 distributions on macOS in GitHub Actions,
           # python-config --ldflags refuses to print a -L directive. We work around
           # that with the LIBRARY_PATH variable below.          
-        run: PYTHON_CONFIG="python${{ matrix.python-version }}-config" PYTHON="python${{ matrix.python-version }}" LIBRARY_PATH="${{ env.pythonLocation }}/lib" make
+        run: PYTHON_CONFIG="python${{ matrix.python-version }}-config" LIBRARY_PATH="${{ env.pythonLocation }}/lib" make
         env:
           PKG_CONFIG_PATH: ${{ env.pythonLocation }}/lib/pkgconfig/
       - name: Debugging - Show dynamic linker information for librubicon.so
@@ -99,4 +99,4 @@ jobs:
         # Inspired by: https://github.community/t5/GitHub-Actions/Workflow-fails-when-running-steps-in-a-container/td-p/29652
         with:
           entrypoint: /bin/sh
-          args: -c "apt-get update && apt-get install -y build-essential python3.7-dev openjdk-8-jdk-headless && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ PYTHON_CONFIG=python3.7-config PYTHON=python3.7 make && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ RUBICON_LIBRARY=dist/librubicon.so LD_LIBRARY_PATH=./dist java org.beeware.rubicon.test.Test"
+          args: -c "apt-get update && apt-get install -y build-essential python3.7-dev openjdk-8-jdk-headless && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ PYTHON_CONFIG=python3.7-config make && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ RUBICON_LIBRARY=dist/librubicon.so LD_LIBRARY_PATH=./dist java org.beeware.rubicon.test.Test"
