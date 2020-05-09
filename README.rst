@@ -116,7 +116,7 @@ In your Python script, you can then reference Java objects::
 
     # You can then call methods on the Java object as if it
     # were a Python object.
-    >>> print url.getHost()
+    >>> print(url.getHost())
     beeware.org
 
 It's also possible to provide implementations of Java Interfaces in Python.
@@ -131,7 +131,7 @@ respond to button clicks::
     # Define your own implementation
     >>> class MyActionListener(ActionListener):
     ...     def actionPerformed(self, event):
-    ...         print "Button Pressed"
+    ...         print("Button Pressed")
 
     # Instantiate an instance of the listener
     >>> listener = MyActionListener()
