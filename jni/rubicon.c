@@ -825,7 +825,6 @@ jobjectRefType GetObjectRefType(jobject obj) {
 JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_init(JNIEnv *env, jobject thisObj, jstring pythonHome, jstring pythonPath, jstring rubiconLib) {
     int ret = 0;
     char pythonPathVar[512];
-    char rubiconLibVar[256];
 
     LOG_I("Start Python runtime...");
     java = env;
@@ -864,6 +863,7 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_init(JNIEnv *env, jobject
 #ifdef ANDROID
     // If we're on android, we need to specify the location of the Rubicon
     // shared library as part of the environment.
+    char rubiconLibVar[256];
     if (rubiconLib) {
         sprintf(rubiconLibVar, "RUBICON_LIBRARY=%s", (*env)->GetStringUTFChars(env, rubiconLib, NULL));
         LOG_D("%s", rubiconLibVar);

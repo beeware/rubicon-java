@@ -1,8 +1,16 @@
+include CONTRIBUTING.md
 include LICENSE
 include Makefile
 include README.rst
+include pyproject.toml
 include tox.ini
-recursive-include jni *.h
-recursive-include jni *.c
+recursive-include changes *.rst
+include docs/Makefile
+include docs/make.bat
+include docs/requirements_docs.txt
+include docs/spelling_wordlist
+recursive-include docs *.png *.py *.rst
+prune docs/_build
+recursive-include jni *.h *.c *.mk
 recursive-include org *.java
 recursive-include tests *.py

@@ -13,6 +13,6 @@ stand alone.
    :maxdepth: 1
    :glob:
 
-   getting-started
+   get-started
    contribute-code
    contribute-docs

@@ -7,7 +7,7 @@ library, and the ``java.net.URL`` class in that library. ``java.net.URL`` is
 the class used to represent and manipulate URLs.
 
 This tutorial assumes you've set up your environment as described in the
-:doc:`Getting started guide </how-to/getting-started>`.
+:doc:`Getting started guide </how-to/get-started>`.
 
 Accessing ``java.net.URL``
 ==========================

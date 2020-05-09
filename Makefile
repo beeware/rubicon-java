@@ -1,7 +1,14 @@
-# Optionally read PYTHON_CONFIG from the environment to support building against a
-# specific version of Python.
+# If the user specifies PYTHON_CONFIG in their environment, use that value.
+# Otherwise, look for a viable python-config in their environment.
+# In *most* environments, this will be python3.X-config in the same directory
+# as the actual Python binary. However, under some virtual environments
+# conditions, this binary will be called `python-config`. Look for both names.
 ifndef PYTHON_CONFIG
-	PYTHON_CONFIG := python-config
+	PYTHON_EXE := $(shell python3 -c "import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()))")
+	PYTHON_CONFIG := $(PYTHON_EXE)-config
+	ifneq ($(shell test -e $(PYTHON_CONFIG) && echo exists),exists)
+		PYTHON_CONFIG := $(shell dirname $(PYTHON_EXE))/python-config
+	endif
 endif
 
 # Optionally read C compiler from the environment.
@@ -9,13 +16,15 @@ ifndef CC
 	CC := gcc
 endif
 
-# Compute Python version + ABI suffix string by looking for the embeddable library name from the
-# output of python-config. This way, we avoid executing the Python interpreter, which helps us
-# in cross-compile contexts (e.g., Python built for Android).
+# Compute Python version + ABI suffix string by looking for the embeddable
+# library name from the output of python-config. This way, we avoid executing
+# the Python interpreter, which helps us in cross-compile contexts (e.g.,
+# Python built for Android).
 PYTHON_LDVERSION := $(shell ($(PYTHON_CONFIG) --libs || true 2>&1 ) | cut -d ' ' -f1 | grep python | sed s,-lpython,, )
 PYTHON_CONFIG_EXTRA_FLAGS := ""
-# If that didn't give us a Python library name, then we're on Python 3.8 or higher, and we have to pass --embed.
-# See https://docs.python.org/3/whatsnew/3.8.html#debug-build-uses-the-same-abi-as-release-build
+# If that didn't give us a Python library name, then we're on Python 3.8 or
+# higher, and we have to pass --embed. See
+# https://docs.python.org/3/whatsnew/3.8.html#debug-build-uses-the-same-abi-as-release-build
 ifndef PYTHON_LDVERSION
 	PYTHON_CONFIG_EXTRA_FLAGS := "--embed"
 	PYTHON_LDVERSION := $(shell ($(PYTHON_CONFIG) --libs ${PYTHON_CONFIG_EXTRA_FLAGS} || true 2>&1 ) | cut -d ' ' -f1 | grep python | sed s,-lpython,, )
@@ -23,8 +32,9 @@ endif
 
 PYTHON_VERSION := $(shell echo ${PYTHON_LDVERSION} | sed 's,[^0-9.],,g')
 
-# Use CFLAGS and LDFLAGS based on Python's. We add -fPIC since we're creating a shared library,
-# and we remove -stack_size (only seen on macOS), since it only applies to executables.
+# Use CFLAGS and LDFLAGS based on Python's. We add -fPIC since we're creating a
+# shared library, and we remove -stack_size (only seen on macOS), since it only
+# applies to executables.
 CFLAGS := $(shell $(PYTHON_CONFIG) --cflags) -fPIC
 LDFLAGS := $(shell $(PYTHON_CONFIG) --ldflags ${PYTHON_CONFIG_EXTRA_FLAGS} | sed 'sX-Wl,-stack_size,1000000XXg')
 
@@ -53,37 +63,37 @@ else ifeq ($(LOWERCASE_OS),darwin)
 	SOEXT := dylib
 endif
 
-all: dist/rubicon.jar dist/librubicon.$(SOEXT) dist/test.jar
+all: build/rubicon.jar build/librubicon.$(SOEXT) build/test.jar
 
-dist/rubicon.jar: org/beeware/rubicon/Python.class org/beeware/rubicon/PythonInstance.class
-	mkdir -p dist
-	jar -cvf dist/rubicon.jar org/beeware/rubicon/Python.class org/beeware/rubicon/PythonInstance.class
+build/rubicon.jar: org/beeware/rubicon/Python.class org/beeware/rubicon/PythonInstance.class
+	mkdir -p build
+	jar -cvf build/rubicon.jar org/beeware/rubicon/Python.class org/beeware/rubicon/PythonInstance.class
 
-dist/test.jar: org/beeware/rubicon/test/BaseExample.class org/beeware/rubicon/test/Example.class org/beeware/rubicon/test/ICallback.class org/beeware/rubicon/test/AbstractCallback.class org/beeware/rubicon/test/Thing.class org/beeware/rubicon/test/Test.class
-	mkdir -p dist
-	jar -cvf dist/test.jar org/beeware/rubicon/test/*.class
+build/test.jar: org/beeware/rubicon/test/BaseExample.class org/beeware/rubicon/test/Example.class org/beeware/rubicon/test/ICallback.class org/beeware/rubicon/test/AbstractCallback.class org/beeware/rubicon/test/Thing.class org/beeware/rubicon/test/Test.class
+	mkdir -p build
+	jar -cvf build/test.jar org/beeware/rubicon/test/*.class
 
-dist/librubicon.$(SOEXT): jni/rubicon.o
-	mkdir -p dist
+build/librubicon.$(SOEXT): jni/rubicon.o
+	mkdir -p build
 	$(CC) -shared -o $@ $< $(LDFLAGS)
 
-PYTHON_LIBS_DIR := $(shell echo `dirname $(PYTHON_CONFIG)`/../Lib)
+PYTHON_LIBS_DIR := $(shell echo `dirname $(PYTHON_CONFIG)`/../lib)
 
 test: all
-# Rather than test which OS we're on, we set the Mac DYLD_LIBRARY_PATH as
-# well as the the LD_LIBRARY_PATH variable seen on Linux. Additionally, the Mac
+# Rather than test which OS we're on, we set the Mac DYLD_LIBRARY_PATH as well
+# as the the LD_LIBRARY_PATH variable seen on Linux. Additionally, the Mac
 # variable seems to get stripped when running some tools, so it's helpful to
 # add it here rather than ask the user to set it in their environment.
 	DYLD_LIBRARY_PATH=$(PYTHON_LIBS_DIR) \
 		LD_LIBRARY_PATH=$(PYTHON_LIBS_DIR) \
-		RUBICON_LIBRARY=$(shell ls ./dist/librubicon.*) \
-		java -Djava.library.path="./dist" org.beeware.rubicon.test.Test
+		RUBICON_LIBRARY=$(shell ls ./build/librubicon.*) \
+		java -Djava.library.path="./build" org.beeware.rubicon.test.Test
 
 clean:
 	rm -f org/beeware/rubicon/test/*.class
 	rm -f org/beeware/rubicon/*.class
 	rm -f jni/*.o
-	rm -rf dist
+	rm -rf build
 
 %.class : %.java
 	$(JAVAC) $<

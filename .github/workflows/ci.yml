@@ -1,17 +1,47 @@
 # Test rubicon-java on all supported operating systems & Python versions.
 #
-# First test on Python 3.5 on Ubuntu & Mac, then the rest. This is a load management strategy:
-# in sprint situations, it's faster to run the tests on one platform and confirm they're likely to pass elsewhere,
-# rather than start many parallel builds which will all fail for the same daft reason. Our smoke test runs on
-# both Linux and macOS to avoid bookkeeping about macOS and Linux needing to test on different Python versions.
-#
-# Keep in sync with `build_status.yml`.
+# First test on Python 3.5 on Ubuntu & Mac, then the rest. This is a load
+# management strategy: in sprint situations, it's faster to run the tests on
+# one platform and confirm they're likely to pass elsewhere, rather than start
+# many parallel builds which will all fail for the same daft reason. Our smoke
+# test runs on both Linux and macOS to avoid bookkeeping about macOS and Linux
+# needing to test on different Python versions.
 name: CI
 on:
-  pull_request
+  pull_request:
+    push:
+      branches:
+        - master
 
 jobs:
+  beefore:
+    name: Pre-test checks
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        task:
+        - 'flake8'
+        - 'towncrier-check'
+        - 'docs'
+        - 'package'
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install --upgrade setuptools
+        python -m pip install tox
+    - name: Run pre-test check
+      run: |
+        tox -e ${{ matrix.task }}
+
   smoke:
+    needs: [beefore]
     name: Smoke test
     strategy:
       matrix:
@@ -29,23 +59,19 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 8
-      - name: Debug log - Print environment variables and python-config output
+      - name: Install dependencies
         run: |
-          set -x  # To print command names along with their output
-          export
-          python${{ matrix.python-version }}-config --ldflags
-          python${{ matrix.python-version }}-config --cflags
-      - name: Compile
-          # For the Python 3.5 and 3.7 distributions on macOS in GitHub Actions,
-          # python-config --ldflags refuses to print a -L directive. We work around
-          # that with the LIBRARY_PATH variable below.          
-        run: PYTHON_CONFIG="python${{ matrix.python-version }}-config" LIBRARY_PATH="${{ env.pythonLocation }}/lib" make
-        env:
-          PKG_CONFIG_PATH: ${{ env.pythonLocation }}/lib/pkgconfig/
-      - name: Debugging - Show dynamic linker information for librubicon.so
-        run: LD_LIBRARY_PATH="${{ env.pythonLocation }}/lib" ldd dist/librubicon.so || otool -L dist/librubicon.dylib
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade setuptools
+          python -m pip install tox
       - name: Test
-        run: RUBICON_LIBRARY="${PWD}/dist/librubicon.${{ runner.os == 'Linux' && 'so' || 'dylib' }}" ${{ runner.os == 'Linux' && 'LD_' || 'DYLD_' }}LIBRARY_PATH="${{env.pythonLocation}}/lib:$(pwd)/dist" java org.beeware.rubicon.test.Test
+          # For the Python 3.5 and 3.7 distributions on macOS in GitHub Actions,
+          # python-config --ldflags refuses to print a -L directive. We work
+          # around that with the LIBRARY_PATH variable below.
+        run: |
+          LIBRARY_PATH="${{ env.pythonLocation }}/lib" tox -e py
+
+
   # Now test on all recent versions of Python as well.
   python-versions:
     needs: [smoke]
@@ -67,25 +93,20 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 8
-      - name: Debug log - Print environment variables and python-config output
+      - name: Install dependencies
         run: |
-          set -x  # To print command names along with their output
-          export
-          python${{ matrix.python-version }}-config --ldflags
-          python${{ matrix.python-version }}-config --cflags
-      - name: Compile
-          # For the Python 3.5 and 3.7 distributions on macOS in GitHub Actions,
-          # python-config --ldflags refuses to print a -L directive. We work around
-          # that with the LIBRARY_PATH variable below.          
-        run: PYTHON_CONFIG="python${{ matrix.python-version }}-config" LIBRARY_PATH="${{ env.pythonLocation }}/lib" make
-        env:
-          PKG_CONFIG_PATH: ${{ env.pythonLocation }}/lib/pkgconfig/
-      - name: Debugging - Show dynamic linker information for librubicon.so
-        run: LD_LIBRARY_PATH="${{ env.pythonLocation }}/lib" ldd dist/librubicon.so || otool -L dist/librubicon.dylib
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade setuptools
+          python -m pip install tox
       - name: Test
-        run: RUBICON_LIBRARY="${PWD}/dist/librubicon.${{ runner.os == 'Linux' && 'so' || 'dylib' }}" ${{ runner.os == 'Linux' && 'LD_' || 'DYLD_' }}LIBRARY_PATH="${{env.pythonLocation}}/lib:$(pwd)/dist" java org.beeware.rubicon.test.Test
+          # For the Python 3.5 and 3.7 distributions on macOS in GitHub Actions,
+          # python-config --ldflags refuses to print a -L directive. We work
+          # around that with the LIBRARY_PATH variable below.
+        run: |
+          LIBRARY_PATH="${{ env.pythonLocation }}/lib" tox -e py
 
-  # Test on x86 (32-bit) Ubuntu 18.04, focusing on 32-bit/64-bit errors; just one Python version.
+  # Test on x86 (32-bit) Ubuntu 18.04, focusing on 32-bit/64-bit errors;
+  # just one Python version.
   x86:
     needs: [smoke]
     name: x86 32-bit tests
@@ -95,8 +116,12 @@ jobs:
         uses: actions/checkout@master
       - name: Install dependencies, compile rubicon-java, and run tests
         uses: docker://i386/ubuntu:18.04
-        # This step does everything because changes within the container (e.g., apt-get) may be discarded between steps.
+        # This step does everything because changes within the container
+        # (e.g., apt-get) may be discarded between steps.
         # Inspired by: https://github.community/t5/GitHub-Actions/Workflow-fails-when-running-steps-in-a-container/td-p/29652
+        # We need to pass in PYTHON_CONFIG because Ubuntu doesn't define
+        # python3 as an alias for python3.7 by default, so the Makefile
+        # can't autodetect that it needs to use python3.7-config.
         with:
           entrypoint: /bin/sh
-          args: -c "apt-get update && apt-get install -y build-essential python3.7-dev openjdk-8-jdk-headless && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ PYTHON_CONFIG=python3.7-config make && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ RUBICON_LIBRARY=dist/librubicon.so LD_LIBRARY_PATH=./dist java org.beeware.rubicon.test.Test"
+          args: -c "apt-get update && apt-get install -y build-essential python3.7-dev openjdk-8-jdk-headless && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ PYTHON_CONFIG=python3.7-config make && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ RUBICON_LIBRARY=build/librubicon.so LD_LIBRARY_PATH=./build java org.beeware.rubicon.test.Test"

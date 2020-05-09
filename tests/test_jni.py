@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division, unicode_literals
+from __future__ import division, print_function, unicode_literals
 
 from unittest import TestCase
 
-from rubicon.java import java, jstring, cast, jdouble, jlong
+from rubicon.java import cast, java, jdouble, jlong, jstring
 
 
 class JNITest(TestCase):
@@ -185,7 +185,9 @@ class JNITest(TestCase):
         self.assertIsNotNone(Example__init.value)
 
         # Find the Example.duplicate_string() method on Example
-        Example__duplicate_string = java.GetMethodID(Example, b"duplicate_string", b"(Ljava/lang/String;)Ljava/lang/String;")
+        Example__duplicate_string = java.GetMethodID(
+            Example, b"duplicate_string", b"(Ljava/lang/String;)Ljava/lang/String;"
+        )
         self.assertIsNotNone(Example__duplicate_string.value)
 
         # Create an instance of org.beeware.test.Example using the default constructor

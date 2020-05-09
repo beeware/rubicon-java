@@ -32,9 +32,10 @@ Rubicon Java
 Rubicon Java is a bridge between the Java Runtime Environment and Python. It
 enables you to:
 
-* Use Python to instantiate objects defined in Java,
-* Use Python to invoke methods on objects defined in Java, and
-* Subclass and extend Java classes in Python.
+* Instantiate objects defined in Java,
+* Invoke static and instance methods on objects defined in Java,
+* Access and modify static and instance fields on objects defined in Java, and
+* Write and use Python implementations of interfaces defined in Java.
 
 It also includes wrappers of the some key data types from the Java standard
 library (e.g., ``java.lang.String``).
@@ -48,8 +49,8 @@ Table of contents
 
 .. rst-class:: column column2
 
-:doc:`Tutorial <././tutorial/index>`
-------------------------------------
+:doc:`Tutorial <./tutorial/index>`
+----------------------------------
 
 Get started with a hands-on introduction for beginners
 

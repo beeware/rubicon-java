@@ -1,7 +1,10 @@
 import itertools
 
-from .jni import *
-from .types import *
+from .jni import cast, java, reflect
+from .types import (
+    jboolean, jbyte, jchar, jclass, jdouble, jfloat, jint, jlong, jobject,
+    jobjectArray, jshort, jstring,
+)
 
 # A cache of known JavaInterface proxies. This is used by the dispatch
 # mechanism to direct callbacks to the right place.
@@ -23,7 +26,7 @@ def dispatch(instance, method, args):
     interface methods with no return value.
     """
     try:
-        # print ("PYTHON SIDE DISPATCH", instance, method, args)
+        # print("PYTHON SIDE DISPATCH", instance, method, args)
         pyinstance = _proxy_cache[instance]
         signatures = pyinstance._methods.get(method)
 
@@ -254,16 +257,16 @@ def return_cast(raw, return_signature):
     instance of the relevant JavaClass.
     """
     if return_signature in {
-            b'V',  # void
-            b'Z',  # bool
-            b'B',  # byte
-            b'C',  # char
-            b'S',  # short
-            b'I',  # int
-            b'J',  # long
-            b'F',  # float
-            b'D',  # double
-        }:
+        b'V',  # void
+        b'Z',  # bool
+        b'B',  # byte
+        b'C',  # char
+        b'S',  # short
+        b'I',  # int
+        b'J',  # long
+        b'F',  # float
+        b'D',  # double
+    }:
         return raw
 
     elif return_signature == b'Ljava/lang/String;':
@@ -322,7 +325,7 @@ def dispatch_cast(raw, type_signature):
         # Check for NULL return values
         if jobject(raw).value:
             gref = java.NewGlobalRef(jobject(raw))
-            # print ("Return type", type_signature)
+            # print("Return type", type_signature)
             # print("Create returned instance")
             return JavaClass(type_signature[1:-1].decode('utf-8'))(__jni__=gref)
         return None
@@ -390,11 +393,11 @@ class StaticJavaMethod(object):
         except KeyError as e:
             raise ValueError(
                 "Can't find Java static method '%s.%s' matching argument signature '%s'. Options are: %s" % (
-                        self.java_class.__dict__['_descriptor'],
-                        self.name,
-                        e,
-                        self._polymorphs.keys()
-                    )
+                    self.java_class.__dict__['_descriptor'],
+                    self.name,
+                    e,
+                    self._polymorphs.keys()
+                )
             )
 
 
@@ -425,11 +428,10 @@ class JavaMethod:
         )
         if jni.value is None:
             raise RuntimeError("Couldn't find Java method '%s.%s' with signature '%s'" % (
-                    self.java_class.__dict__['_descriptor'].decode('utf-8'),
-                    self.name,
-                    full_signature.decode('utf-8')
-                )
-            )
+                self.java_class.__dict__['_descriptor'].decode('utf-8'),
+                self.name,
+                full_signature.decode('utf-8')
+            ))
 
         self._polymorphs[params_signature] = {
             'return_signature': return_signature,
@@ -449,11 +451,11 @@ class JavaMethod:
         except KeyError as e:
             raise ValueError(
                 "Can't find Java instance method '%s.%s' matching argument signature '%s'. Options are: %s" % (
-                        self.java_class.__dict__['_descriptor'],
-                        self.name,
-                        e,
-                        self._polymorphs.keys()
-                    )
+                    self.java_class.__dict__['_descriptor'],
+                    self.name,
+                    e,
+                    self._polymorphs.keys()
+                )
             )
 
 
@@ -464,6 +466,7 @@ class BoundJavaMethod(object):
 
     def __call__(self, *args):
         return self.method(self.instance, *args)
+
 
 ###########################################################################
 # Representations of Java fields
@@ -580,7 +583,10 @@ def _cache_field(java_class, name, is_static):
         jboolean(is_static)
     )
     if java_field.value:
-        # print("%s: Registering %sfield %s" % (java_class.__dict__['_descriptor'], 'static ' if is_static else '', name))
+        # print("%s: Registering %sfield %s" % (
+        #     java_class.__dict__['_descriptor'],
+        #     'static ' if is_static else '', name
+        # ))
         java_type = java.CallObjectMethod(java_field, reflect.Field__getType)
         type_name = java.CallObjectMethod(java_type, reflect.Class__getName)
 
@@ -595,7 +601,10 @@ def _cache_field(java_class, name, is_static):
         java.DeleteLocalRef(java_type)
         java.DeleteLocalRef(type_name)
     else:
-        # print ("%s: %s %s does not exist" % (java_class.__dict__['_descriptor'], 'Static field' if is_static else 'Field', name))
+        # print("%s: %s %s does not exist" % (
+        #     java_class.__dict__['_descriptor'],
+        #     'Static field' if is_static else 'Field', name
+        # ))
         wrapper = None
 
     return wrapper
@@ -611,7 +620,10 @@ def _cache_methods(java_class, name, is_static):
         jboolean(is_static)
     )
     if java_methods.value:
-        # print("%s: Registering %smethod %s" % (java_class.__dict__['_descriptor'], 'static ' if is_static else '', name))
+        # print("%s: Registering %smethod %s" % (
+        #     java_class.__dict__['_descriptor'],
+        #     'static ' if is_static else '', name
+        # ))
 
         if is_static:
             wrapper = StaticJavaMethod(java_class=java_class, name=name)
@@ -637,10 +649,16 @@ def _cache_methods(java_class, name, is_static):
             java.DeleteLocalRef(java_method)
         java.DeleteLocalRef(java_methods)
 
-        # print("%s: Registered %smethod %s: %s" % (java_class.__dict__['_descriptor'], 'static ' if is_static else '', name, wrapper._polymorphs))
+        # print("%s: Registered %smethod %s: %s" % (
+        #     java_class.__dict__['_descriptor'],
+        #     'static ' if is_static else '', name, wrapper._polymorphs
+        # ))
 
     else:
-        # print ("%s: %s %s does not exist" % (java_class.__dict__['_descriptor'], 'Static method' if is_static else 'Method', name))
+        # print("%s: %s %s does not exist" % (
+        #     java_class.__dict__['_descriptor'],
+        #     'Static method' if is_static else 'Method', name
+        # ))
         wrapper = None
 
     return wrapper
@@ -648,7 +666,7 @@ def _cache_methods(java_class, name, is_static):
 
 class JavaInstance(object):
     def __init__(self, *args, **kwargs):
-        # print ("Creating Java instance of ", self.__class__)
+        # print("Creating Java instance of ", self.__class__)
         jni = kwargs.pop('__jni__', None)
         if kwargs:
             raise ValueError("Can't construct instance of %s using keyword arguments." % (self.__class__))
@@ -662,7 +680,10 @@ class JavaInstance(object):
             if constructors is None:
                 # print("   %s: Loading constructors" % self.__class__.__dict__['_descriptor'])
                 constructors = {}
-                constructors_j = java.CallObjectMethod(self.__class__.__dict__['__jni__'], reflect.Class__getConstructors)
+                constructors_j = java.CallObjectMethod(
+                    self.__class__.__dict__['__jni__'],
+                    reflect.Class__getConstructors
+                )
                 if constructors_j.value is None:
                     raise RuntimeError("Couldn't get constructor for '%s'" % self)
                 constructors_j = cast(constructors_j, jobjectArray)
@@ -681,7 +702,10 @@ class JavaInstance(object):
                         params = java.CallObjectMethod(constructor, reflect.Constructor__getParameterTypes)
                         params = cast(params, jobjectArray)
 
-                        # print("  %s: registering '%s' constructor " % (self.__class__.__dict__['_descriptor'], signature_for_params(params)))
+                        # print("  %s: registering '%s' constructor " % (
+                        #     self.__class__.__dict__['_descriptor'],
+                        #     signature_for_params(params)
+                        # ))
                         constructors[signature_for_params(params)] = None
                     # else:
                         # print("  %s: ignoring nonpublic constructor" % self.__class__.__dict__['_descriptor'])
@@ -690,7 +714,6 @@ class JavaInstance(object):
                     java.DeleteLocalRef(constructor)
                 java.DeleteLocalRef(constructors_j)
                 type.__setattr__(self.__class__, '_constructors', constructors)
-
 
             ##################################################################
             # Invoke the JNI constructor
@@ -721,9 +744,9 @@ class JavaInstance(object):
             except KeyError as e:
                 raise ValueError(
                     "Can't find constructor matching argument signature %s. Options are: %s" % (
-                            e,
-                            ', '.join(k.decode('utf-8') for k in constructors.keys())
-                        )
+                        e,
+                        ', '.join(k.decode('utf-8') for k in constructors.keys())
+                    )
                 )
 
         # This is just:
@@ -741,14 +764,17 @@ class JavaInstance(object):
         return self.toString()
 
     def __getattr__(self, name):
-        # print ("GETATTR %s on JavaInstance %s %s" % (name, self.__dict__, self.__class__.__dict__))
-        # print ("GETATTR %s on JavaInstance" % name)
+        # print("GETATTR %s on JavaInstance %s %s" % (name, self.__dict__, self.__class__.__dict__))
+        # print("GETATTR %s on JavaInstance" % name)
         # First try to find a field match
         try:
-            # print ("%s: Known fields %s" % (self.__class__.__dict__['_descriptor'], self.__class__.__dict__['_members']['fields']))
+            # print("%s: Known fields %s" % (
+            #     self.__class__.__dict__['_descriptor'],
+            #     self.__class__.__dict__['_members']['fields']
+            # ))
             field_wrapper = self.__class__.__dict__['_members']['fields'][name]
         except KeyError:
-            # print ("%s: First attempt to use field %s" % (self.__class__.__dict__['_descriptor'], name))
+            # print("%s: First attempt to use field %s" % (self.__class__.__dict__['_descriptor'], name))
             field_wrapper = _cache_field(self.__class__, name, False)
             self.__class__.__dict__['_members']['fields'][name] = field_wrapper
 
@@ -757,10 +783,13 @@ class JavaInstance(object):
 
         # Then try to find a method match
         try:
-            # print ("%s: Known methods %s" % (self.__class__.__dict__['_descriptor'], self.__class__.__dict__['_members']['methods']))
+            # print("%s: Known methods %s" % (
+            #     self.__class__.__dict__['_descriptor'],
+            #     self.__class__.__dict__['_members']['methods']
+            # ))
             method_wrapper = self.__class__.__dict__['_members']['methods'][name]
         except KeyError:
-            # print ("%s: First attempt to use method %s" % (self.__class__.__dict__['_descriptor'], name))
+            # print("%s: First attempt to use method %s" % (self.__class__.__dict__['_descriptor'], name))
             method_wrapper = _cache_methods(self.__class__, name, False)
             self.__class__.__dict__['_members']['methods'][name] = method_wrapper
 
@@ -770,12 +799,12 @@ class JavaInstance(object):
         raise AttributeError("'%s' Java object has no attribute '%s'" % (self.__class__.__name__, name))
 
     def __setattr__(self, name, value):
-        # print ("SETATTR %s on JavaInstance %s %s" % (name, self.__dict__, self.__class__.__dict__))
+        # print("SETATTR %s on JavaInstance %s %s" % (name, self.__dict__, self.__class__.__dict__))
         # Try to find a field match.
         try:
             field_wrapper = self.__class__.__dict__['_members']['fields'][name]
         except KeyError:
-            # print ("%s: First attempt to use field %s" % (self.__class__.__dict__['_descriptor'], name))
+            # print("%s: First attempt to use field %s" % (self.__class__.__dict__['_descriptor'], name))
             field_wrapper = _cache_field(self.__class__, name, False)
             self.__class__.__dict__['_members']['fields'][name] = field_wrapper
 
@@ -801,8 +830,8 @@ class JavaClass(type):
         if bases or attrs:
             # The user is trying to subclass a JavaClass. This will not work because
             # rubicon-java relies on the Java reflection APIs, which do not support that.
-            raise NotImplementedError("Unable to subclass a JavaClass.") 
-        # print ("Creating Java class", descriptor)
+            raise NotImplementedError("Unable to subclass a JavaClass.")
+        # print("Creating Java class", descriptor)
         # Using str descriptor as cache key, to avoid .encode() when checking cache.
         if descriptor in cls._class_cache:
             return cls._class_cache[descriptor]
@@ -827,7 +856,7 @@ class JavaClass(type):
         # Next preference is an interfaces
         java_interfaces = java.CallObjectMethod(jni, reflect.Class__getInterfaces)
         if java_interfaces.value is None:
-            raise RuntimeError("Couldn't get interfaces for '%s'" % self)
+            raise RuntimeError("Couldn't get interfaces for '%s'" % cls)
         java_interfaces = cast(java_interfaces, jobjectArray)
 
         interface_count = java.GetArrayLength(java_interfaces)
@@ -885,13 +914,16 @@ class JavaClass(type):
         return java_class
 
     def __getattr__(self, name):
-        # print ("GETATTR %s on JavaClass %s" % (name, self))
+        # print("GETATTR %s on JavaClass %s" % (name, self))
         # First, try to find a field match
         try:
-            # print ("%s: Known static fields %s" % (self.__dict__['_descriptor'], self.__dict__['_static']['fields']))
+            # print("%s: Known static fields %s" % (
+            #     self.__dict__['_descriptor'],
+            #     self.__dict__['_static']['fields']
+            # ))
             field_wrapper = self.__dict__['_static']['fields'][name]
         except KeyError:
-            # print ("%s: First attempt to use static field %s" % (self.__dict__['_descriptor'], name))
+            # print("%s: First attempt to use static field %s" % (self.__dict__['_descriptor'], name))
             field_wrapper = _cache_field(self, name, True)
             self.__dict__['_static']['fields'][name] = field_wrapper
 
@@ -900,10 +932,13 @@ class JavaClass(type):
 
         # Then try to find a method match
         try:
-            # print ("%s: Known static methods %s" % (self.__dict__['_descriptor'], self.__dict__['_static']['methods']))
+            # print("%s: Known static methods %s" % (
+            #     self.__dict__['_descriptor'],
+            #     self.__dict__['_static']['methods']
+            # ))
             method_wrapper = self.__dict__['_static']['methods'][name]
         except KeyError:
-            # print ("%s: First attempt to use static method %s" % (self.__dict__['_descriptor'], name))
+            # print("%s: First attempt to use static method %s" % (self.__dict__['_descriptor'], name))
             method_wrapper = _cache_methods(self, name, True)
             self.__dict__['_static']['methods'][name] = method_wrapper
 
@@ -917,13 +952,13 @@ class JavaClass(type):
         raise AttributeError("Java class '%s' has no attribute '%s'" % (self.__dict__['_descriptor'], name))
 
     def __setattr__(self, name, value):
-        # print ("SETATTR %s on JavaClass %s" % (name, self))
+        # print("SETATTR %s on JavaClass %s" % (name, self))
         # Try to find a field match
         try:
-            # print ("%s: Known static fields %s" % (self.__dict__['_descriptor'], self.__dict__['_static']['fields']))
+            # print("%s: Known static fields %s" % (self.__dict__['_descriptor'], self.__dict__['_static']['fields']))
             field_wrapper = self.__dict__['_static']['fields'][name]
         except KeyError:
-            # print ("%s: First attempt to use static field %s" % (self.__dict__['_descriptor'], name))
+            # print("%s: First attempt to use static field %s" % (self.__dict__['_descriptor'], name))
             field_wrapper = _cache_field(self, name, True)
             self.__dict__['_static']['fields'][name] = field_wrapper
 
@@ -1006,7 +1041,7 @@ class JavaInterface(type):
         ##################################################################
         methods = java.CallObjectMethod(jni, reflect.Class__getMethods)
         if methods is None:
-            raise RuntimeError("Couldn't get methods for '%s'" % self)
+            raise RuntimeError("Couldn't get methods for '%s'" % cls)
         methods = cast(methods, jobjectArray)
 
         method_count = java.GetArrayLength(methods)

@@ -21,8 +21,8 @@ Rubicon-Java
    :target: https://github.com/beeware/rubicon-java/blob/master/LICENSE
    :alt: License
 
-.. image:: https://github.com/beeware/toga/workflows/Build%20status/badge.svg
-   :target: https://github.com/beeware/toga/actions
+.. image:: https://github.com/beeware/rubicon-java/workflows/CI/badge.svg?branch=master
+   :target: https://github.com/beeware/rubicon-java/actions
    :alt: Build Status
 
 .. image:: https://badges.gitter.im/beeware/general.svg
@@ -50,13 +50,7 @@ A ``Makefile`` has been provided to compile the JNI and JAR components. Type::
 
     $ make
 
-to compile them. The compiled output will be placed in the ``dist`` directory.
-
-.. admonition:: Cross platform support
-
-    This Makefile currently only works under OS/X; however, the build commands
-    aren't complicated; it should be fairly easy to reproduce the build on other
-    platforms. Pull requests to make the ``Makefile`` cross-platform are welcome.
+to compile them. The compiled output will be placed in the ``build`` directory.
 
 To use Rubicon-Java, you'll need to ensure:
 
@@ -92,8 +86,8 @@ Then start the Python interpreter, and run a Python file::
         System.out.println("Error initializing Python VM.");
     }
 
-    # Start a Python script
-    if (Python.run("/path/to/script.py") != 0) {
+    # Start a Python module
+    if (Python.run("path.of.module") != 0) {
         System.out.println("Error running Python script.");
     }
 
@@ -112,7 +106,7 @@ In your Python script, you can then reference Java objects::
 
     # Then instantiate the Java class, using the API
     # that is exposed in Java.
-    >>> url = URL("http://beeware.org")
+    >>> url = URL("https://beeware.org")
 
     # You can then call methods on the Java object as if it
     # were a Python object.
@@ -149,31 +143,33 @@ Testing
 
 To run the Rubicon test suite:
 
-1. Configure your shell environment to point to a ``PYTHON_CONFIG`` binary.
-   `virtualenv` and `venv` do not necessarily put the ``python3-config`` binary
-   on your ``$PATH``, but you can use this expression to set it properly::
-
-    $ export PYTHON_CONFIG="$(python3 -c 'import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()) + "-config")')"
-
-2. Ensure that ``java`` is on your ``$PATH``, or set the ``JAVA_HOME`` environment
+1. Ensure that ``java`` is on your ``$PATH``, or set the ``JAVA_HOME`` environment
    variable to point to a directory of a Java Development Kit (JDK).
 
-3. Build the libraries::
+2. Create a Python 3 virtual environment, and ensure that pip & setuptools are
+   up to date::
 
-    $ make clean
-    $ make all
+    $ python3 -m venv venv
+    $ source venv/bin/activate
+    (venv) $ python -m pip install --upgrade pip
+    (venv) $ python -m pip install --upgrade setuptools
 
-4. Run the test suite, specifying the path to the compiled library. The following
-   should work properly on both macOS and Linux::
+3. Install ``tox``::
 
-    $ make test
+    (venv) $ python -m pip install tox
 
-This is a Python test suite, invoked via Java.
+4. Run the test suite. The following should work properly on both macOS and
+   Linux::
 
-.. Documentation
-.. -------------
+    (venv) $ tox -e py
 
-.. Full documentation for Rubicon can be found on `Read The Docs`_.
+This will compile the Rubicon library, compile the Java test classes, and
+run the Python test suite from within the Java environment.
+
+Documentation
+-------------
+
+Full documentation for Rubicon can be found on `Read The Docs`_.
 
 Community
 ---------
