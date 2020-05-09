@@ -98,6 +98,6 @@ clean:
 
 %.o : %.c
 	echo PYTHON_EXE $(PYTHON_EXE)
-	ls -la $(PYTHON_BIN)
+	ls -la $(PYTHON_DIR)
 	echo PYTHON_CONFIG $(PYTHON_CONFIG)
 	$(CC) -c $(CFLAGS) -Isrc -I$(JAVA_HOME)/include -I$(JAVA_PLATFORM) -o $@ $<
