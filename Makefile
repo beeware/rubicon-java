@@ -1,7 +1,7 @@
 # Optionally read PYTHON_CONFIG from the environment to support building against a
 # specific version of Python.
 ifndef PYTHON_CONFIG
-	PYTHON_CONFIG := python-config
+	PYTHON_CONFIG := $(python3 -c 'import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()))')-config
 endif
 
 # Optionally read C compiler from the environment.
@@ -65,6 +65,7 @@ build/test.jar: org/beeware/rubicon/test/BaseExample.class org/beeware/rubicon/t
 
 build/librubicon.$(SOEXT): jni/rubicon.o
 	mkdir -p build
+	echo PYTHON_CONFIG is $(PYTHON_CONFIG)
 	$(CC) -shared -o $@ $< $(LDFLAGS)
 
 PYTHON_LIBS_DIR := $(shell echo `dirname $(PYTHON_CONFIG)`/../lib)
