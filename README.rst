@@ -177,7 +177,7 @@ Community
 
 Rubicon is part of the `BeeWare suite`_. You can talk to the community through:
 
-* `@beewareware on Twitter`_
+* `@PyBeeWare on Twitter`_
 
 * The `beeware/general`_ channel on Gitter.
 
@@ -192,7 +192,7 @@ want to contribute code, please `fork the code`_ and `submit a pull request`_.
 
 .. _BeeWare suite: http://beeware.org
 .. _Read The Docs: http://rubicon-java.readthedocs.org
-.. _@beewareware on Twitter: https://twitter.com/beewareware
+.. _@PyBeeWare on Twitter: https://twitter.com/PyBeeWare
 .. _beeware/general: https://gitter.im/beeware/general
 .. _BeeWare Community Code of Conduct: http://beeware.org/community/behavior/
 .. _log them on Github: https://github.com/beeware/rubicon-java/issues
