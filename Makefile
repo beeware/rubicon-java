@@ -67,8 +67,17 @@ build/librubicon.$(SOEXT): jni/rubicon.o
 	mkdir -p build
 	$(CC) -shared -o $@ $< $(LDFLAGS)
 
+PYTHON_LIBS_DIR := $(shell echo `dirname $(PYTHON_CONFIG)`/../Lib)
+
 test: all
-	java org.beeware.rubicon.test.Test
+# Rather than test which OS we're on, we set the Mac DYLD_LIBRARY_PATH as
+# well as the the LD_LIBRARY_PATH variable seen on Linux. Additionally, the Mac
+# variable seems to get stripped when running some tools, so it's helpful to
+# add it here rather than ask the user to set it in their environment.
+	DYLD_LIBRARY_PATH=$(PYTHON_LIBS_DIR) \
+		LD_LIBRARY_PATH=$(PYTHON_LIBS_DIR) \
+		RUBICON_LIBRARY=$(shell ls ./dist/librubicon.*) \
+		java -Djava.library.path="./dist" org.beeware.rubicon.test.Test
 
 clean:
 	rm -f org/beeware/rubicon/test/*.class

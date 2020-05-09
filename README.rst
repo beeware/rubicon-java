@@ -116,7 +116,7 @@ In your Python script, you can then reference Java objects::
 
     # You can then call methods on the Java object as if it
     # were a Python object.
-    >>> print url.getHost()
+    >>> print(url.getHost())
     beeware.org
 
 It's also possible to provide implementations of Java Interfaces in Python.
@@ -131,7 +131,7 @@ respond to button clicks::
     # Define your own implementation
     >>> class MyActionListener(ActionListener):
     ...     def actionPerformed(self, event):
-    ...         print "Button Pressed"
+    ...         print("Button Pressed")
 
     # Instantiate an instance of the listener
     >>> listener = MyActionListener()
@@ -149,21 +149,24 @@ Testing
 
 To run the Rubicon test suite:
 
-1. Configure your shell environment so that the Python, Java, and Rubicon
-   dynamic libraries can be discovered by the dynamic linker.
+1. Configure your shell environment to point to a ``PYTHON_CONFIG`` binary.
+   `virtualenv` and `venv` do not necessarily put the ``python3-config`` binary
+   on your ``$PATH``, but you can use this expression to set it properly::
 
-   * On OSX, using Python 2.7.7 built under Homebrew::
+    $ export PYTHON_CONFIG="$(python3 -c 'import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()) + "-config")')"
 
-        export DYLD_LIBRARY_PATH=/usr/local/Cellar/python/2.7.7_2/Frameworks/Python.framework/Versions/2.7/lib/:`/usr/libexec/java_home`/jre/lib/server:./dist
+2. Ensure that ``java`` is on your ``$PATH``, or set the ``JAVA_HOME`` environment
+   variable to point to a directory of a Java Development Kit (JDK).
 
-2. Build the libraries::
+3. Build the libraries::
 
     $ make clean
     $ make all
 
-3. Run the test suite::
+4. Run the test suite, specifying the path to the compiled library. The following
+   should work properly on both macOS and Linux::
 
-    $ java org.beeware.rubicon.test.Test
+    $ make test
 
 This is a Python test suite, invoked via Java.
 
