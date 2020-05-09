@@ -80,8 +80,8 @@ class JNITest(TestCase):
     def test_static_method(self):
         "A static method on a class can be invoked."
         with ExampleClassWithCleanup() as Example:
-            self.assertEqual(Example.get_static_base_int_field(), 2288)
-            self.assertEqual(Example.get_static_int_field(), 2299)
+            self.assertEqual(Example.get_static_base_int_field(), 1137)
+            self.assertEqual(Example.get_static_int_field(), 1142)
 
             Example.set_static_base_int_field(2288)
             Example.set_static_int_field(2299)

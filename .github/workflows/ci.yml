@@ -39,6 +39,7 @@ jobs:
         tox -e ${{ matrix.task }}
 
   smoke:
+    needs: [beefore]
     name: Smoke test
     strategy:
       matrix:
@@ -73,6 +74,7 @@ jobs:
         run: LD_LIBRARY_PATH="${{ env.pythonLocation }}/lib" ldd dist/librubicon.so || otool -L dist/librubicon.dylib
       - name: Test
         run: RUBICON_LIBRARY="${PWD}/dist/librubicon.${{ runner.os == 'Linux' && 'so' || 'dylib' }}" ${{ runner.os == 'Linux' && 'LD_' || 'DYLD_' }}LIBRARY_PATH="${{env.pythonLocation}}/lib:$(pwd)/dist" java org.beeware.rubicon.test.Test
+
   # Now test on all recent versions of Python as well.
   python-versions:
     needs: [smoke]
