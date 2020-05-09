@@ -143,10 +143,10 @@ Testing
 
 To run the Rubicon test suite:
 
-1. Check if `python-config` passes exists in your environment, and points at
-   your current active Python 3 install. You can confirm this by running::
+1. Check if `python-config` exists in your environment, and points at your
+   current active Python 3 install. You can confirm this by running::
 
-       $ python-config --prefix
+       $ python3-config --prefix
 
    and confirming that the path points at the same Python that you're using.
    If it doesn't, set a ``PYTHON_CONFIG`` environment variable::
