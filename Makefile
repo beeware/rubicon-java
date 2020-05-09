@@ -1,9 +1,16 @@
 # Optionally read PYTHON_CONFIG from the environment to support building
-# against a specific version of Python. We reference python-config, rather than
-# python3-config or python3.X-config, because venv doesn't create those linked
-# aliases.
+# against a specific version of Python. We need to look for python-config
+# *and* python3.X-config, because of inconsistencies between venv and native
+# installed Python.
 ifndef PYTHON_CONFIG
+	PYTHON_EXE := $(shell (python3 -c "import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()))"))
+	PYTHON_BIN := $(shell (python3 -c "import sys; from pathlib import Path; print(str(Path(sys.executable).resolve().parent))"))
 	PYTHON_CONFIG := $(shell (python3 -c "import sys; from pathlib import Path; print(str(Path(sys.executable).resolve().parent))"))/python-config
+	ifneq ("$(wildcard $(PYTHON_CONFIG))","")
+	else
+		PYTHON_CONFIG := $(shell (python3 -c "import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()))"))-config
+	endif
+
 endif
 
 # Optionally read C compiler from the environment.
@@ -91,4 +98,7 @@ clean:
 	$(JAVAC) $<
 
 %.o : %.c
+	echo PYTHON_EXE $(PYTHON_EXE)
+	ls PYTHON_BIN
+	echo PYTHON_CONFIG $(PYTHON_CONFIG)
 	$(CC) -c $(CFLAGS) -Isrc -I$(JAVA_HOME)/include -I$(JAVA_PLATFORM) -o $@ $<
