@@ -39,7 +39,7 @@ jobs:
         tox -e ${{ matrix.task }}
 
   smoke:
-    needs: [beefore]
+    # needs: [beefore]
     name: Smoke test
     strategy:
       matrix:

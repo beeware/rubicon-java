@@ -6,8 +6,7 @@ ifndef PYTHON_CONFIG
 	PYTHON_EXE := $(shell (python3 -c "import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()))"))
 	PYTHON_BIN := $(shell (python3 -c "import sys; from pathlib import Path; print(str(Path(sys.executable).resolve().parent))"))
 	PYTHON_CONFIG := $(shell (python3 -c "import sys; from pathlib import Path; print(str(Path(sys.executable).resolve().parent))"))/python-config
-	ifneq ("$(wildcard $(PYTHON_CONFIG))","")
-	else
+	ifneq ("$(shell test -e $(PYTHON_CONFIG) && echo -n exists)","exists")
 		PYTHON_CONFIG := $(shell (python3 -c "import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()))"))-config
 	endif
 
@@ -99,6 +98,6 @@ clean:
 
 %.o : %.c
 	echo PYTHON_EXE $(PYTHON_EXE)
-	ls PYTHON_BIN
+	ls $(PYTHON_BIN)
 	echo PYTHON_CONFIG $(PYTHON_CONFIG)
 	$(CC) -c $(CFLAGS) -Isrc -I$(JAVA_HOME)/include -I$(JAVA_PLATFORM) -o $@ $<
