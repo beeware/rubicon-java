@@ -1,7 +1,7 @@
 # Optionally read PYTHON_CONFIG from the environment to support building against a
 # specific version of Python.
 ifndef PYTHON_CONFIG
-	PYTHON_CONFIG := python-config
+	PYTHON_CONFIG := $(shell (python3 -c "import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()))"))-config
 endif
 
 # Optionally read C compiler from the environment.

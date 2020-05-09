@@ -143,27 +143,25 @@ Testing
 
 To run the Rubicon test suite:
 
-1. Check if `python-config` exists in your environment, and points at your
-   current active Python 3 install. You can confirm this by running::
-
-       $ python3-config --prefix
-
-   and confirming that the path points at the same Python that you're using.
-   If it doesn't, set a ``PYTHON_CONFIG`` environment variable::
-
-       $ export PYTHON_CONFIG="$(python3 -c 'import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()) + "-config")')"
-
-2. Ensure that ``java`` is on your ``$PATH``, or set the ``JAVA_HOME`` environment
+1. Ensure that ``java`` is on your ``$PATH``, or set the ``JAVA_HOME`` environment
    variable to point to a directory of a Java Development Kit (JDK).
+
+2. Create a Python 3 virtual environment, and ensure that pip & setuptools are
+   up to date::
+
+    $ python3 -m venv venv
+    $ source venv/bin/activate
+    (venv) $ python -m pip install --upgrade pip
+    (venv) $ python -m pip install --upgrade setuptools
 
 3. Install ``tox``::
 
-    $ pip install tox
+    (venv) $ python -m pip install tox
 
 4. Run the test suite. The following should work properly on both macOS and
    Linux::
 
-    $ tox -e py
+    (venv) $ tox -e py
 
 This will compile the Rubicon library, compile the Java test classes, and
 run the Python test suite from within the Java environment.
