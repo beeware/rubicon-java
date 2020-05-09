@@ -117,4 +117,4 @@ jobs:
         # Inspired by: https://github.community/t5/GitHub-Actions/Workflow-fails-when-running-steps-in-a-container/td-p/29652
         with:
           entrypoint: /bin/sh
-          args: -c "apt-get update && apt-get install -y build-essential python3.7-dev openjdk-8-jdk-headless && PYTHON_CONFIG=python3.7-config JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ make && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ RUBICON_LIBRARY=build/librubicon.so LD_LIBRARY_PATH=./build java org.beeware.rubicon.test.Test"
+          args: -c "apt-get update && apt-get install -y build-essential python3.7-dev openjdk-8-jdk-headless && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ PYTHON_CONFIG=python3.7-config make && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ RUBICON_LIBRARY=build/librubicon.so LD_LIBRARY_PATH=./build java org.beeware.rubicon.test.Test"
