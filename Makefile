@@ -53,18 +53,18 @@ else ifeq ($(LOWERCASE_OS),darwin)
 	SOEXT := dylib
 endif
 
-all: dist/rubicon.jar dist/librubicon.$(SOEXT) dist/test.jar
+all: build/rubicon.jar build/librubicon.$(SOEXT) build/test.jar
 
-dist/rubicon.jar: org/beeware/rubicon/Python.class org/beeware/rubicon/PythonInstance.class
-	mkdir -p dist
-	jar -cvf dist/rubicon.jar org/beeware/rubicon/Python.class org/beeware/rubicon/PythonInstance.class
+build/rubicon.jar: org/beeware/rubicon/Python.class org/beeware/rubicon/PythonInstance.class
+	mkdir -p build
+	jar -cvf build/rubicon.jar org/beeware/rubicon/Python.class org/beeware/rubicon/PythonInstance.class
 
-dist/test.jar: org/beeware/rubicon/test/BaseExample.class org/beeware/rubicon/test/Example.class org/beeware/rubicon/test/ICallback.class org/beeware/rubicon/test/AbstractCallback.class org/beeware/rubicon/test/Thing.class org/beeware/rubicon/test/Test.class
-	mkdir -p dist
-	jar -cvf dist/test.jar org/beeware/rubicon/test/*.class
+build/test.jar: org/beeware/rubicon/test/BaseExample.class org/beeware/rubicon/test/Example.class org/beeware/rubicon/test/ICallback.class org/beeware/rubicon/test/AbstractCallback.class org/beeware/rubicon/test/Thing.class org/beeware/rubicon/test/Test.class
+	mkdir -p build
+	jar -cvf build/test.jar org/beeware/rubicon/test/*.class
 
-dist/librubicon.$(SOEXT): jni/rubicon.o
-	mkdir -p dist
+build/librubicon.$(SOEXT): jni/rubicon.o
+	mkdir -p build
 	$(CC) -shared -o $@ $< $(LDFLAGS)
 
 test: all
@@ -74,7 +74,7 @@ clean:
 	rm -f org/beeware/rubicon/test/*.class
 	rm -f org/beeware/rubicon/*.class
 	rm -f jni/*.o
-	rm -rf dist
+	rm -rf build
 
 %.class : %.java
 	$(JAVAC) $<

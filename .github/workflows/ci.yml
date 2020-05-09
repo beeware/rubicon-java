@@ -71,9 +71,9 @@ jobs:
         env:
           PKG_CONFIG_PATH: ${{ env.pythonLocation }}/lib/pkgconfig/
       - name: Debugging - Show dynamic linker information for librubicon.so
-        run: LD_LIBRARY_PATH="${{ env.pythonLocation }}/lib" ldd dist/librubicon.so || otool -L dist/librubicon.dylib
+        run: LD_LIBRARY_PATH="${{ env.pythonLocation }}/lib" ldd build/librubicon.so || otool -L build/librubicon.dylib
       - name: Test
-        run: RUBICON_LIBRARY="${PWD}/dist/librubicon.${{ runner.os == 'Linux' && 'so' || 'dylib' }}" ${{ runner.os == 'Linux' && 'LD_' || 'DYLD_' }}LIBRARY_PATH="${{env.pythonLocation}}/lib:$(pwd)/dist" java org.beeware.rubicon.test.Test
+        run: RUBICON_LIBRARY="${PWD}/build/librubicon.${{ runner.os == 'Linux' && 'so' || 'dylib' }}" ${{ runner.os == 'Linux' && 'LD_' || 'DYLD_' }}LIBRARY_PATH="${{env.pythonLocation}}/lib:$(pwd)/build" java org.beeware.rubicon.test.Test
 
   # Now test on all recent versions of Python as well.
   python-versions:
