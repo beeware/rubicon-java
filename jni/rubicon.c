@@ -835,9 +835,11 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_init(JNIEnv *env, jobject
     dlopen(LIBPYTHON_RTLD_GLOBAL, RTLD_LAZY | RTLD_GLOBAL);
 #endif
 
-    // Special environment to prefer .pyo, and don't write bytecode if .py are found
-    // because the process will not have write attribute on the device.
+    // To avoid the possibility of permissions errors writing *.pyc files
+    // in permission-constrained app environments, do not write compiled bytecode to disk.
     putenv("PYTHONDONTWRITEBYTECODE=1");
+    // Set stdout and stderr to be unbuffered; this is helpful on Android, where we
+    // are overriding stdout & stderr and would prefer to avoid delays.
     putenv("PYTHONUNBUFFERED=1");
 
     if (pythonHome) {
