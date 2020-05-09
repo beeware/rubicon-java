@@ -4,12 +4,12 @@
 # installed Python.
 ifndef PYTHON_CONFIG
 	PYTHON_EXE := $(shell python3 -c "import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()))")
-	PYTHON_DIR := $(basename $(PYTHON_EXE))
+	PYTHON_DIR := $(shell dirname $(PYTHON_EXE))
 	PYTHON_CONFIG := $(PYTHON_DIR)/python-config
-	ifneq ("$(shell test -e $(PYTHON_CONFIG) && echo -n exists)","exists")
+	VAR := $(shell test -e $(PYTHON_CONFIG) && echo exists)
+	ifneq ($(shell test -e $(PYTHON_CONFIG) && echo exists),exists)
 		PYTHON_CONFIG := $(PYTHON_EXE)-config
 	endif
-
 endif
 
 # Optionally read C compiler from the environment.
@@ -98,6 +98,8 @@ clean:
 
 %.o : %.c
 	echo PYTHON_EXE $(PYTHON_EXE)
+	echo PYTHON_DIR $(PYTHON_DIR)
+	echo VAR $(VAR)
 	ls -la $(PYTHON_DIR)
 	echo PYTHON_CONFIG $(PYTHON_CONFIG)
 	$(CC) -c $(CFLAGS) -Isrc -I$(JAVA_HOME)/include -I$(JAVA_PLATFORM) -o $@ $<
