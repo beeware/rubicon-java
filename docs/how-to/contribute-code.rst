@@ -22,26 +22,17 @@ coding:
 
     $ python3 -m venv venv
     $ source venv/bin/activate.sh
-    (venv) $ pip install --upgrade pip
-    (venv) $ pip install --upgrade setuptools
-    (venv) $ pip install tox
+    (venv) $ python -m pip install --upgrade pip
+    (venv) $ python -m pip install --upgrade setuptools
     (venv) $ git clone https://github.com/beeware/rubicon-java.git
     (venv) $ cd rubicon-objc
-    (venv) $ pip install -e .
+    (venv) $ python -m pip install -e .
 
-Next, check if `python-config` exists in your environment, and points at your
-current active Python 3 install. You can confirm this by running:
-
-.. code-block:: sh
-
-   (venv) $ python3-config --prefix
-
-and checking that the path points at the same Python that you're using. If it
-doesn't, set a ``PYTHON_CONFIG`` environment variable:
+Rubicon uses tox to describe it's testing environment. To install tox, run:
 
 .. code-block:: sh
 
-    (venv) $ export PYTHON_CONFIG="$(python3 -c 'import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()) + "-config")')"
+    (venv) $ python -m pip install tox
 
 You can then run the full test suite:
 
