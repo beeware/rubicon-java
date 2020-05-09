@@ -76,8 +76,8 @@ test: all
 # add it here rather than ask the user to set it in their environment.
 	DYLD_LIBRARY_PATH=$(PYTHON_LIBS_DIR) \
 		LD_LIBRARY_PATH=$(PYTHON_LIBS_DIR) \
-		RUBICON_LIBRARY=$(shell ls ./dist/librubicon.*) \
-		java -Djava.library.path="./dist" org.beeware.rubicon.test.Test
+		RUBICON_LIBRARY=$(shell ls ./build/librubicon.*) \
+		java -Djava.library.path="./build" org.beeware.rubicon.test.Test
 
 clean:
 	rm -f org/beeware/rubicon/test/*.class

@@ -50,13 +50,7 @@ A ``Makefile`` has been provided to compile the JNI and JAR components. Type::
 
     $ make
 
-to compile them. The compiled output will be placed in the ``dist`` directory.
-
-.. admonition:: Cross platform support
-
-    This Makefile currently only works under OS/X; however, the build commands
-    aren't complicated; it should be fairly easy to reproduce the build on other
-    platforms. Pull requests to make the ``Makefile`` cross-platform are welcome.
+to compile them. The compiled output will be placed in the ``build`` directory.
 
 To use Rubicon-Java, you'll need to ensure:
 
@@ -92,8 +86,8 @@ Then start the Python interpreter, and run a Python file::
         System.out.println("Error initializing Python VM.");
     }
 
-    # Start a Python script
-    if (Python.run("/path/to/script.py") != 0) {
+    # Start a Python module
+    if (Python.run("path.of.module") != 0) {
         System.out.println("Error running Python script.");
     }
 
@@ -112,7 +106,7 @@ In your Python script, you can then reference Java objects::
 
     # Then instantiate the Java class, using the API
     # that is exposed in Java.
-    >>> url = URL("http://beeware.org")
+    >>> url = URL("https://beeware.org")
 
     # You can then call methods on the Java object as if it
     # were a Python object.
@@ -163,17 +157,17 @@ To run the Rubicon test suite:
     $ make clean
     $ make all
 
-4. Run the test suite, specifying the path to the compiled library. The following
-   should work properly on both macOS and Linux::
+4. Run the test suite. The following should work properly on both macOS and
+   Linux::
 
     $ make test
 
 This is a Python test suite, invoked via Java.
 
-.. Documentation
-.. -------------
+Documentation
+-------------
 
-.. Full documentation for Rubicon can be found on `Read The Docs`_.
+Full documentation for Rubicon can be found on `Read The Docs`_.
 
 Community
 ---------

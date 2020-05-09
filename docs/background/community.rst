@@ -10,17 +10,16 @@ community through:
 * The `beeware/general`_ channel on Gitter.
 
 Code of Conduct
-===============
+---------------
 
 The BeeWare community has a strict `Code of Conduct`_. All users and
 developers are expected to adhere to this code.
 
 If you have any concerns about this code of conduct, or you wish to report a
-violation of this code, please contact the project founder `Russell
-Keith-Magee`_.
+violation of this code, please contact the project founder `Russell Keith-Magee`_.
 
 Contributing
-============
+------------
 
 If you experience problems with Rubicon, `log them on GitHub`_. If you
 want to contribute code, please `fork the code`_ and `submit a pull request`_.
