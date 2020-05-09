@@ -2,6 +2,8 @@
 Release History
 ===============
 
+.. towncrier release notes start
+
 0.2.0
 -----
 
@@ -27,5 +29,4 @@ Thanks to the contributors, listed by GitHub username in alphabetical order:
 - @paulproteus 
 - @RomanKharin 
 
-.. towncrier release notes start
 .. _towncrier: https://pypi.org/project/towncrier/
