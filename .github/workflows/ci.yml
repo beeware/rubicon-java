@@ -115,6 +115,8 @@ jobs:
         uses: docker://i386/ubuntu:18.04
         # This step does everything because changes within the container (e.g., apt-get) may be discarded between steps.
         # Inspired by: https://github.community/t5/GitHub-Actions/Workflow-fails-when-running-steps-in-a-container/td-p/29652
+        # We need to pass in PYTHON_CONFIG because Ubuntu doesn't define
+        # python3 as an alias for python3.7 by default.
         with:
           entrypoint: /bin/sh
-          args: -c "apt-get update && apt-get install -y build-essential python3.7-dev openjdk-8-jdk-headless && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ make && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ RUBICON_LIBRARY=build/librubicon.so LD_LIBRARY_PATH=./build java org.beeware.rubicon.test.Test"
+          args: -c "apt-get update && apt-get install -y build-essential python3.7-dev openjdk-8-jdk-headless && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ PYTHON_CONFIG=python3.7-config make && JAVA_HOME=/usr/lib/jvm/java-8-openjdk-i386/ RUBICON_LIBRARY=build/librubicon.so LD_LIBRARY_PATH=./build java org.beeware.rubicon.test.Test"

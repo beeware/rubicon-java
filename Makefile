@@ -1,15 +1,11 @@
-# Optionally read PYTHON_CONFIG from the environment to support building
-# against a specific version of Python. We need to look for python-config
-# *and* python3.X-config, because of inconsistencies between venv and native
-# installed Python.
+# If the user specifies PYTHON_CONFIG in their environment, use that value.
+# Otherwise, look for a viable `python3.X-config` in their environment.
+# We do this by using python3 to resolve the *actual* path to the
+# python3 executable - this should be `python3.X`, but it will be the original
+# python install location, not the virtual environment's bin directory.
+# That original install directory should also contain a `python3.X-config`.
 ifndef PYTHON_CONFIG
-	PYTHON_EXE := $(shell python3 -c "import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()))")
-	PYTHON_DIR := $(shell dirname $(PYTHON_EXE))
-	PYTHON_CONFIG := $(PYTHON_DIR)/python-config
-	VAR := $(shell test -e $(PYTHON_CONFIG) && echo exists)
-	ifneq ($(shell test -e $(PYTHON_CONFIG) && echo exists),exists)
-		PYTHON_CONFIG := $(PYTHON_EXE)-config
-	endif
+	PYTHON_CONFIG := $(shell python3 -c "import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()))")-config
 endif
 
 # Optionally read C compiler from the environment.
@@ -97,9 +93,4 @@ clean:
 	$(JAVAC) $<
 
 %.o : %.c
-	echo PYTHON_EXE $(PYTHON_EXE)
-	echo PYTHON_DIR $(PYTHON_DIR)
-	echo VAR $(VAR)
-	ls -la $(PYTHON_DIR)
-	echo PYTHON_CONFIG $(PYTHON_CONFIG)
 	$(CC) -c $(CFLAGS) -Isrc -I$(JAVA_HOME)/include -I$(JAVA_PLATFORM) -o $@ $<
