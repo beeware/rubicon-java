@@ -1,7 +1,9 @@
-# Optionally read PYTHON_CONFIG from the environment to support building against a
-# specific version of Python.
+# Optionally read PYTHON_CONFIG from the environment to support building
+# against a specific version of Python. We reference python-config, rather than
+# python3-config or python3.X-config, because venv doesn't create those linked
+# aliases.
 ifndef PYTHON_CONFIG
-	PYTHON_CONFIG := $(shell (python3 -c "import sys; from pathlib import Path; print(str(Path(sys.executable).resolve()))"))-config
+	PYTHON_CONFIG := $(shell (python3 -c "import sys; from pathlib import Path; print(str(Path(sys.executable).resolve().parent))"))/python-config
 endif
 
 # Optionally read C compiler from the environment.
