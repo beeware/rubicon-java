@@ -75,7 +75,7 @@ jobs:
         env:
           PKG_CONFIG_PATH: ${{ env.pythonLocation }}/lib/pkgconfig/
         run: |
-          PYTHON_CONFIG=$(which python${{ matrix.python-version }}-config) tox -e py
+          PYTHON_CONFIG=$(which python${{ matrix.python-version }}-config) LIBRARY_PATH="${{ env.pythonLocation }}/lib" tox -e py
 
 
   # Now test on all recent versions of Python as well.
