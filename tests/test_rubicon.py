@@ -22,11 +22,12 @@ class JNITest(TestCase):
         self.assertEqual(stack.pop().toString(), "Hello")
 
         # with self.assertRaises(Exception):
-            # stack.pop()
+        #     stack.pop()
 
     def test_subclass_impossible(self):
         def make_subclass():
             Stack = JavaClass('java/util/Stack')
+
             class ImpossibleStackSubclass(Stack):
                 pass
 
@@ -79,8 +80,8 @@ class JNITest(TestCase):
     def test_static_method(self):
         "A static method on a class can be invoked."
         with ExampleClassWithCleanup() as Example:
-            initial_base = Example.get_static_base_int_field()
-            initial = Example.get_static_int_field()
+            self.assertEqual(Example.get_static_base_int_field(), 2288)
+            self.assertEqual(Example.get_static_int_field(), 2299)
 
             Example.set_static_base_int_field(2288)
             Example.set_static_int_field(2299)
@@ -328,7 +329,7 @@ class JNITest(TestCase):
 
         # Create two handler instances so we can check the right one
         # is being invoked.
-        handler1 = MyInterface(5)
+        handler1 = MyInterface(5)  # NOQA; F841
         handler2 = MyInterface(10)
 
         # Create an Example object, and register a handler with it.

@@ -1,8 +1,11 @@
-from ctypes import *
-from ctypes import util
 import os
+from ctypes import c_char_p, cast, cdll, util
 
-from .types import *
+from .types import (
+    jarray, jboolean, jboolean_p, jbyte, jbyte_p, jbyteArray, jchar, jclass,
+    jdouble, jfieldID, jfloat, jint, jlong, jmethodID, jobject, jobjectArray,
+    jshort, jsize, jstring,
+)
 
 # If we're on Android, the SO file isn't on the LD_LIBRARY_PATH,
 # so we have to manually specify it using the environment.
@@ -172,19 +175,27 @@ class _ReflectionAPI(object):
         self._descriptors = {
             'Class': ('FindClass', b'java/lang/Class'),
             'Class__getName': ('GetMethodID', 'Class', b'getName', b'()Ljava/lang/String;'),
-            'Class__getConstructors': ('GetMethodID', 'Class', b'getConstructors', b'()[Ljava/lang/reflect/Constructor;'),
+            'Class__getConstructors': (
+                'GetMethodID', 'Class', b'getConstructors', b'()[Ljava/lang/reflect/Constructor;'
+            ),
             'Class__getMethods': ('GetMethodID', 'Class', b'getMethods', b'()[Ljava/lang/reflect/Method;'),
             'Class__getInterfaces': ('GetMethodID', 'Class', b'getInterfaces', b'()[Ljava/lang/Class;'),
             'Class__getSuperclass': ('GetMethodID', 'Class', b'getSuperclass', b'()Ljava/lang/Class;'),
 
             'Constructor': ('FindClass', b'java/lang/reflect/Constructor'),
-            'Constructor__getParameterTypes': ('GetMethodID', 'Constructor', b'getParameterTypes', b'()[Ljava/lang/Class;'),
+            'Constructor__getParameterTypes': (
+                'GetMethodID', 'Constructor', b'getParameterTypes', b'()[Ljava/lang/Class;'
+            ),
             'Constructor__getModifiers': ('GetMethodID', 'Constructor', b'getModifiers', b'()I'),
 
             'Method': ('FindClass', b'java/lang/reflect/Method'),
             'Method__getName': ('GetMethodID', 'Method', b'getName', b'()Ljava/lang/String;'),
-            'Method__getReturnType': ('GetMethodID', 'Method', b'getReturnType', b'()Ljava/lang/Class;'),
-            'Method__getParameterTypes': ('GetMethodID', 'Method', b'getParameterTypes', b'()[Ljava/lang/Class;'),
+            'Method__getReturnType': (
+                'GetMethodID', 'Method', b'getReturnType', b'()Ljava/lang/Class;'
+            ),
+            'Method__getParameterTypes': (
+                'GetMethodID', 'Method', b'getParameterTypes', b'()[Ljava/lang/Class;'
+            ),
             'Method__getModifiers': ('GetMethodID', 'Method', b'getModifiers', b'()I'),
 
             'Field': ('FindClass', b'java/lang/reflect/Field'),
@@ -196,8 +207,14 @@ class _ReflectionAPI(object):
 
             'Python': ('FindClass', b'org/beeware/rubicon/Python'),
             'Python__proxy': ('GetStaticMethodID', 'Python', b'proxy', b'(Ljava/lang/Class;J)Ljava/lang/Object;'),
-            'Python__getField': ('GetStaticMethodID', 'Python', b'getField', b'(Ljava/lang/Class;Ljava/lang/String;Z)Ljava/lang/reflect/Field;'),
-            'Python__getMethods': ('GetStaticMethodID', 'Python', b'getMethods', b'(Ljava/lang/Class;Ljava/lang/String;Z)[Ljava/lang/reflect/Method;'),
+            'Python__getField': (
+                'GetStaticMethodID', 'Python', b'getField',
+                b'(Ljava/lang/Class;Ljava/lang/String;Z)Ljava/lang/reflect/Field;'
+            ),
+            'Python__getMethods': (
+                'GetStaticMethodID', 'Python', b'getMethods',
+                b'(Ljava/lang/Class;Ljava/lang/String;Z)[Ljava/lang/reflect/Method;'
+            ),
 
             'Boolean': ('FindClass', b'java/lang/Boolean'),
             'Boolean__booleanValue': ('GetMethodID', 'Boolean', b'booleanValue', b'()Z'),
