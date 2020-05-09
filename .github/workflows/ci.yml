@@ -57,23 +57,20 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 8
-      - name: Debug log - Print environment variables and python-config output
+      - name: Install dependencies
         run: |
-          set -x  # To print command names along with their output
-          export
-          python${{ matrix.python-version }}-config --ldflags
-          python${{ matrix.python-version }}-config --cflags
-      - name: Compile
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade setuptools
+          python -m pip install tox
+      - name: Test
           # For the Python 3.5 and 3.7 distributions on macOS in GitHub Actions,
           # python-config --ldflags refuses to print a -L directive. We work around
           # that with the LIBRARY_PATH variable below.
-        run: PYTHON_CONFIG="python${{ matrix.python-version }}-config" LIBRARY_PATH="${{ env.pythonLocation }}/lib" make
         env:
           PKG_CONFIG_PATH: ${{ env.pythonLocation }}/lib/pkgconfig/
-      - name: Debugging - Show dynamic linker information for librubicon.so
-        run: LD_LIBRARY_PATH="${{ env.pythonLocation }}/lib" ldd build/librubicon.so || otool -L build/librubicon.dylib
-      - name: Test
-        run: RUBICON_LIBRARY="${PWD}/build/librubicon.${{ runner.os == 'Linux' && 'so' || 'dylib' }}" ${{ runner.os == 'Linux' && 'LD_' || 'DYLD_' }}LIBRARY_PATH="${{env.pythonLocation}}/lib:$(pwd)/build" java org.beeware.rubicon.test.Test
+        run: |
+          PYTHON_CONFIG=$(which python${{ matrix.python-version }}-config) LIBRARY_PATH="${{ env.pythonLocation }}/lib" tox -e py
+
 
   # Now test on all recent versions of Python as well.
   python-versions:
@@ -96,23 +93,19 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 8
-      - name: Debug log - Print environment variables and python-config output
+      - name: Install dependencies
         run: |
-          set -x  # To print command names along with their output
-          export
-          python${{ matrix.python-version }}-config --ldflags
-          python${{ matrix.python-version }}-config --cflags
-      - name: Compile
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade setuptools
+          python -m pip install tox
+      - name: Test
           # For the Python 3.5 and 3.7 distributions on macOS in GitHub Actions,
           # python-config --ldflags refuses to print a -L directive. We work around
           # that with the LIBRARY_PATH variable below.
-        run: PYTHON_CONFIG="python${{ matrix.python-version }}-config" LIBRARY_PATH="${{ env.pythonLocation }}/lib" make
         env:
           PKG_CONFIG_PATH: ${{ env.pythonLocation }}/lib/pkgconfig/
-      - name: Debugging - Show dynamic linker information for librubicon.so
-        run: LD_LIBRARY_PATH="${{ env.pythonLocation }}/lib" ldd build/librubicon.so || otool -L build/librubicon.dylib
-      - name: Test
-        run: RUBICON_LIBRARY="${PWD}/build/librubicon.${{ runner.os == 'Linux' && 'so' || 'dylib' }}" ${{ runner.os == 'Linux' && 'LD_' || 'DYLD_' }}LIBRARY_PATH="${{env.pythonLocation}}/lib:$(pwd)/build" java org.beeware.rubicon.test.Test
+        run: |
+          PYTHON_CONFIG=$(which python${{ matrix.python-version }}-config) LIBRARY_PATH="${{ env.pythonLocation }}/lib" tox -e py
 
   # Test on x86 (32-bit) Ubuntu 18.04, focusing on 32-bit/64-bit errors; just one Python version.
   x86:

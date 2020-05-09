@@ -67,7 +67,7 @@ build/librubicon.$(SOEXT): jni/rubicon.o
 	mkdir -p build
 	$(CC) -shared -o $@ $< $(LDFLAGS)
 
-PYTHON_LIBS_DIR := $(shell echo `dirname $(PYTHON_CONFIG)`/../Lib)
+PYTHON_LIBS_DIR := $(shell echo `dirname $(PYTHON_CONFIG)`/../lib)
 
 test: all
 # Rather than test which OS we're on, we set the Mac DYLD_LIBRARY_PATH as
