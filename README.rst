@@ -21,8 +21,8 @@ Rubicon-Java
    :target: https://github.com/beeware/rubicon-java/blob/master/LICENSE
    :alt: License
 
-.. image:: https://github.com/beeware/toga/workflows/Build%20status/badge.svg
-   :target: https://github.com/beeware/toga/actions
+.. image:: https://github.com/beeware/rubicon-java/workflows/CI/badge.svg?branch=master
+   :target: https://github.com/beeware/rubicon-java/actions
    :alt: Build Status
 
 .. image:: https://badges.gitter.im/beeware/general.svg
