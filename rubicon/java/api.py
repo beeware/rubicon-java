@@ -22,9 +22,11 @@ def dispatch(instance, method, args):
     that have been instantiated; Python method lookup is then used to invoke
     the appropriate method, and provide the arguments (after casting to
     valid Python objects).
-    This method has no return value, so it can only be used to represent Java
-    interface methods with no return value.
+    This method returns either `None` or a Python `int`. if the Python callable
+    returns a Python `int. It can therefore be used to represent Java interface
+    methods returning either `void` or `int` or `java.lang.Integer`.
     """
+    val = None
     try:
         # print("PYTHON SIDE DISPATCH", instance, method, args)
         pyinstance = _proxy_cache[instance]
@@ -39,7 +41,7 @@ def dispatch(instance, method, args):
                     dispatch_cast(jarg, jtype)
                     for jarg, jtype in zip(args, signature)
                 ]
-                getattr(pyinstance, method)(*args)
+                val = getattr(pyinstance, method)(*args)
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -47,6 +49,8 @@ def dispatch(instance, method, args):
             raise RuntimeError("Can't handle multiple prototypes for same method name (yet!)")
     except KeyError:
         raise RuntimeError("Unknown Python instance %d", instance)
+    if isinstance(val, int):
+        return val
 
 
 ###########################################################################

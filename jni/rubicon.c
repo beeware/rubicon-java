@@ -1048,6 +1048,9 @@ JNIEXPORT void JNICALL Java_org_beeware_rubicon_Python_stop(JNIEnv *env, jobject
  *
  * This method converts the Python method invocation into a call on the
  * method dispatch method that has been registered as part of the runtime.
+ *
+ * It returns NULL to Java EXCEPT if the Python code returns a number. In that
+ * case, it returns a boxed java.lang.Integer.
  *************************************************************************/
 JNIEXPORT jobject JNICALL Java_org_beeware_rubicon_PythonInstance_invoke(JNIEnv *env, jobject thisObj, jobject proxy, jobject method, jobjectArray jargs) {
     LOG_D("Invocation");
@@ -1107,16 +1110,31 @@ JNIEXPORT jobject JNICALL Java_org_beeware_rubicon_PythonInstance_invoke(JNIEnv 
 
     Py_DECREF(pargs);
 
+    jobject ret = (jobject) NULL;
+
     if (result == NULL) {
         LOG_E("Error invoking callback");
         PyErr_Print();
         PyErr_Clear();
     } else {
         LOG_D("Callback invoked");
+        // In order to support Java interfaces that expect a `int` return type, we check if the
+        // Python code returned a number; if so, we convert to `java.lang.Integer`. Java/JNI takes
+        // care of unboxing.
+        if (PyLong_Check(result)) {
+            jint result_int = (jint) PyLong_AsLong(result);
+            jclass java_lang_integer = (*env)->FindClass(env, "java/lang/Integer");
+            jmethodID integer_constructor = (*env)->GetMethodID(env, java_lang_integer, "<init>", "(I)V");
+            if (integer_constructor == NULL) {
+                LOG_D("Unable to call java.lang.Integer constructor.");
+            } else {
+                ret = (*env)->NewObject(env, java_lang_integer, integer_constructor, result_int);
+            }
+        }
         Py_DECREF(result);
     }
     LOG_D("Native invocation done.");
 
     PyGILState_Release(gstate);
-    return NULL;
+    return ret;
 }

@@ -348,6 +348,37 @@ class JNITest(TestCase):
         self.assertEqual(results['string'], 'This is a Java Example object')
         self.assertEqual(results['int'], 47)
 
+    def test_interface_int_return(self):
+        """A Java interface with an int-returning method can be defined in Python and proxied,
+        including return value."""
+        # To ensure Java can call into our Python proxy object and get an `int` out, we
+        # ask AddOne to call a Python class which implements a Java interface with a
+        # method to return an `int`.
+        #
+        # For consistency with previous tests, and to verify that parameter passing works
+        # with int-returning interfaces, we rely on an `Example` object to store state.
+        ICallbackInt = JavaInterface('org/beeware/rubicon/test/ICallbackInt')
+
+        class GetAndIncrementExampleIntField(ICallbackInt):
+            def getInt(self, example):
+                example.set_int_field(example.int_field + 1)
+                return example.int_field
+
+        implementation = GetAndIncrementExampleIntField()
+
+        # Create two `Example` objects to validate there are no weird surprises about where state goes.
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        example1 = Example()
+        example2 = Example()
+
+        # Validate that `AddOne` calls our Python `getInt()` implementation. The first number is 35
+        # because AddOne adds 1, and getInt() adds 1, and it starts at 33.
+        AddOne = JavaClass('org/beeware/rubicon/test/AddOne')
+        self.assertEqual(35, AddOne().addOne(implementation, example1))
+        self.assertEqual(36, AddOne().addOne(implementation, example1))
+        # Validate that implementation mutates example1's state, not example2's state.
+        self.assertEqual(35, AddOne().addOne(implementation, example2))
+
     def test_alternatives(self):
         "A class is aware of it's type hierarchy"
         Example = JavaClass('org/beeware/rubicon/test/Example')
