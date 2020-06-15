@@ -107,7 +107,7 @@ class AndroidEventLoop(asyncio.SelectorEventLoop):
         # checks for other tasks that require wakeup by calling this method. The fact that
         # running delayed tasks can trigger the next wakeup is what makes this event loop a "loop."
         self.android_interop.call_later(
-            "run_delayed_tasks", self.run_delayed_tasks, timeout * 1000,
+            self.run_delayed_tasks, timeout * 1000,
         )
 
     def _get_next_delayed_task_wakeup(self):
@@ -219,46 +219,36 @@ class AndroidInterop:
     """Encapsulate details of Android event loop cooperation."""
 
     def __init__(self):
-        self._runnable_by_key = {}
-        self._calling_soon = set()
+        # `_runnable_by_fn` is a one-to-one mapping from Python callables to Java Runnables.
+        # This allows us to avoid creating more than one Java object per Python callable, which
+        # would be waste of memory and CPU.
+        self._runnable_by_fn = {}
+        # _handler is a lazily-created `android.os.Handler`. We use its `postDelayed()` method
+        # to ask for wakeup. We only create it when needed, which avoids using memory & CPU
+        # until needed.
         self._handler = None
 
     @property
     def handler(self):
         if self._handler is None:
-            # We use `android.os.Handler.postDelayed()` to ask for wakeup. This requires an instance
-            # of `Handler`, which we cache. We use the default constructor which assumes we are on
-            # the Android UI thread.
+            # Use the default constructor, which assumes we are on the Android UI thread.
             self._handler = Handler()
         return self._handler
 
-    def get_or_create_runnable(self, key, fn):
-        if key in self._runnable_by_key:
-            return self._runnable_by_key[key]
-        android_interop_self = self
+    def get_or_create_runnable(self, fn):
+        if fn in self._runnable_by_fn:
+            return self._runnable_by_fn[fn]
 
         class PythonRunnable(Runnable):
             def run(self):
-                if key in android_interop_self._calling_soon:
-                    android_interop_self._calling_soon.remove(key)
                 fn()
 
-        self._runnable_by_key[key] = PythonRunnable()
-        return self._runnable_by_key[key]
+        self._runnable_by_fn[fn] = PythonRunnable()
+        return self._runnable_by_fn[fn]
 
-    def call_soon_dedup(self, key, fn):
-        """Enqueue a Python callable `fn` to be run soon. Use `key` to identify avoid duplication:
-        if `call_soon_dedup()` is called twice with the same `key`, we only ask Android for one
-        wake-up."""
-        if key in self._calling_soon:
-            return
-        self.handler.postDelayed(self.get_or_create_runnable(key, fn), 0)
-
-    def call_later(self, key, fn, timeout_millis):
-        """Enqueue a Python callable `fn` to be run after `timeout_millis` milliseconds. Since this
-        relies on a `java.lang.Runnable`, and we want create as few Java objects as possible, use
-        `key` as a cache key to avoid creating the same `Runnable` repeatedly."""
+    def call_later(self, fn, timeout_millis):
+        """Enqueue a Python callable `fn` to be run after `timeout_millis` milliseconds."""
         # Coerce timeout_millis to an integer since postDelayed() takes an integer (jlong).
         self.handler.postDelayed(
-            self.get_or_create_runnable(key, fn), int(timeout_millis)
+            self.get_or_create_runnable(fn), int(timeout_millis)
         )
