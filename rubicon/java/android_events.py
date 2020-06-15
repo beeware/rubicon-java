@@ -239,11 +239,7 @@ class AndroidInterop:
         if fn in self._runnable_by_fn:
             return self._runnable_by_fn[fn]
 
-        class PythonRunnable(Runnable):
-            def run(self):
-                fn()
-
-        self._runnable_by_fn[fn] = PythonRunnable()
+        self._runnable_by_fn[fn] = PythonRunnable(fn)
         return self._runnable_by_fn[fn]
 
     def call_later(self, fn, timeout_millis):
@@ -252,3 +248,13 @@ class AndroidInterop:
         self.handler.postDelayed(
             self.get_or_create_runnable(fn), int(timeout_millis)
         )
+
+
+class PythonRunnable(Runnable):
+    '''Bind a specific Python callable in a Java `Runnable`.'''
+    def __init__(self, fn):
+        super().__init__()
+        self._fn = fn
+
+    def run(self):
+        self._fn()
