@@ -264,7 +264,8 @@ class AndroidInterop:
 # Per https://github.com/python/cpython/blob/master/LICENSE , re-use is permitted
 # via the Python Software Foundation License Version 2, which includes inclusion
 # into this project under its BSD license terms so long as we retain this copyright notice:
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Python Software Foundation; All Rights Reserved.
+# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013,
+# 2014, 2015, 2016, 2017, 2018, 2019, 2020 Python Software Foundation; All Rights Reserved.
 # and the Python Software Foundation License Version 2 itself.
 #
 # # PYTHON SOFTWARE FOUNDATION LICENSE VERSION 2
