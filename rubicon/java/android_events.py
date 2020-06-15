@@ -22,11 +22,8 @@ class AndroidEventLoop(asyncio.SelectorEventLoop):
     # In some cases, for simplicity of implementation, this class reaches into the internals of the
     # parent and grandparent classes.
     #
-    # A Python event loop needs to handle two things:
-    #
-    # - Waking the event loop when delayed tasks are ready to run.
-    #
-    # - Waking the event loop when I/O is possible on a set of file descriptors.
+    # A Python event loop handles two kinds of tasks. It needs to run delayed tasks after waiting
+    # the right amount of time, and it needs to do I/O when file descriptors are ready for I/O.
     #
     # `SelectorEventLoop` uses an approach we **cannot** use: it calls the `select()` method
     # to block waiting for specific file descriptors to be come ready for I/O, or a timeout
