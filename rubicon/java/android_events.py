@@ -34,9 +34,9 @@ class AndroidEventLoop(asyncio.SelectorEventLoop):
     #
     # To handle delayed tasks, `AndroidEventLoop` asks the Android event loop to wake it up when
     # its soonest delayed task is ready. To accomplish this, it relies on a `SelectorEventLoop`
-    # implementation of `_scheduled` being a collection of tasks sorted by soonest wakeup time.
+    # implementation detail: `_scheduled` is a collection of tasks sorted by soonest wakeup time.
     #
-    # To be woken up when it's possible to do I/O, `AndroidEventLoop` will register file descriptors
+    # To handle waking up when it's possible to do I/O, `AndroidEventLoop` will register file descriptors
     # with the Android event loop so the platform can wake it up accordingly. It does not do this yet.
     def __init__(self):
         # Tell the parent constructor to use our custom Selector.
@@ -150,8 +150,8 @@ class AndroidEventLoop(asyncio.SelectorEventLoop):
         return timeout
 
     def run_delayed_tasks(self):
-        """Android-specific: Handle delayed tasks when the platform wakes us up. Additionally,
-        enqueue this method to be run in the future if there are more delayed tasks to do later."""
+        """Android-specific: Run any delayed tasks that have become ready. Additionally, check if
+        there are more delayed tasks to execute in the future; if so, schedule the next wakeup."""
         # Based heavily on `BaseEventLoop._run_once()` from CPython -- specifically, the part
         # after blocking on `select()`.
         # Handle 'later' callbacks that are ready.
