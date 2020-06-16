@@ -12,7 +12,7 @@
 
 #include "rubicon.h"
 
-#ifdef ANDROID
+#ifdef __ANDROID__
 
 /**************************************************************************
  **************************************************************************
@@ -86,13 +86,21 @@ static PyMethodDef android_methods[] = {
 static struct PyModuleDef android_definition = {
     PyModuleDef_HEAD_INIT,
     "android",
-    "A module exposing Android functionality.",
+    "Android logging wrappers",
     -1,
-    android_methods};
+    android_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+};
 
-PyMODINIT_FUNC initandroid(void) {
-    (void)Py_InitModule("android", &android_definition);
+PyMODINIT_FUNC
+PyInit_android(void)
+{
+    return PyModule_Create(&android_definition);
 }
+
 #else
 
 #define LOG_V(...) printf("");
@@ -860,7 +868,7 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_init(JNIEnv *env, jobject
         LOG_D("Using default PYTHONPATH");
     }
 
-#ifdef ANDROID
+#ifdef __ANDROID__
     // If we're on android, we need to specify the location of the Rubicon
     // shared library as part of the environment.
     char rubiconLibVar[256];
@@ -873,25 +881,24 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_init(JNIEnv *env, jobject
     }
 
     // Initialize and bootstrap the Android logging module
-    LOG_I("Initializing Android logging module...");
-    PyImport_AppendInittab("android", init_android);
+    LOG_I("Adding Android logging module to default modules...");
+    int append_inittab_result = PyImport_AppendInittab("android", PyInit_android);
+    if (append_inittab_result == -1) {
+        LOG_E("Error: could not append Android logging module to default modules");
+    }
 #endif
 
     // putenv("PYTHONVERBOSE=1");
 
-    LOG_I("Initializing Python runtime...");
+    LOG_D("Initializing Python runtime...");
     Py_Initialize();
 
-    LOG_I("Initializing Python threads...");
+    LOG_D("Initializing Python threads...");
     // If other modules are using threads, we need to initialize them before.
     PyEval_InitThreads();
 
-#ifdef ANDROID
-    // Initialize and bootstrap the Android logging module
-    LOG_I("Initializing Android logging module...");
-    initandroid();
-
-    LOG_D("Bootstrap Android logging...");
+#ifdef __ANDROID__
+    LOG_D("Replacing sys.stdout/sys.stderr with Android log wrappers...");
     ret = PyRun_SimpleString(
         "import sys\n"
         "import android\n"
@@ -909,15 +916,13 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_init(JNIEnv *env, jobject
         "        return\n"
         "sys.stdout = LogFile(android.info)\n"
         "sys.stderr = LogFile(android.error)\n"
-        "print 'Android Logging bootstrap active.'");
+        "print('sys.stdout/stderr replaced with Android log wrappers.')");
     if (ret != 0) {
-        LOG_E("Exception during logging bootstrap.");
-    } else {
-        LOG_D("Python runtime started.");
+        LOG_E("Exception while routing sys.stdout/stderr to Android log.");
     }
 #endif
 
-    LOG_I("Import rubicon...");
+    LOG_V("Import rubicon...");
     PyObject *rubicon;
 
     rubicon = PyImport_ImportModule("rubicon.java");
@@ -928,7 +933,7 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_init(JNIEnv *env, jobject
         java = NULL;
         return -1;
     }
-    LOG_D("Got rubicon python module");
+    LOG_V("Got rubicon python module");
 
     method_handler = PyObject_GetAttrString(rubicon, "dispatch");
     if (method_handler == NULL) {
@@ -938,11 +943,11 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_init(JNIEnv *env, jobject
         java = NULL;
         return -2;
     }
-    LOG_D("Got method dispatch handler");
+    LOG_V("Got method dispatch handler");
 
     Py_DECREF(rubicon);
 
-    LOG_D("Python runtime started.");
+    LOG_I("Python runtime started.");
     return ret;
 }
 
@@ -962,16 +967,13 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_run(JNIEnv *env, jobject 
     if (args) {
         python_argc += (*env)->GetArrayLength(env, args);
     }
-    LOG_D("There are %d arguments", python_argc);
 
     wchar_t **python_argv = PyMem_RawMalloc(sizeof(wchar_t) * python_argc);
     python_argv[0] = Py_DecodeLocale(module_str, NULL);
-    LOG_D("ARG 0: %s", script_str);
     for (i = 1; i < python_argc; i++) {
         jobject arg = (*env)->GetObjectArrayElement(env, args, i - 1);
         const char *arg_str = (*env)->GetStringUTFChars(env, arg, NULL);
         python_argv[i] = Py_DecodeLocale(arg_str, NULL);
-        LOG_D("ARG %d: %s", i, arg_str);
     }
     PySys_SetArgv(python_argc, python_argv);
 
@@ -1014,8 +1016,9 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_run(JNIEnv *env, jobject 
         result = PyObject_Call(run_module_as_main, runargs, NULL);
         if (result == NULL) {
             LOG_E("Application quit abnormally!");
-            ret = 1;
             PyErr_Print();
+            PyErr_Clear();
+            ret = 1;
         }
     }
 
@@ -1053,22 +1056,16 @@ JNIEXPORT void JNICALL Java_org_beeware_rubicon_Python_stop(JNIEnv *env, jobject
  * case, it returns a boxed java.lang.Integer.
  *************************************************************************/
 JNIEXPORT jobject JNICALL Java_org_beeware_rubicon_PythonInstance_invoke(JNIEnv *env, jobject thisObj, jobject proxy, jobject method, jobjectArray jargs) {
-    LOG_D("Invocation");
-
     jclass PythonInstance = (*env)->FindClass(env, "org/beeware/rubicon/PythonInstance");
-    LOG_D("PythonInstance: %ld", (long)PythonInstance);
     jfieldID PythonInstance__id = (*env)->GetFieldID(env, PythonInstance, "instance", "J");
-    LOG_D("id: %ld", (long)PythonInstance__id);
-
-    jlong instance = (*env)->GetLongField(env, thisObj, PythonInstance__id);
-    // `jlong` is always 64 bits. Use portable PRId64 macro for `ld` on 64-bit and `lld` on 32-bit.
-    LOG_D("instance: %" PRId64, instance);
 
     jclass Method = (*env)->FindClass(env, "java/lang/reflect/Method");
     jmethodID method__getName = (*env)->GetMethodID(env, Method, "getName", "()Ljava/lang/String;");
 
     jobject method_name = (*env)->CallObjectMethod(env, method, method__getName);
 
+    // `jlong` is always 64 bits. Use portable PRId64 macro for `ld` on 64-bit and `lld` on 32-bit.
+    jlong instance = (*env)->GetLongField(env, thisObj, PythonInstance__id);
     LOG_D("Native invocation %" PRId64 " :: %s", instance, (*env)->GetStringUTFChars(env, method_name, NULL));
 
     PyGILState_STATE gstate;
@@ -1089,18 +1086,14 @@ JNIEXPORT jobject JNICALL Java_org_beeware_rubicon_PythonInstance_invoke(JNIEnv 
 
     if (jargs) {
         jsize argc = (*env)->GetArrayLength(env, jargs);
-        LOG_D("There are %d arguments", argc);
-
         args = PyTuple_New(argc);
         jsize i;
         for (i = 0; i != argc; ++i) {
             PyTuple_SET_ITEM(args, i, PyLong_FromLong((unsigned long)(*env)->GetObjectArrayElement(env, jargs, i)));
         }
     } else {
-        LOG_D("There are no arguments");
         args = PyTuple_New(0);
     }
-    LOG_D("Made arguments tuple");
 
     PyTuple_SET_ITEM(pargs, 0, pinstance);
     PyTuple_SET_ITEM(pargs, 1, pmethod_name);
@@ -1117,7 +1110,6 @@ JNIEXPORT jobject JNICALL Java_org_beeware_rubicon_PythonInstance_invoke(JNIEnv 
         PyErr_Print();
         PyErr_Clear();
     } else {
-        LOG_D("Callback invoked");
         // In order to support Java interfaces that expect a `int` return type, we check if the
         // Python code returned a number; if so, we convert to `java.lang.Integer`. Java/JNI takes
         // care of unboxing.
@@ -1126,7 +1118,7 @@ JNIEXPORT jobject JNICALL Java_org_beeware_rubicon_PythonInstance_invoke(JNIEnv 
             jclass java_lang_integer = (*env)->FindClass(env, "java/lang/Integer");
             jmethodID integer_constructor = (*env)->GetMethodID(env, java_lang_integer, "<init>", "(I)V");
             if (integer_constructor == NULL) {
-                LOG_D("Unable to call java.lang.Integer constructor.");
+                LOG_E("Unable to call java.lang.Integer constructor.");
             } else {
                 ret = (*env)->NewObject(env, java_lang_integer, integer_constructor, result_int);
             }
