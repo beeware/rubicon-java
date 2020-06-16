@@ -69,7 +69,7 @@ build/rubicon.jar: org/beeware/rubicon/Python.class org/beeware/rubicon/PythonIn
 	mkdir -p build
 	jar -cvf build/rubicon.jar org/beeware/rubicon/Python.class org/beeware/rubicon/PythonInstance.class
 
-build/test.jar: org/beeware/rubicon/test/BaseExample.class org/beeware/rubicon/test/Example.class org/beeware/rubicon/test/ICallback.class org/beeware/rubicon/test/AbstractCallback.class org/beeware/rubicon/test/Thing.class org/beeware/rubicon/test/Test.class
+build/test.jar: org/beeware/rubicon/test/BaseExample.class org/beeware/rubicon/test/Example.class org/beeware/rubicon/test/ICallback.class org/beeware/rubicon/test/ICallbackInt.class org/beeware/rubicon/test/AddOne.class org/beeware/rubicon/test/AbstractCallback.class org/beeware/rubicon/test/Thing.class org/beeware/rubicon/test/Test.class
 	mkdir -p build
 	jar -cvf build/test.jar org/beeware/rubicon/test/*.class
 
