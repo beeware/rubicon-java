@@ -4,6 +4,32 @@ Release History
 
 .. towncrier release notes start
 
+0.2.1 (2020-06-17)
+==================
+Features
+--------
+
+* Add the ability to implement Java interface methods that return `int`. (#42)
+
+Misc
+----
+
+* #31, #37
+
+
+0.2.1 (2020-06-17)
+==================
+Features
+--------
+
+* Add the ability to implement Java interface methods that return `int`. (#42)
+
+Misc
+----
+
+* #31, #37
+
+
 0.2.0
 -----
 
