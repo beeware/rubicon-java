@@ -13,3 +13,4 @@ local
 .tox
 venv
 .vscode
+pip-wheel-metadata/
