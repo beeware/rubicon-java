@@ -38,6 +38,13 @@ PYTHON_VERSION := $(shell echo ${PYTHON_LDVERSION} | sed 's,[^0-9.],,g')
 CFLAGS := $(shell $(PYTHON_CONFIG) --cflags) -fPIC
 LDFLAGS := $(shell $(PYTHON_CONFIG) --ldflags ${PYTHON_CONFIG_EXTRA_FLAGS} | sed 'sX-Wl,-stack_size,1000000XXg')
 
+# If we are compiling for Android, the C code will detect it via #define. We need to accommodate
+# that by linking to the Android "log" library.
+IS_ANDROID := $(shell $(CC) -dM -E - < /dev/null | grep -q __ANDROID__ && echo yes || echo no)
+ifeq ($(IS_ANDROID),yes)
+	LDFLAGS := $(LDFLAGS) -llog
+endif
+
 ifdef JAVA_HOME
 	JAVAC := $(JAVA_HOME)/bin/javac
 else
