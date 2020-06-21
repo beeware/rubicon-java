@@ -1,1 +1,2 @@
-Route sys.stdout & sys.stderr to Android debug log with an ``android`` module.
+``sys.stdout`` & ``sys.stderr`` are now routed to the Android debug log using an
+``android`` Python module.
