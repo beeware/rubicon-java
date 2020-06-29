@@ -1,5 +1,5 @@
 import os
-from ctypes import c_char_p, cast, cdll, util
+from ctypes import c_char_p, cast, cdll
 
 from .types import (
     jarray, jboolean, jboolean_p, jbyte, jbyte_p, jbyteArray, jchar, jclass,
@@ -7,16 +7,19 @@ from .types import (
     jshort, jsize, jstring,
 )
 
-# If we're on Android, the SO file isn't on the LD_LIBRARY_PATH,
-# so we have to manually specify it using the environment.
-_java_lib = util.find_library('rubicon')
-if _java_lib is None:
-    try:
-        _java_lib = os.environ['RUBICON_LIBRARY']
-    except KeyError:
+# If RUBICON_LIBRARY is set in the environment, rely on it. If not,
+# import and use ctypes.util to find it. We defer the ctypes.util
+# import for speed, since on Android (a performance-limited target),
+# avoiding an import can be a big win.
+_env_java_lib = os.environ.get('RUBICON_LIBRARY')
+if _env_java_lib:
+    java = cdll.LoadLibrary(_env_java_lib)
+else:
+    from ctypes import util
+    _java_lib = util.find_library('rubicon')
+    if _java_lib is None:
         raise ValueError("Can't find Rubicon library")
-
-java = cdll.LoadLibrary(_java_lib)
+    java = cdll.LoadLibrary(_java_lib)
 
 # These are the parts of the JNI API we use. You can find the spec for the rest here:
 # https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/functions.html
