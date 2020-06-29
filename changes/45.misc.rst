@@ -1,3 +1,1 @@
-Stopped configuring two Python features by environment variable (unbuffered I/O
-& no writing of bytecode). Callers of ``Python.init()`` can set environment
-variables to their pleasure.
+Bytecode writing and buffered I/O are no longer explicitly disabled on initialization. These features can be re-enabled by setting the ``PYTHONDONTWRITEBYTECODE`` and ``PYTHONUNBUFFERED`` environment variables, respectively.
