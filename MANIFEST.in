@@ -9,7 +9,6 @@ include docs/Makefile
 include docs/make.bat
 include docs/requirements_docs.txt
 include docs/spelling_wordlist
-recursive-include rubicon/java *.py
 recursive-include docs *.png *.py *.rst
 prune docs/_build
 recursive-include jni *.h *.c *.mk
