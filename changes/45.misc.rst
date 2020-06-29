@@ -1,0 +1,3 @@
+Stopped configuring two Python features by environment variable (unbuffered I/O
+& no writing of bytecode). Callers of ``Python.init()`` can set environment
+variables to their pleasure.
