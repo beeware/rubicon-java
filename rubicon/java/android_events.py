@@ -1,0 +1,260 @@
+import asyncio
+import asyncio.base_events
+import asyncio.events
+import asyncio.log
+import heapq
+import selectors
+import sys
+import threading
+
+from . import JavaClass, JavaInterface
+
+Handler = JavaClass("android/os/Handler")
+Runnable = JavaInterface("java/lang/Runnable")
+
+# Some methods in this file are based on CPython's implementation.
+# Per https://github.com/python/cpython/blob/master/LICENSE , re-use is permitted
+# via the Python Software Foundation License Version 2, which includes inclusion
+# into this project under its BSD license terms so long as we retain this copyright notice:
+# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013,
+# 2014, 2015, 2016, 2017, 2018, 2019, 2020 Python Software Foundation; All Rights Reserved.
+
+
+class AndroidEventLoop(asyncio.SelectorEventLoop):
+    # `AndroidEventLoop` exists to support starting the Python event loop cooperatively with
+    # the built-in Android event loop. Since it's cooperative, it has a `run_forever_cooperatively()`
+    # method which returns immediately. This is is different from the parent class's `run_forever()`,
+    # which blocks.
+    #
+    # In some cases, for simplicity of implementation, this class reaches into the internals of the
+    # parent and grandparent classes.
+    #
+    # A Python event loop handles two kinds of tasks. It needs to run delayed tasks after waiting
+    # the right amount of time, and it needs to do I/O when file descriptors are ready for I/O.
+    #
+    # `SelectorEventLoop` uses an approach we **cannot** use: it calls the `select()` method
+    # to block waiting for specific file descriptors to be come ready for I/O, or a timeout
+    # corresponding to the soonest delayed task, whichever occurs sooner.
+    #
+    # To handle delayed tasks, `AndroidEventLoop` asks the Android event loop to wake it up when
+    # its soonest delayed task is ready. To accomplish this, it relies on a `SelectorEventLoop`
+    # implementation detail: `_scheduled` is a collection of tasks sorted by soonest wakeup time.
+    #
+    # To handle waking up when it's possible to do I/O, `AndroidEventLoop` will register file descriptors
+    # with the Android event loop so the platform can wake it up accordingly. It does not do this yet.
+    def __init__(self):
+        # Tell the parent constructor to use our custom Selector.
+        super().__init__(_SelectorMinusSelect())
+        # Create placeholders for lazily-created objects.
+        self.android_interop = AndroidInterop()
+
+    # Override parent `_call_soon()` to ensure Android wakes us up to do the delayed task.
+    def _call_soon(self, callback, args, context):
+        ret = super()._call_soon(callback, args, context)
+        self.enqueue_android_wakeup_for_delayed_tasks()
+        return ret
+
+    # Override parent `_add_callback()` to ensure Android wakes us up to do the delayed task.
+    def _add_callback(self, handle):
+        ret = super()._add_callback(handle)
+        self.enqueue_android_wakeup_for_delayed_tasks()
+        return ret
+
+    def run_forever_cooperatively(self):
+        """Configure the event loop so it is started, doing as little work as possible to
+        ensure that. Most Android interop objects are created lazily so that the cost of
+        event loop interop is not paid by apps that don't use the event loop."""
+        # Based on `BaseEventLoop.run_forever()` in CPython.
+        if self.is_running():
+            raise RuntimeError("Refusing to start since loop is already running.")
+        if self._closed:
+            raise RuntimeError("Event loop is closed. Create a new object.")
+        self._set_coroutine_origin_tracking(self._debug)
+        self._thread_id = threading.get_ident()
+
+        self._old_agen_hooks = sys.get_asyncgen_hooks()
+        sys.set_asyncgen_hooks(
+            firstiter=self._asyncgen_firstiter_hook,
+            finalizer=self._asyncgen_finalizer_hook,
+        )
+        asyncio.events._set_running_loop(self)
+
+    def enqueue_android_wakeup_for_delayed_tasks(self):
+        """Ask Android to wake us up when delayed tasks are ready to be handled.
+
+        Since this is effectively the actual event loop, it also handles stopping the loop."""
+        # If we are supposed to stop, actually stop.
+        if self._stopping:
+            self._stopping = False
+            self._thread_id = None
+            asyncio.events._set_running_loop(None)
+            self._set_coroutine_origin_tracking(False)
+            sys.set_asyncgen_hooks(*self._old_agen_hooks)
+            # Remove Android event loop interop objects.
+            self.android_interop = None
+            return
+
+        # If we have actually already stopped, then do nothing.
+        if self._thread_id is None:
+            return
+
+        timeout = self._get_next_delayed_task_wakeup()
+        if timeout is None:
+            # No delayed tasks.
+            return
+
+        # Ask Android to wake us up to run delayed tasks. Running delayed tasks also
+        # checks for other tasks that require wakeup by calling this method. The fact that
+        # running delayed tasks can trigger the next wakeup is what makes this event loop a "loop."
+        self.android_interop.call_later(
+            self.run_delayed_tasks, timeout * 1000,
+        )
+
+    def _get_next_delayed_task_wakeup(self):
+        """Compute the time to sleep before we should be woken up to handle delayed tasks."""
+        # This is based heavily on the CPython's implementation of `BaseEventLoop._run_once()`
+        # before it blocks on `select()`.
+        _MIN_SCHEDULED_TIMER_HANDLES = 100
+        _MIN_CANCELLED_TIMER_HANDLES_FRACTION = 0.5
+        MAXIMUM_SELECT_TIMEOUT = 24 * 3600
+
+        sched_count = len(self._scheduled)
+        if (
+            sched_count > _MIN_SCHEDULED_TIMER_HANDLES
+            and self._timer_cancelled_count / sched_count
+            > _MIN_CANCELLED_TIMER_HANDLES_FRACTION
+        ):
+            # Remove delayed calls that were cancelled if their number
+            # is too high
+            new_scheduled = []
+            for handle in self._scheduled:
+                if handle._cancelled:
+                    handle._scheduled = False
+                else:
+                    new_scheduled.append(handle)
+
+            heapq.heapify(new_scheduled)
+            self._scheduled = new_scheduled
+            self._timer_cancelled_count = 0
+        else:
+            # Remove delayed calls that were cancelled from head of queue.
+            while self._scheduled and self._scheduled[0]._cancelled:
+                self._timer_cancelled_count -= 1
+                handle = heapq.heappop(self._scheduled)
+                handle._scheduled = False
+
+        timeout = None
+        if self._ready or self._stopping:
+            timeout = 0
+        elif self._scheduled:
+            # Compute the desired timeout.
+            when = self._scheduled[0]._when
+            timeout = min(max(0, when - self.time()), MAXIMUM_SELECT_TIMEOUT)
+
+        return timeout
+
+    def run_delayed_tasks(self):
+        """Android-specific: Run any delayed tasks that have become ready. Additionally, check if
+        there are more delayed tasks to execute in the future; if so, schedule the next wakeup."""
+        # Based heavily on `BaseEventLoop._run_once()` from CPython -- specifically, the part
+        # after blocking on `select()`.
+        # Handle 'later' callbacks that are ready.
+        end_time = self.time() + self._clock_resolution
+        while self._scheduled:
+            handle = self._scheduled[0]
+            if handle._when >= end_time:
+                break
+            handle = heapq.heappop(self._scheduled)
+            handle._scheduled = False
+            self._ready.append(handle)
+
+        # This is the only place where callbacks are actually *called*.
+        # All other places just add them to ready.
+        # Note: We run all currently scheduled callbacks, but not any
+        # callbacks scheduled by callbacks run this time around --
+        # they will be run the next time (after another I/O poll).
+        # Use an idiom that is thread-safe without using locks.
+        ntodo = len(self._ready)
+        for i in range(ntodo):
+            handle = self._ready.popleft()
+            if handle._cancelled:
+                continue
+            if self._debug:
+                try:
+                    self._current_handle = handle
+                    t0 = self.time()
+                    handle._run()
+                    dt = self.time() - t0
+                    if dt >= self.slow_callback_duration:
+                        asyncio.log.logger.warning(
+                            "Executing %s took %.3f seconds",
+                            asyncio.base_events._format_handle(handle),
+                            dt,
+                        )
+                finally:
+                    self._current_handle = None
+            else:
+                handle._run()
+        handle = None  # Needed to break cycles when an exception occurs.
+
+        # End code borrowed from CPython, within this method.
+        self.enqueue_android_wakeup_for_delayed_tasks()
+
+
+class _SelectorMinusSelect(selectors.PollSelector):
+    # This class removes the `select()` method from PollSelector, purely as
+    # a safety mechanism. On Android, this would be an error -- it would result
+    # in the app freezing, triggering an App Not Responding pop-up from the
+    # platform, and the user killing the app.
+    #
+    # Instead, the AndroidEventLoop cooperates with the native Android event
+    # loop to be woken up to get work done as needed.
+    def select(self, *args, **kwargs):
+        raise NotImplementedError(
+            "_SelectorMinusSelect refuses to select(); see comments."
+        )
+
+
+class AndroidInterop:
+    """Encapsulate details of Android event loop cooperation."""
+
+    def __init__(self):
+        # `_runnable_by_fn` is a one-to-one mapping from Python callables to Java Runnables.
+        # This allows us to avoid creating more than one Java object per Python callable, which
+        # would be waste of memory and CPU.
+        self._runnable_by_fn = {}
+        # _handler is a lazily-created `android.os.Handler`. We use its `postDelayed()` method
+        # to ask for wakeup. We only create it when needed, which avoids using memory & CPU
+        # until needed.
+        self._handler = None
+
+    @property
+    def handler(self):
+        if self._handler is None:
+            # Use the default constructor, which assumes we are on the Android UI thread.
+            self._handler = Handler()
+        return self._handler
+
+    def get_or_create_runnable(self, fn):
+        if fn in self._runnable_by_fn:
+            return self._runnable_by_fn[fn]
+
+        self._runnable_by_fn[fn] = PythonRunnable(fn)
+        return self._runnable_by_fn[fn]
+
+    def call_later(self, fn, timeout_millis):
+        """Enqueue a Python callable `fn` to be run after `timeout_millis` milliseconds."""
+        # Coerce timeout_millis to an integer since postDelayed() takes an integer (jlong).
+        self.handler.postDelayed(
+            self.get_or_create_runnable(fn), int(timeout_millis)
+        )
+
+
+class PythonRunnable(Runnable):
+    '''Bind a specific Python callable in a Java `Runnable`.'''
+    def __init__(self, fn):
+        super().__init__()
+        self._fn = fn
+
+    def run(self):
+        self._fn()
