@@ -263,7 +263,7 @@ class AndroidSelector(selectors.SelectSelector):
     """Subclass of selectors.Selector which cooperates with the Android event loop
     to learn when file descriptors become ready for I/O.
 
-    It lacks a `select()` function to avoid blocking."""
+    AndroidSelector's `select()` raises NotImplementedError; see its comments."""
 
     def __init__(self, loop):
         super().__init__()
