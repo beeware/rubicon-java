@@ -1,2 +1,0 @@
-Only call ``ctypes.util.find_library()`` if ``RUBICON_LIBRARY`` is absent
-from the environment. This allows a rubicon-java user to pick the fast path.

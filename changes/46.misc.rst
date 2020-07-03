@@ -1,1 +1,0 @@
-Remove rubicon/__init__.py in order to rely on Python 3.3+ namespace package system (PEP 420)

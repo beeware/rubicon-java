@@ -1,1 +1,0 @@
-Further simplified namespace package metadata in setup.cfg.

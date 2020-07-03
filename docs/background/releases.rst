@@ -4,6 +4,22 @@ Release History
 
 .. towncrier release notes start
 
+0.2.2 (2020-07-03)
+==================
+Features
+--------
+
+* Python's AsyncIO event loop is now integrated with the Android event loop.
+  (#40, #49)
+* ``sys.stdout`` & ``sys.stderr`` are now routed to the Android debug log using
+  an ``android`` Python module. (#44)
+
+Misc
+----
+
+* #45, #46, #47, #48
+
+
 0.2.1 (2020-06-17)
 ==================
 Features
@@ -49,10 +65,10 @@ This version specifically targets Java 8 to simplify Android support.
 
 Thanks to the contributors, listed by GitHub username in alphabetical order:
 
-- @freakboy3742 
-- @glasnt 
-- @jacebrowning 
-- @paulproteus 
-- @RomanKharin 
+- @freakboy3742
+- @glasnt
+- @jacebrowning
+- @paulproteus
+- @RomanKharin
 
 .. _towncrier: https://pypi.org/project/towncrier/

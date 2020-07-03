@@ -1,1 +1,0 @@
-Bytecode writing and buffered I/O are no longer explicitly disabled on initialization. These features can be re-enabled by setting the ``PYTHONDONTWRITEBYTECODE`` and ``PYTHONUNBUFFERED`` environment variables, respectively.
