@@ -1,1 +1,1 @@
-Added I/O integration to cooperate with Android event loop.
+AsyncIO network operations are now integrated with the Android event loop.
