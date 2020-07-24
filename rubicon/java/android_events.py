@@ -122,6 +122,12 @@ class AndroidEventLoop(asyncio.SelectorEventLoop):
             self.run_delayed_tasks, timeout * 1000,
         )
 
+    def _set_coroutine_origin_tracking(self, debug):
+        # If running on Python 3.7 or 3.8, integrate with upstream event loop's debug feature, allowing
+        # unawaited coroutines to have some useful info logged. See https://bugs.python.org/issue32591
+        if hasattr(super(), "_set_coroutine_origin_tracking"):
+            super()._set_coroutine_origin_tracking(debug)
+
     def _get_next_delayed_task_wakeup(self):
         """Compute the time to sleep before we should be woken up to handle delayed tasks."""
         # This is based heavily on the CPython's implementation of `BaseEventLoop._run_once()`
