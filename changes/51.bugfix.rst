@@ -1,0 +1,1 @@
+Fixed asyncio event loop startup on Python 3.6.
