@@ -4,8 +4,18 @@ Release History
 
 .. towncrier release notes start
 
+0.2.3 (2020-07-27)
+==================
+
+Bugfixes
+--------
+
+* The asyncio event loop can now start on Python 3.6. (#51)
+
+
 0.2.2 (2020-07-03)
 ==================
+
 Features
 --------
 
@@ -22,6 +32,7 @@ Misc
 
 0.2.1 (2020-06-17)
 ==================
+
 Features
 --------
 
@@ -35,6 +46,7 @@ Misc
 
 0.2.1 (2020-06-17)
 ==================
+
 Features
 --------
 
@@ -47,7 +59,7 @@ Misc
 
 
 0.2.0
------
+=====
 
 Changes since v0.1.0:
 
