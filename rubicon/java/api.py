@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 import itertools
 
 from .jni import cast, java, reflect
@@ -104,6 +105,19 @@ def convert_args(args, type_names):
             jarg = java.NewByteArray(len(arg))
             java.SetByteArrayRegion(jarg, 0, len(arg), arg)
             converted.append(jarg)
+        elif isinstance(arg, Sequence) and type_name[0] == ord(b'['):
+            if type_name[1] == ord(b'I'):
+                jarg = java.NewIntArray(len(arg))
+                java.SetIntArrayRegion(jarg, 0, len(arg), (jint * len(arg))(*arg))
+                converted.append(jarg)
+            elif type_name[1] == ord(b'F'):
+                jarg = java.NewFloatArray(len(arg))
+                java.SetFloatArrayRegion(jarg, 0, len(arg), (jfloat * len(arg))(*arg))
+                converted.append(jarg)
+            elif type_name[1] == ord(b'D'):
+                jarg = java.NewDoubleArray(len(arg))
+                java.SetDoubleArrayRegion(jarg, 0, len(arg), (jdouble * len(arg))(*arg))
+                converted.append(jarg)
         elif isinstance(arg, str):
             converted.append(java.NewStringUTF(arg.encode('utf-8')))
         elif isinstance(arg, (JavaInstance, JavaProxy)):
@@ -170,6 +184,15 @@ def select_polymorph(polymorphs, args):
                     b"Ljava/lang/CharSequence;",
                     b"Ljava/lang/Object;",
                 ])
+            elif isinstance(arg, Sequence) and len(arg) > 0:
+                # If arg is an iterable of all the same basic numeric type, then
+                # an array of that Java type can work.
+                if isinstance(arg[0], (int, jint)):
+                    if all((isinstance(item, (int, jint)) for item in arg)):
+                        arg_types.append([b'[I'])
+                elif isinstance(arg[0], (float, jfloat, jdouble)):
+                    if all((isinstance(item, (float, jfloat, jdouble)) for item in arg)):
+                        arg_types.append([b'[D', b'[F'])
             elif isinstance(arg, (JavaInstance, JavaProxy)):
                 arg_types.append(arg.__class__.__dict__['_alternates'])
             else:

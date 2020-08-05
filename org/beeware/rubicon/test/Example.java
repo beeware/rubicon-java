@@ -28,6 +28,30 @@ public class Example extends BaseExample {
         return static_long_field;
     }
 
+    static public int sum_all_ints(int[] numbers) {
+        int sum = 0;
+        for (int number : numbers) {
+            sum += number;
+        }
+        return sum;
+    }
+
+    static public double sum_all_doubles(double[] numbers) {
+        double sum = 0;
+        for (double number : numbers) {
+            sum += number;
+        }
+        return sum;
+    }
+
+    static public float sum_all_floats(float[] numbers) {
+        float sum = 0;
+        for (float number : numbers) {
+            sum += number;
+        }
+        return sum;
+    }
+
     /* An inner enumerated type */
     public enum Stuff {
         FOO, BAR, WHIZ;

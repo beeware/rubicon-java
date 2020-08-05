@@ -238,6 +238,21 @@ class JNITest(TestCase):
         with self.assertRaises(ValueError):
             Example.tripler(1.234)
 
+    def test_pass_int_array(self):
+        """A list of Python ints can be passed as a Java int array."""
+        Example = JavaClass("org/beeware/rubicon/test/Example")
+        self.assertEqual(3, Example.sum_all_ints([1, 2]))
+
+    def test_pass_double_array(self):
+        """A list of Python floats can be passed as a Java double array."""
+        Example = JavaClass("org/beeware/rubicon/test/Example")
+        self.assertEqual(3, Example.sum_all_doubles([1.0, 2.0]))
+
+    def test_pass_float_array(self):
+        """A list of Python floats can be passed as a Java float array."""
+        Example = JavaClass("org/beeware/rubicon/test/Example")
+        self.assertEqual(3, Example.sum_all_floats([1.0, 2.0]))
+
     def test_static_access_non_static(self):
         "An instance field/method cannot be accessed from the static context"
         Example = JavaClass('org/beeware/rubicon/test/Example')
