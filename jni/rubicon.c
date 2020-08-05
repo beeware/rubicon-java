@@ -1045,8 +1045,8 @@ JNIEXPORT void JNICALL Java_org_beeware_rubicon_Python_stop(JNIEnv *env, jobject
  * This method converts the Python method invocation into a call on the
  * method dispatch method that has been registered as part of the runtime.
  *
- * It returns NULL to Java EXCEPT if the Python code returns a number. In that
- * case, it returns a boxed java.lang.Integer.
+ * It returns NULL to Java EXCEPT if the Python code returns a number or bool.
+ * In those cases, it returns a boxed java.lang.Integer or java.lang.Boolean.
  *************************************************************************/
 JNIEXPORT jobject JNICALL Java_org_beeware_rubicon_PythonInstance_invoke(JNIEnv *env, jobject thisObj, jobject proxy, jobject method, jobjectArray jargs) {
     jclass PythonInstance = (*env)->FindClass(env, "org/beeware/rubicon/PythonInstance");
@@ -1103,10 +1103,19 @@ JNIEXPORT jobject JNICALL Java_org_beeware_rubicon_PythonInstance_invoke(JNIEnv 
         PyErr_Print();
         PyErr_Clear();
     } else {
-        // In order to support Java interfaces that expect a `int` return type, we check if the
-        // Python code returned a number; if so, we convert to `java.lang.Integer`. Java/JNI takes
-        // care of unboxing.
-        if (PyLong_Check(result)) {
+        // In order to support Java interfaces that expect a `int` or `bool` return type, we check
+        // if the Python code returned a number or bool; if so, we convert to the appropriate boxed
+        // Java value. Java/JNI takes care of unboxing.
+        if (PyBool_Check(result)) {
+            jclass java_lang_boolean = (*env)->FindClass(env, "java/lang/Boolean");
+            if (PyObject_IsTrue(result)) {
+                jfieldID true_field = (*env)->GetStaticFieldID(env, java_lang_boolean, "TRUE", "Ljava/lang/Boolean;");
+                ret = (*env)->GetStaticObjectField(env, java_lang_boolean, true_field);
+            } else {
+                jfieldID false_field = (*env)->GetStaticFieldID(env, java_lang_boolean, "FALSE", "Ljava/lang/Boolean;");
+                ret = (*env)->GetStaticObjectField(env, java_lang_boolean, false_field);
+            }
+        } else if (PyLong_Check(result)) {
             jint result_int = (jint) PyLong_AsLong(result);
             jclass java_lang_integer = (*env)->FindClass(env, "java/lang/Integer");
             jmethodID integer_constructor = (*env)->GetMethodID(env, java_lang_integer, "<init>", "(I)V");

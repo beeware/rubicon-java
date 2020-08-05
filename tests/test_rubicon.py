@@ -379,6 +379,29 @@ class JNITest(TestCase):
         # Validate that implementation mutates example1's state, not example2's state.
         self.assertEqual(35, AddOne().addOne(implementation, example2))
 
+    def test_interface_bool_return(self):
+        """A Java interface with a bool-returning method can be defined in Python and proxied,
+        including return value."""
+        ICallbackBool = JavaInterface('org/beeware/rubicon/test/ICallbackBool')
+
+        class MakeBool(ICallbackBool):
+            def __init__(self, s):
+                super().__init__()
+                self.s = s
+
+            def getBool(self):
+                if self.s == "yes":
+                    return True
+                return False
+
+        true_maker = MakeBool("yes")
+        false_maker = MakeBool("no")
+
+        # Validate that a Java class can use our Python class when expecting the bool-returning interface.
+        TruthInverter = JavaClass("org/beeware/rubicon/test/TruthInverter")
+        self.assertFalse(TruthInverter().invert(true_maker))
+        self.assertTrue(TruthInverter().invert(false_maker))
+
     def test_alternatives(self):
         "A class is aware of it's type hierarchy"
         Example = JavaClass('org/beeware/rubicon/test/Example')
