@@ -4,6 +4,15 @@ Release History
 
 .. towncrier release notes start
 
+0.2.4 (2020-08-06)
+==================
+
+Features
+--------
+
+* Added support for implementing Java interfaces that return ``bool``. (#52)
+
+
 0.2.3 (2020-07-27)
 ==================
 

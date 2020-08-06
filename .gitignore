@@ -14,3 +14,4 @@ local
 venv
 .vscode
 pip-wheel-metadata/
+.envrc
