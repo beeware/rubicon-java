@@ -253,6 +253,12 @@ class JNITest(TestCase):
         with self.assertRaises(ValueError):
             Example.sum_all_doubles([1.0, "two"])
 
+    def test_empty_list(self):
+        """An empty list results in an inability to find the right Java method."""
+        Example = JavaClass("org/beeware/rubicon/test/Example")
+        with self.assertRaises(ValueError):
+            Example.sum_all_ints([])
+
     def test_pass_double_array(self):
         """A list of Python floats can be passed as a Java double array."""
         Example = JavaClass("org/beeware/rubicon/test/Example")
