@@ -187,6 +187,7 @@ def select_polymorph(polymorphs, args):
                     b"Ljava/lang/CharSequence;",
                     b"Ljava/lang/Object;",
                 ])
+            # If char arrays are useful to handle, add them later. Handle all other types of primitive type arrays.
             elif isinstance(arg, bytes):
                 arg_types.append([b'[B'])
             elif isinstance(arg, Sequence) and len(arg) > 0:
