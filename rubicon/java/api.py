@@ -208,6 +208,8 @@ def select_polymorph(polymorphs, args):
                         arg_types.append([b'[D', b'[F'])
                     else:
                         raise ValueError("Unable to treat all data in list as floats/doubles")
+                else:
+                    raise ValueError("Unable convert sequence into array of Java primitive types")
             elif isinstance(arg, (JavaInstance, JavaProxy)):
                 arg_types.append(arg.__class__.__dict__['_alternates'])
             else:
