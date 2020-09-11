@@ -247,6 +247,8 @@ class JNITest(TestCase):
         """A list of mixed types raise an exception when trying to find the right Java method."""
         Example = JavaClass("org/beeware/rubicon/test/Example")
         with self.assertRaises(ValueError):
+            Example.sum_all_ints(["two", 3])
+        with self.assertRaises(ValueError):
             Example.sum_all_ints([1, "two"])
         with self.assertRaises(ValueError):
             Example.sum_all_floats([1.0, "two"])
