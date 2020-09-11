@@ -243,6 +243,16 @@ class JNITest(TestCase):
         Example = JavaClass("org/beeware/rubicon/test/Example")
         self.assertEqual(3, Example.sum_all_ints([1, 2]))
 
+    def test_heterogenous_list(self):
+        """A list of mixed types raise an exception when trying to find the right Java method."""
+        Example = JavaClass("org/beeware/rubicon/test/Example")
+        with self.assertRaises(ValueError):
+            Example.sum_all_ints([1, "two"])
+        with self.assertRaises(ValueError):
+            Example.sum_all_floats([1.0, "two"])
+        with self.assertRaises(ValueError):
+            Example.sum_all_doubles([1.0, "two"])
+
     def test_pass_double_array(self):
         """A list of Python floats can be passed as a Java double array."""
         Example = JavaClass("org/beeware/rubicon/test/Example")

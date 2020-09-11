@@ -189,9 +189,13 @@ def select_polymorph(polymorphs, args):
                 if isinstance(arg[0], (int, jint)):
                     if all((isinstance(item, (int, jint)) for item in arg)):
                         arg_types.append([b'[I'])
+                    else:
+                        raise ValueError("Unable to treat all data in list as integers")
                 elif isinstance(arg[0], (float, jfloat, jdouble)):
                     if all((isinstance(item, (float, jfloat, jdouble)) for item in arg)):
                         arg_types.append([b'[D', b'[F'])
+                    else:
+                        raise ValueError("Unable to treat all data in list as floats/doubles")
             elif isinstance(arg, (JavaInstance, JavaProxy)):
                 arg_types.append(arg.__class__.__dict__['_alternates'])
             else:
