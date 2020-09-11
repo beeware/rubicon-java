@@ -2,7 +2,8 @@ import os
 from ctypes import c_char_p, cast, cdll
 
 from .types import (
-    jarray, jboolean, jboolean_p, jbyte, jbyte_p, jbyteArray, jchar, jclass,
+    jarray, jboolean, jboolean_p, jbooleanArray,
+    jbyte, jbyte_p, jbyteArray, jchar, jclass,
     jdouble, jdouble_p, jdoubleArray, jfieldID, jfloat, jfloat_p, jfloatArray,
     jint, jint_p, jintArray, jlong, jmethodID, jobject, jobjectArray,
     jshort, jsize, jstring,
@@ -170,6 +171,12 @@ java.NewByteArray.argtypes = [jsize]
 
 java.SetByteArrayRegion.restype = None
 java.SetByteArrayRegion.argtypes = [jbyteArray, jsize, jsize, jbyte_p]
+
+java.NewBooleanArray.restype = jbooleanArray
+java.NewBooleanArray.argtypes = [jsize]
+
+java.SetBooleanArrayRegion.restype = None
+java.SetBooleanArrayRegion.argtypes = [jbooleanArray, jsize, jsize, jboolean_p]
 
 java.NewDoubleArray.restype = jdoubleArray
 java.NewDoubleArray.argtypes = [jsize]

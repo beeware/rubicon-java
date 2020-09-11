@@ -269,6 +269,12 @@ class JNITest(TestCase):
         Example = JavaClass("org/beeware/rubicon/test/Example")
         self.assertEqual(3, Example.sum_all_floats([1.0, 2.0]))
 
+    def test_pass_boolean_array(self):
+        """A list of Python bools can be passed as a Java boolean array."""
+        Example = JavaClass("org/beeware/rubicon/test/Example")
+        self.assertEqual(False, Example.combine_booleans_by_and([True, False]))
+        self.assertEqual(True, Example.combine_booleans_by_and([True, True]))
+
     def test_static_access_non_static(self):
         "An instance field/method cannot be accessed from the static context"
         Example = JavaClass('org/beeware/rubicon/test/Example')

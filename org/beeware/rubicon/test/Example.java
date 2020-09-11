@@ -52,6 +52,14 @@ public class Example extends BaseExample {
         return sum;
     }
 
+    static public boolean combine_booleans_by_and(boolean[] values) {
+        boolean result = true;
+        for (boolean value : values) {
+            result = result && value;
+        }
+        return result;
+    }
+
     /* An inner enumerated type */
     public enum Stuff {
         FOO, BAR, WHIZ;

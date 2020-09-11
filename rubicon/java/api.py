@@ -105,6 +105,10 @@ def convert_args(args, type_names):
             jarg = java.NewByteArray(len(arg))
             java.SetByteArrayRegion(jarg, 0, len(arg), arg)
             converted.append(jarg)
+        elif isinstance(arg, Sequence) and type_name[0] == ord(b'[') and type_name[1] == ord(b'Z'):
+            jarg = java.NewBooleanArray(len(arg))
+            java.SetBooleanArrayRegion(jarg, 0, len(arg), (jboolean * len(arg))(*arg))
+            converted.append(jarg)
         elif isinstance(arg, Sequence) and type_name[0] == ord(b'[') and type_name[1] == ord(b'I'):
             jarg = java.NewIntArray(len(arg))
             java.SetIntArrayRegion(jarg, 0, len(arg), (jint * len(arg))(*arg))
@@ -186,7 +190,12 @@ def select_polymorph(polymorphs, args):
             elif isinstance(arg, Sequence) and len(arg) > 0:
                 # If arg is an iterable of all the same basic numeric type, then
                 # an array of that Java type can work.
-                if isinstance(arg[0], (int, jint)):
+                if isinstance(arg[0], (bool, jboolean)):
+                    if all((isinstance(item, (bool, jboolean)) for item in arg)):
+                        arg_types.append([b'[Z'])
+                    else:
+                        raise ValueError("Convert entire list to bool/jboolean to create a Java boolean array")
+                elif isinstance(arg[0], (int, jint)):
                     if all((isinstance(item, (int, jint)) for item in arg)):
                         arg_types.append([b'[I'])
                     else:
