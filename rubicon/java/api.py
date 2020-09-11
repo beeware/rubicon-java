@@ -105,19 +105,18 @@ def convert_args(args, type_names):
             jarg = java.NewByteArray(len(arg))
             java.SetByteArrayRegion(jarg, 0, len(arg), arg)
             converted.append(jarg)
-        elif isinstance(arg, Sequence) and type_name[0] == ord(b'['):
-            if type_name[1] == ord(b'I'):
-                jarg = java.NewIntArray(len(arg))
-                java.SetIntArrayRegion(jarg, 0, len(arg), (jint * len(arg))(*arg))
-                converted.append(jarg)
-            elif type_name[1] == ord(b'F'):
-                jarg = java.NewFloatArray(len(arg))
-                java.SetFloatArrayRegion(jarg, 0, len(arg), (jfloat * len(arg))(*arg))
-                converted.append(jarg)
-            elif type_name[1] == ord(b'D'):
-                jarg = java.NewDoubleArray(len(arg))
-                java.SetDoubleArrayRegion(jarg, 0, len(arg), (jdouble * len(arg))(*arg))
-                converted.append(jarg)
+        elif isinstance(arg, Sequence) and type_name[0] == ord(b'[') and type_name[1] == ord(b'I'):
+            jarg = java.NewIntArray(len(arg))
+            java.SetIntArrayRegion(jarg, 0, len(arg), (jint * len(arg))(*arg))
+            converted.append(jarg)
+        elif isinstance(arg, Sequence) and type_name[0] == ord(b'[') and type_name[1] == ord(b'F'):
+            jarg = java.NewFloatArray(len(arg))
+            java.SetFloatArrayRegion(jarg, 0, len(arg), (jfloat * len(arg))(*arg))
+            converted.append(jarg)
+        elif isinstance(arg, Sequence) and type_name[0] == ord(b'[') and type_name[1] == ord(b'D'):
+            jarg = java.NewDoubleArray(len(arg))
+            java.SetDoubleArrayRegion(jarg, 0, len(arg), (jdouble * len(arg))(*arg))
+            converted.append(jarg)
         elif isinstance(arg, str):
             converted.append(java.NewStringUTF(arg.encode('utf-8')))
         elif isinstance(arg, (JavaInstance, JavaProxy)):
