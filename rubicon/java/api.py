@@ -103,7 +103,7 @@ def convert_args(args, type_names):
             converted.append(arg)
         elif isinstance(arg, bytes):
             jarg = java.NewByteArray(len(arg))
-            java.SetByteArrayRegion(jarg, 0, len(arg), arg)
+            java.SetByteArrayRegion(jarg, 0, len(arg), (jbyte * len(arg))(*arg))
             converted.append(jarg)
         elif isinstance(arg, Sequence) and type_name[0] == ord(b'[') and type_name[1] == ord(b'Z'):
             jarg = java.NewBooleanArray(len(arg))
@@ -187,6 +187,8 @@ def select_polymorph(polymorphs, args):
                     b"Ljava/lang/CharSequence;",
                     b"Ljava/lang/Object;",
                 ])
+            elif isinstance(arg, bytes):
+                arg_types.append([b'[B'])
             elif isinstance(arg, Sequence) and len(arg) > 0:
                 # If arg is an iterable of all the same basic numeric type, then
                 # an array of that Java type can work.

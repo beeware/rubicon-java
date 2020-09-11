@@ -275,6 +275,12 @@ class JNITest(TestCase):
         self.assertEqual(False, Example.combine_booleans_by_and([True, False]))
         self.assertEqual(True, Example.combine_booleans_by_and([True, True]))
 
+    def test_pass_byte_array(self):
+        """A Python bytes object can be passed as a Java byte array."""
+        Example = JavaClass("org/beeware/rubicon/test/Example")
+        self.assertEqual(ord(b'x'), Example.xor_all_bytes(b'x\x00'))
+        self.assertEqual(0, Example.xor_all_bytes(b'xx'))
+
     def test_static_access_non_static(self):
         "An instance field/method cannot be accessed from the static context"
         Example = JavaClass('org/beeware/rubicon/test/Example')

@@ -60,6 +60,14 @@ public class Example extends BaseExample {
         return result;
     }
 
+    static public int xor_all_bytes(byte[] values) {
+        int result = 0;
+        for (byte value : values) {
+            result = result ^ value;
+        }
+        return result;
+    }
+
     /* An inner enumerated type */
     public enum Stuff {
         FOO, BAR, WHIZ;
