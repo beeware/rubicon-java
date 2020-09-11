@@ -105,19 +105,19 @@ def convert_args(args, type_names):
             jarg = java.NewByteArray(len(arg))
             java.SetByteArrayRegion(jarg, 0, len(arg), (jbyte * len(arg))(*arg))
             converted.append(jarg)
-        elif isinstance(arg, Sequence) and type_name[0] == ord(b'[') and type_name[1] == ord(b'Z'):
+        elif isinstance(arg, Sequence) and type_name == b'[Z':
             jarg = java.NewBooleanArray(len(arg))
             java.SetBooleanArrayRegion(jarg, 0, len(arg), (jboolean * len(arg))(*arg))
             converted.append(jarg)
-        elif isinstance(arg, Sequence) and type_name[0] == ord(b'[') and type_name[1] == ord(b'I'):
+        elif isinstance(arg, Sequence) and type_name == b'[I':
             jarg = java.NewIntArray(len(arg))
             java.SetIntArrayRegion(jarg, 0, len(arg), (jint * len(arg))(*arg))
             converted.append(jarg)
-        elif isinstance(arg, Sequence) and type_name[0] == ord(b'[') and type_name[1] == ord(b'F'):
+        elif isinstance(arg, Sequence) and type_name == b'[F':
             jarg = java.NewFloatArray(len(arg))
             java.SetFloatArrayRegion(jarg, 0, len(arg), (jfloat * len(arg))(*arg))
             converted.append(jarg)
-        elif isinstance(arg, Sequence) and type_name[0] == ord(b'[') and type_name[1] == ord(b'D'):
+        elif isinstance(arg, Sequence) and type_name == b'[D':
             jarg = java.NewDoubleArray(len(arg))
             java.SetDoubleArrayRegion(jarg, 0, len(arg), (jdouble * len(arg))(*arg))
             converted.append(jarg)
