@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 import itertools
 
 from .jni import cast, java, reflect
@@ -102,7 +103,23 @@ def convert_args(args, type_names):
             converted.append(arg)
         elif isinstance(arg, bytes):
             jarg = java.NewByteArray(len(arg))
-            java.SetByteArrayRegion(jarg, 0, len(arg), arg)
+            java.SetByteArrayRegion(jarg, 0, len(arg), (jbyte * len(arg))(*arg))
+            converted.append(jarg)
+        elif isinstance(arg, Sequence) and type_name == b'[Z':
+            jarg = java.NewBooleanArray(len(arg))
+            java.SetBooleanArrayRegion(jarg, 0, len(arg), (jboolean * len(arg))(*arg))
+            converted.append(jarg)
+        elif isinstance(arg, Sequence) and type_name == b'[I':
+            jarg = java.NewIntArray(len(arg))
+            java.SetIntArrayRegion(jarg, 0, len(arg), (jint * len(arg))(*arg))
+            converted.append(jarg)
+        elif isinstance(arg, Sequence) and type_name == b'[F':
+            jarg = java.NewFloatArray(len(arg))
+            java.SetFloatArrayRegion(jarg, 0, len(arg), (jfloat * len(arg))(*arg))
+            converted.append(jarg)
+        elif isinstance(arg, Sequence) and type_name == b'[D':
+            jarg = java.NewDoubleArray(len(arg))
+            java.SetDoubleArrayRegion(jarg, 0, len(arg), (jdouble * len(arg))(*arg))
             converted.append(jarg)
         elif isinstance(arg, str):
             converted.append(java.NewStringUTF(arg.encode('utf-8')))
@@ -170,6 +187,29 @@ def select_polymorph(polymorphs, args):
                     b"Ljava/lang/CharSequence;",
                     b"Ljava/lang/Object;",
                 ])
+            # If char arrays are useful to handle, add them later. Handle all other types of primitive type arrays.
+            elif isinstance(arg, bytes):
+                arg_types.append([b'[B'])
+            elif isinstance(arg, Sequence) and len(arg) > 0:
+                # If arg is an iterable of all the same basic numeric type, then
+                # an array of that Java type can work.
+                if isinstance(arg[0], (bool, jboolean)):
+                    if all((isinstance(item, (bool, jboolean)) for item in arg)):
+                        arg_types.append([b'[Z'])
+                    else:
+                        raise ValueError("Convert entire list to bool/jboolean to create a Java boolean array")
+                elif isinstance(arg[0], (int, jint)):
+                    if all((isinstance(item, (int, jint)) for item in arg)):
+                        arg_types.append([b'[I'])
+                    else:
+                        raise ValueError("Unable to treat all data in list as integers")
+                elif isinstance(arg[0], (float, jfloat, jdouble)):
+                    if all((isinstance(item, (float, jfloat, jdouble)) for item in arg)):
+                        arg_types.append([b'[D', b'[F'])
+                    else:
+                        raise ValueError("Unable to treat all data in list as floats/doubles")
+                else:
+                    raise ValueError("Unable convert sequence into array of Java primitive types")
             elif isinstance(arg, (JavaInstance, JavaProxy)):
                 arg_types.append(arg.__class__.__dict__['_alternates'])
             else:

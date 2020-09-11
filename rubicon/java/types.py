@@ -1,5 +1,5 @@
 from ctypes import (
-    POINTER, Structure, c_bool, c_byte, c_char_p, c_double, c_float, c_int,
+    POINTER, Structure, c_bool, c_byte, c_char_p, c_double, c_float, c_int32,
     c_longlong, c_short, c_void_p, c_wchar,
 )
 
@@ -19,7 +19,7 @@ jboolean = c_bool
 jbyte = c_byte
 jchar = c_wchar
 jshort = c_short
-jint = c_int
+jint = c_int32
 jlong = c_longlong
 jfloat = c_float
 jdouble = c_double

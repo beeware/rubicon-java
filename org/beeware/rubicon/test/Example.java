@@ -28,6 +28,46 @@ public class Example extends BaseExample {
         return static_long_field;
     }
 
+    static public int sum_all_ints(int[] numbers) {
+        int sum = 0;
+        for (int number : numbers) {
+            sum += number;
+        }
+        return sum;
+    }
+
+    static public double sum_all_doubles(double[] numbers) {
+        double sum = 0;
+        for (double number : numbers) {
+            sum += number;
+        }
+        return sum;
+    }
+
+    static public float sum_all_floats(float[] numbers) {
+        float sum = 0;
+        for (float number : numbers) {
+            sum += number;
+        }
+        return sum;
+    }
+
+    static public boolean combine_booleans_by_and(boolean[] values) {
+        boolean result = true;
+        for (boolean value : values) {
+            result = result && value;
+        }
+        return result;
+    }
+
+    static public int xor_all_bytes(byte[] values) {
+        int result = 0;
+        for (byte value : values) {
+            result = result ^ value;
+        }
+        return result;
+    }
+
     /* An inner enumerated type */
     public enum Stuff {
         FOO, BAR, WHIZ;

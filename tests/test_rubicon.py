@@ -238,6 +238,58 @@ class JNITest(TestCase):
         with self.assertRaises(ValueError):
             Example.tripler(1.234)
 
+    def test_pass_int_array(self):
+        """A list of Python ints can be passed as a Java int array."""
+        Example = JavaClass("org/beeware/rubicon/test/Example")
+        self.assertEqual(3, Example.sum_all_ints([1, 2]))
+
+    def test_heterogenous_list(self):
+        """A list of mixed types raise an exception when trying to find the right Java method."""
+        Example = JavaClass("org/beeware/rubicon/test/Example")
+        with self.assertRaises(ValueError):
+            Example.sum_all_ints(["two", 3])
+        with self.assertRaises(ValueError):
+            Example.sum_all_ints([1, "two"])
+        with self.assertRaises(ValueError):
+            Example.sum_all_floats([1.0, "two"])
+        with self.assertRaises(ValueError):
+            Example.sum_all_doubles([1.0, "two"])
+
+    def test_list_that_cannot_be_turned_into_java_primitive_array(self):
+        """A list that can't turn into a Java primitive array raises an exception when trying to find the right
+        Java method."""
+        Example = JavaClass("org/beeware/rubicon/test/Example")
+        with self.assertRaises(ValueError):
+            Example.sum_all_ints([object()])
+
+    def test_empty_list(self):
+        """An empty list results in an inability to find the right Java method."""
+        Example = JavaClass("org/beeware/rubicon/test/Example")
+        with self.assertRaises(ValueError):
+            Example.sum_all_ints([])
+
+    def test_pass_double_array(self):
+        """A list of Python floats can be passed as a Java double array."""
+        Example = JavaClass("org/beeware/rubicon/test/Example")
+        self.assertEqual(3, Example.sum_all_doubles([1.0, 2.0]))
+
+    def test_pass_float_array(self):
+        """A list of Python floats can be passed as a Java float array."""
+        Example = JavaClass("org/beeware/rubicon/test/Example")
+        self.assertEqual(3, Example.sum_all_floats([1.0, 2.0]))
+
+    def test_pass_boolean_array(self):
+        """A list of Python bools can be passed as a Java boolean array."""
+        Example = JavaClass("org/beeware/rubicon/test/Example")
+        self.assertEqual(False, Example.combine_booleans_by_and([True, False]))
+        self.assertEqual(True, Example.combine_booleans_by_and([True, True]))
+
+    def test_pass_byte_array(self):
+        """A Python bytes object can be passed as a Java byte array."""
+        Example = JavaClass("org/beeware/rubicon/test/Example")
+        self.assertEqual(ord(b'x'), Example.xor_all_bytes(b'x\x00'))
+        self.assertEqual(0, Example.xor_all_bytes(b'xx'))
+
     def test_static_access_non_static(self):
         "An instance field/method cannot be accessed from the static context"
         Example = JavaClass('org/beeware/rubicon/test/Example')
