@@ -255,6 +255,13 @@ class JNITest(TestCase):
         with self.assertRaises(ValueError):
             Example.sum_all_doubles([1.0, "two"])
 
+    def test_list_that_cannot_be_turned_into_java_primitive_array(self):
+        """A list that can't turn into a Java primitive array raises an exception when trying to find the right
+        Java method."""
+        Example = JavaClass("org/beeware/rubicon/test/Example")
+        with self.assertRaises(ValueError):
+            Example.sum_all_ints([object()])
+
     def test_empty_list(self):
         """An empty list results in an inability to find the right Java method."""
         Example = JavaClass("org/beeware/rubicon/test/Example")
