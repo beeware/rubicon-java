@@ -4,6 +4,15 @@ Release History
 
 .. towncrier release notes start
 
+0.2.5 (2021-01-05)
+==================
+
+Features
+--------
+
+* Added support for passing Python lists into Java numeric array types (#53)
+
+
 0.2.4 (2020-08-06)
 ==================
 
