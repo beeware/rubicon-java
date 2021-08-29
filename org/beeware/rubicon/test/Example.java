@@ -137,6 +137,10 @@ public class Example extends BaseExample {
         return theThing;
     }
 
+    public Object get_generic_thing() {
+        return theThing;
+    }
+
     /* String argument/return value handling */
     public String duplicate_string(String in) {
         return in + in;

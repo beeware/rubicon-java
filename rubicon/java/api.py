@@ -476,9 +476,9 @@ class StaticJavaMethod(object):
         except KeyError as e:
             raise ValueError(
                 "Can't find Java static method '%s.%s' matching argument signature '%s'. Options are: %s" % (
-                    self.java_class.__dict__['_descriptor'],
+                    self.java_class.__dict__['_descriptor'].decode('utf-8'),
                     self.name,
-                    e,
+                    e.args[0].decode('utf-8'),
                     ', '.join(
                         signature_for_type_names(type_names).decode('utf-8')
                         for type_names in self._polymorphs.keys()
@@ -537,9 +537,9 @@ class JavaMethod:
         except KeyError as e:
             raise ValueError(
                 "Can't find Java instance method '%s.%s' matching argument signature '%s'. Options are: %s" % (
-                    self.java_class.__dict__['_descriptor'],
+                    self.java_class.__dict__['_descriptor'].decode('utf-8'),
                     self.name,
-                    e,
+                    e.args[0].decode('utf-8'),
                     ', '.join(
                         signature_for_type_names(type_names).decode('utf-8')
                         for type_names in self._polymorphs.keys()
@@ -833,7 +833,7 @@ class JavaInstance(object):
             except KeyError as e:
                 raise ValueError(
                     "Can't find constructor matching argument signature %s. Options are: %s" % (
-                        e,
+                        e.args[0].decode('utf-8'),
                         ', '.join(
                             signature_for_type_names(type_names).decode('utf-8')
                             for type_names in constructors.keys()
@@ -904,6 +904,17 @@ class JavaInstance(object):
             return field_wrapper.set(self, value)
 
         raise AttributeError("'%s' Java object has no attribute '%s'" % (self.__class__.__name__, name))
+
+    def __cast__(self, klass, globalref=False):
+        """Cast the object to a specific class.
+
+        Optionally, make the resulting reference a global JNI reference.
+        """
+        if globalref:
+            cast = klass(__jni__=java.NewGlobalRef(self))
+        else:
+            cast = klass(__jni__=self.__jni__)
+        return cast
 
 
 class UnknownClassException(Exception):
