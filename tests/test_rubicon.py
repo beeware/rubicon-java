@@ -295,6 +295,18 @@ class JNITest(TestCase):
         global_cast_thing = obj.__cast__(Thing, globalref=True)
         self.assertEqual(obj1.combiner(4, "Ham", global_cast_thing), "4::Ham::This is thing 2")
 
+    def test_convert_to_global(self):
+        "An object can be converted into a global JNI reference."
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        obj1 = Example()
+
+        Thing = JavaClass('org/beeware/rubicon/test/Thing')
+        thing = Thing('This is thing', 2)
+
+        global_thing = thing.__global__()
+        self.assertEqual(global_thing.currentCount(), 2)
+        self.assertEqual(obj1.combiner(5, "Spam", global_thing), "5::Spam::This is thing 2")
+
     def test_pass_int_array(self):
         """A list of Python ints can be passed as a Java int array."""
         Example = JavaClass("org/beeware/rubicon/test/Example")

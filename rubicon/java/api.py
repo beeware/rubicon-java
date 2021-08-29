@@ -905,6 +905,10 @@ class JavaInstance(object):
 
         raise AttributeError("'%s' Java object has no attribute '%s'" % (self.__class__.__name__, name))
 
+    def __global__(self):
+        "Return an global reference to the same object"
+        return self.__class__(__jni__=java.NewGlobalRef(self))
+
     def __cast__(self, klass, globalref=False):
         """Cast the object to a specific class.
 
