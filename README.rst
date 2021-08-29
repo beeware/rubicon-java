@@ -25,9 +25,9 @@ Rubicon-Java
    :target: https://github.com/beeware/rubicon-java/actions
    :alt: Build Status
 
-.. image:: https://badges.gitter.im/beeware/general.svg
-   :target: https://gitter.im/beeware/general
-   :alt: Gitter chat room
+.. image:: https://img.shields.io/discord/836455665257021440?label=Discord%20Chat&logo=discord&style=plastic
+   :target: https://beeware.org/bee/chat/
+   :alt: Discord server
 
 Rubicon-Java is a bridge between the Java Runtime Environment and Python.
 It enables you to:
