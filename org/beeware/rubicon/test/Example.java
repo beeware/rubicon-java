@@ -144,6 +144,9 @@ public class Example extends BaseExample {
 
     /* Polymorphism handling */
     public String doubler(String in) {
+        if (in == null) {
+            return "Can't double NULL strings";
+        }
         return in + in;
     }
 
@@ -165,6 +168,20 @@ public class Example extends BaseExample {
 
     public static long tripler(long in) {
         return in + in + in;
+    }
+
+    /* Handling long argument lists */
+    public String combiner(int x, String name, Thing thing) {
+        if (name == null) {
+            if (thing == null) {
+                return x + ":: No special name or thing";
+            } else {
+                return x + ":: No special name ::" + thing;
+            }
+        } else if (thing == null) {
+            return x + "::" + name + " (but no thing)";
+        }
+        return x + "::" + name + "::" + thing;
     }
 
     /* Interface visiblity */

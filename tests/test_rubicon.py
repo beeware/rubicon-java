@@ -217,15 +217,42 @@ class JNITest(TestCase):
     def test_polymorphic_method(self):
         "Check that the right method is activated based on arguments used"
         Example = JavaClass('org/beeware/rubicon/test/Example')
-
         obj1 = Example()
 
         self.assertEqual(obj1.doubler(42), 84)
         self.assertEqual(obj1.doubler("wibble"), "wibblewibble")
 
+        # None will be resolved to a matching polymorph
+        self.assertEqual(obj1.doubler(None), "Can't double NULL strings")
+
         # If arguments don't match available options, an error is raised
         with self.assertRaises(ValueError):
             obj1.doubler(1.234)
+
+    def test_method_null(self):
+        "Null objects can be passed as arguments"
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        obj1 = Example()
+
+        Thing = JavaClass('org/beeware/rubicon/test/Thing')
+        thing = Thing('This is thing', 2)
+
+        self.assertEqual(obj1.combiner(3, "Pork", thing), '3::Pork::This is thing 2')
+        self.assertEqual(obj1.combiner(3, None, thing), '3:: No special name ::This is thing 2')
+        self.assertEqual(obj1.combiner(3, "Pork", None), '3::Pork (but no thing)')
+        self.assertEqual(obj1.combiner(3, None, None), '3:: No special name or thing')
+
+        # None can only be used when an object is expected.
+        with self.assertRaises(ValueError):
+            obj1.combiner(None, "Pork", thing)
+
+        # Type mismatches are still a problem
+        with self.assertRaises(ValueError):
+            obj1.combiner(1.234, "Pork", thing)
+
+        # Argument count mismatches are still a problem
+        with self.assertRaises(ValueError):
+            obj1.combiner(1.234, "Pork")
 
     def test_polymorphic_static_method(self):
         "Check that the right static method is activated based on arguments used"
