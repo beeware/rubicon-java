@@ -1,0 +1,1 @@
+Local JNI Instances can be converted into global JNI instances using ``__global__()``
