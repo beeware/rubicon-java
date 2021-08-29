@@ -1057,7 +1057,9 @@ class JavaClass(type):
         if field_wrapper:
             return field_wrapper.set(value)
 
-        raise AttributeError("Java class '%s' has no attribute '%s'" % (self.__dict__['_descriptor'].decode('utf-8'), name))
+        raise AttributeError("Java class '%s' has no attribute '%s'" % (
+            self.__dict__['_descriptor'].decode('utf-8'), name)
+        )
 
     def __repr__(self):
         return "<JavaClass: %s>" % self._descriptor.decode('utf-8')
