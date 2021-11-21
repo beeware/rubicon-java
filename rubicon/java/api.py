@@ -989,8 +989,8 @@ class JavaNull:
         return "<NULL>"
 
     def __eq__(self, other):
-        # Nulls are always equivalent
-        return self._signature == other._signature
+        # Nulls are always equal to all other nulls
+        return isinstance(other, JavaNull)
 
     def __bool__(self):
         # Nulls are always false

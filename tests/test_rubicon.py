@@ -304,12 +304,13 @@ class JNITest(TestCase):
         obj = Example()
 
         Thing = JavaClass('org/beeware/rubicon/test/Thing')
-        thing = Thing('This is thing', 2)
 
         obj.set_thing(Thing.__null__)
         returned = obj.get_thing()
         # Typed null objects are always equal to equivalent typed nulls
         self.assertEqual(returned, Thing.__null__)
+        # All Typed nulls are equivalent
+        self.assertEqual(returned, Example.__null__)
         # Null is always false
         self.assertFalse(returned)
 
