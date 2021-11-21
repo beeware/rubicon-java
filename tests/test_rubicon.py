@@ -386,7 +386,7 @@ class JNITest(TestCase):
 
         # ...but if we cast it to the type we know it is
         # (org.beeware.rubicon.test.Thing), the same calls will succeed.
-        cast_thing = obj.__cast__(Thing)
+        cast_thing = Thing.__cast__(obj)
         self.assertEqual(cast_thing.currentCount(), 2)
         self.assertEqual(
             obj1.combiner(4, "Ham", cast_thing, ICallback_null, JavaNull([int])),
@@ -395,7 +395,7 @@ class JNITest(TestCase):
 
         # We can also cast as a global JNI reference
         # (org.beeware.rubicon.test.Thing), the same calls will succeed.
-        global_cast_thing = obj.__cast__(Thing, globalref=True)
+        global_cast_thing = Thing.__cast__(obj, globalref=True)
         self.assertEqual(
             obj1.combiner(4, "Ham", global_cast_thing, ICallback_null, JavaNull([int])),
             "4::Ham::This is thing 2::<no callback>::<no values to count>"
