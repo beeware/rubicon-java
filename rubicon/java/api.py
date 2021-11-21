@@ -1141,6 +1141,7 @@ class JavaClass(type):
             cast = self(__jni__=obj.__jni__)
         return cast
 
+
 ###########################################################################
 # Representations of Java classes and instances
 ###########################################################################
