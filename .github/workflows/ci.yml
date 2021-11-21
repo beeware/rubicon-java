@@ -1,6 +1,6 @@
 # Test rubicon-java on all supported operating systems & Python versions.
 #
-# First test on Python 3.5 on Ubuntu & Mac, then the rest. This is a load
+# First test on Python 3.6 on Ubuntu & Mac, then the rest. This is a load
 # management strategy: in sprint situations, it's faster to run the tests on
 # one platform and confirm they're likely to pass elsewhere, rather than start
 # many parallel builds which will all fail for the same daft reason. Our smoke
@@ -46,7 +46,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-18.04, macos-latest]
-        python-version: [3.6]
+        python-version: ["3.6"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Environment - checkout code
@@ -79,7 +79,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
         os: [ubuntu-18.04, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
