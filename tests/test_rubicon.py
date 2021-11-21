@@ -401,6 +401,23 @@ class JNITest(TestCase):
             "4::Ham::This is thing 2::<no callback>::<no values to count>"
         )
 
+    def test_convert_to_global(self):
+        "An object can be converted into a global JNI reference."
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        obj1 = Example()
+
+        Thing = JavaClass('org/beeware/rubicon/test/Thing')
+        thing = Thing('This is thing', 2)
+
+        ICallback__null = JavaNull(b'Lorg/beeware/rubicon/test/ICallback;')
+
+        global_thing = thing.__global__()
+        self.assertEqual(global_thing.currentCount(), 2)
+        self.assertEqual(
+            obj1.combiner(5, "Spam", global_thing, ICallback__null, JavaNull([int])),
+            "5::Spam::This is thing 2::<no callback>::<no values to count>"
+        )
+
     def test_pass_int_array(self):
         """A list of Python ints can be passed as a Java int array."""
         Example = JavaClass("org/beeware/rubicon/test/Example")

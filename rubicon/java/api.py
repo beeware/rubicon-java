@@ -871,6 +871,10 @@ class JavaInstance(object):
 
         raise AttributeError("'%s' Java object has no attribute '%s'" % (self.__class__.__name__, name))
 
+    def __global__(self):
+        "Return an global reference to the same object"
+        return self.__class__(__jni__=java.NewGlobalRef(self))
+
 
 class UnknownClassException(Exception):
     def __init__(self, descriptor):
