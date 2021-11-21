@@ -363,6 +363,44 @@ class JNITest(TestCase):
         with self.assertRaises(ValueError):
             Example.tripler(1.234)
 
+    def test_type_cast(self):
+        "An object can be cast to another type"
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        obj1 = Example()
+
+        Thing = JavaClass('org/beeware/rubicon/test/Thing')
+        thing = Thing('This is thing', 2)
+
+        obj1.set_thing(thing)
+
+        # Retrieve a generic reference to the object (java.lang.Object)
+        obj = obj1.get_generic_thing()
+
+        ICallback_null = JavaNull(b'Lorg/beeware/rubicon/test/ICallback;')
+
+        # Attempting to use this generic object *as* a Thing will fail.
+        with self.assertRaises(AttributeError):
+            obj.currentCount()
+        with self.assertRaises(ValueError):
+            obj1.combiner(3, "Ham", obj, ICallback_null, JavaNull([int]))
+
+        # ...but if we cast it to the type we know it is
+        # (org.beeware.rubicon.test.Thing), the same calls will succeed.
+        cast_thing = Thing.__cast__(obj)
+        self.assertEqual(cast_thing.currentCount(), 2)
+        self.assertEqual(
+            obj1.combiner(4, "Ham", cast_thing, ICallback_null, JavaNull([int])),
+            "4::Ham::This is thing 2::<no callback>::<no values to count>"
+        )
+
+        # We can also cast as a global JNI reference
+        # (org.beeware.rubicon.test.Thing), the same calls will succeed.
+        global_cast_thing = Thing.__cast__(obj, globalref=True)
+        self.assertEqual(
+            obj1.combiner(4, "Ham", global_cast_thing, ICallback_null, JavaNull([int])),
+            "4::Ham::This is thing 2::<no callback>::<no values to count>"
+        )
+
     def test_pass_int_array(self):
         """A list of Python ints can be passed as a Java int array."""
         Example = JavaClass("org/beeware/rubicon/test/Example")

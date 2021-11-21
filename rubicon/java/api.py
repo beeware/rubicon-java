@@ -442,9 +442,9 @@ class StaticJavaMethod(object):
         except KeyError as e:
             raise ValueError(
                 "Can't find Java static method '%s.%s' matching argument signature '%s'. Options are: %s" % (
-                    self.java_class.__dict__['_descriptor'],
+                    self.java_class.__dict__['_descriptor'].decode('utf-8'),
                     self.name,
-                    e,
+                    e.args[0].decode('utf-8'),
                     ', '.join(
                         params_signature.decode('utf-8')
                         for params_signature in self._polymorphs.keys()
@@ -503,9 +503,9 @@ class JavaMethod:
         except KeyError as e:
             raise ValueError(
                 "Can't find Java instance method '%s.%s' matching argument signature '%s'. Options are: %s" % (
-                    self.java_class.__dict__['_descriptor'],
+                    self.java_class.__dict__['_descriptor'].decode('utf-8'),
                     self.name,
-                    e,
+                    e.args[0].decode('utf-8'),
                     ', '.join(
                         params_signature.decode('utf-8')
                         for params_signature in self._polymorphs.keys()
@@ -799,7 +799,7 @@ class JavaInstance(object):
             except KeyError as e:
                 raise ValueError(
                     "Can't find constructor matching argument signature %s. Options are: %s" % (
-                        e,
+                        e.args[0].decode('utf-8'),
                         ', '.join(
                             params_signature.decode('utf-8')
                             for params_signature in constructors.keys()
@@ -1129,6 +1129,17 @@ class JavaClass(type):
 
     def __repr__(self):
         return "<JavaClass: %s>" % self._descriptor.decode('utf-8')
+
+    def __cast__(self, obj, globalref=False):
+        """Cast the provided object to this class.
+
+        Optionally, make the resulting reference a global JNI reference.
+        """
+        if globalref:
+            cast = self(__jni__=java.NewGlobalRef(obj))
+        else:
+            cast = self(__jni__=obj.__jni__)
+        return cast
 
 
 ###########################################################################
