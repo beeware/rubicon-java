@@ -298,6 +298,22 @@ class JNITest(TestCase):
 
         self.assertEqual(obj1.doubler(JavaNull(str)), "Can't double NULL strings")
 
+    def test_null_return(self):
+        "Returned NULL objects are typed"
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        obj = Example()
+
+        Thing = JavaClass('org/beeware/rubicon/test/Thing')
+
+        obj.set_thing(Thing.__null__)
+        returned = obj.get_thing()
+        # Typed null objects are always equal to equivalent typed nulls
+        self.assertEqual(returned, Thing.__null__)
+        # All Typed nulls are equivalent
+        self.assertEqual(returned, Example.__null__)
+        # Null is always false
+        self.assertFalse(returned)
+
     def test_java_null_construction(self):
         "Java NULLs can be constructed"
         Example = JavaClass('org/beeware/rubicon/test/Example')
@@ -351,6 +367,17 @@ class JNITest(TestCase):
         # Some types can't be converted in a list
         with self.assertRaises(ValueError):
             JavaNull([None])
+
+    def test_null_repr(self):
+        "Null objects can be output to console"
+        # Output of a null makes sense
+        self.assertEqual(repr(JavaNull(b'Lcom/example/Thing;')), "<Java NULL (Lcom/example/Thing;)>")
+        self.assertEqual(repr(JavaNull(str)), "<Java NULL (Ljava/lang/String;)>")
+        self.assertEqual(repr(JavaNull(int)), "<Java NULL (I)>")
+
+        self.assertEqual(str(JavaNull(b'Lcom/example/Thing;')), "<NULL>")
+        self.assertEqual(str(JavaNull(str)), "<NULL>")
+        self.assertEqual(str(JavaNull(int)), "<NULL>")
 
     def test_polymorphic_static_method(self):
         "Check that the right static method is activated based on arguments used"

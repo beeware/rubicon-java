@@ -328,7 +328,7 @@ def return_cast(raw, return_signature):
         # Check for NULL return values
         if raw.value:
             return JavaClass(return_signature[1:-1].decode('utf-8'))(__jni__=raw)
-        return None
+        return JavaNull(return_signature)
 
     raise ValueError("Don't know how to cast return signature '%s'" % return_signature)
 
@@ -981,6 +981,20 @@ class JavaNull:
                         }[type_or_signature]
                     except KeyError:
                         raise ValueError("Cannot create a typed null for {!r}".format(type_or_signature))
+
+    def __repr__(self):
+        return f"<Java NULL ({self._signature.decode('utf-8')})>"
+
+    def __str__(self):
+        return "<NULL>"
+
+    def __eq__(self, other):
+        # Nulls are always equal to all other nulls
+        return isinstance(other, JavaNull)
+
+    def __bool__(self):
+        # Nulls are always false
+        return False
 
 
 class JavaClass(type):
