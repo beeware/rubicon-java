@@ -871,17 +871,6 @@ class JavaInstance(object):
 
         raise AttributeError("'%s' Java object has no attribute '%s'" % (self.__class__.__name__, name))
 
-    def __cast__(self, klass, globalref=False):
-        """Cast the object to a specific class.
-
-        Optionally, make the resulting reference a global JNI reference.
-        """
-        if globalref:
-            cast = klass(__jni__=java.NewGlobalRef(self))
-        else:
-            cast = klass(__jni__=self.__jni__)
-        return cast
-
 
 class UnknownClassException(Exception):
     def __init__(self, descriptor):
@@ -1141,6 +1130,16 @@ class JavaClass(type):
     def __repr__(self):
         return "<JavaClass: %s>" % self._descriptor.decode('utf-8')
 
+    def __cast__(self, obj, globalref=False):
+        """Cast the provided object to this class.
+
+        Optionally, make the resulting reference a global JNI reference.
+        """
+        if globalref:
+            cast = self(__jni__=java.NewGlobalRef(obj))
+        else:
+            cast = self(__jni__=obj.__jni__)
+        return cast
 
 ###########################################################################
 # Representations of Java classes and instances
