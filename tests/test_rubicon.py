@@ -2,7 +2,7 @@ import math
 import sys
 from unittest import TestCase
 
-from rubicon.java import JavaClass, JavaInterface
+from rubicon.java import JavaClass, JavaInterface, JavaNull, jstring, jlong
 
 
 class JNITest(TestCase):
@@ -222,9 +222,6 @@ class JNITest(TestCase):
         self.assertEqual(obj1.doubler(42), 84)
         self.assertEqual(obj1.doubler("wibble"), "wibblewibble")
 
-        # None will be resolved to a matching polymorph
-        self.assertEqual(obj1.doubler(None), "Can't double NULL strings")
-
         # If arguments don't match available options, an error is raised
         with self.assertRaises(ValueError):
             obj1.doubler(1.234)
@@ -237,22 +234,123 @@ class JNITest(TestCase):
         Thing = JavaClass('org/beeware/rubicon/test/Thing')
         thing = Thing('This is thing', 2)
 
-        self.assertEqual(obj1.combiner(3, "Pork", thing), '3::Pork::This is thing 2')
-        self.assertEqual(obj1.combiner(3, None, thing), '3:: No special name ::This is thing 2')
-        self.assertEqual(obj1.combiner(3, "Pork", None), '3::Pork (but no thing)')
-        self.assertEqual(obj1.combiner(3, None, None), '3:: No special name or thing')
+        ICallback = JavaInterface('org/beeware/rubicon/test/ICallback')
 
-        # None can only be used when an object is expected.
-        with self.assertRaises(ValueError):
-            obj1.combiner(None, "Pork", thing)
+        class MyInterface(ICallback):
+            def poke(self, example, value):
+                pass
 
-        # Type mismatches are still a problem
-        with self.assertRaises(ValueError):
-            obj1.combiner(1.234, "Pork", thing)
+            def peek(self, example, value):
+                pass
 
-        # Argument count mismatches are still a problem
+        handler = MyInterface()
+
+        # An explicit typed NULL can be used to match None arguments.
+        self.assertEqual(
+            obj1.combiner(3, JavaNull(b'Ljava/lang/String;'), thing, handler, [1, 2]),
+            "3::<no special name>::This is thing 2::There is a callback::There are 2 values"
+        )
+
+        # A typed Null can be constructed from a primitive Python
+        self.assertEqual(
+            obj1.combiner(3, JavaNull(str), thing, handler, [1, 2]),
+            "3::<no special name>::This is thing 2::There is a callback::There are 2 values"
+        )
+
+        # Every JavaClass has a built-in NULL
+        self.assertEqual(
+            obj1.combiner(3, "Pork", Thing.__null__, handler, [1, 2]),
+            '3::Pork::<no special thing>::There is a callback::There are 2 values'
+        )
+
+        # JavaClasses can also be used to construct a null.
+        self.assertEqual(
+            obj1.combiner(3, "Pork", JavaNull(Thing), handler, [1, 2]),
+            '3::Pork::<no special thing>::There is a callback::There are 2 values'
+        )
+
+        # Every JavaInterface has a built-in NULL
+        self.assertEqual(
+            obj1.combiner(3, "Pork", thing, ICallback.__null__, [1, 2]),
+            '3::Pork::This is thing 2::<no callback>::There are 2 values'
+        )
+
+        # JavaInterfaces can also be used to construct a null.
+        self.assertEqual(
+            obj1.combiner(3, "Pork", thing, JavaNull(ICallback), [1, 2]),
+            '3::Pork::This is thing 2::<no callback>::There are 2 values'
+        )
+
+        # Arrays are constructed by passing in a list with a single type item.
+        self.assertEqual(
+            obj1.combiner(3, "Pork", thing, handler, JavaNull([int])),
+            '3::Pork::This is thing 2::There is a callback::<no values to count>'
+        )
+
+        # If NULL arguments don't match available options, an error is raised
         with self.assertRaises(ValueError):
-            obj1.combiner(1.234, "Pork")
+            obj1.combiner(3, "Pork", JavaNull(str), handler, [1, 2]),
+
+    def test_polymorphic_method_null(self):
+        "Polymorphic methods can be passed NULLs"
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        obj1 = Example()
+
+        self.assertEqual(obj1.doubler(JavaNull(str)), "Can't double NULL strings")
+
+    def test_java_null_construction(self):
+        "Java NULLs can be constructed"
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        obj1 = Example()
+
+        # Java nulls can be constructed explicitly
+        self.assertEqual(JavaNull(b"Lcom/example/Thing;")._signature, b"Lcom/example/Thing;")
+
+        # Java nulls can be constructed from a JavaClass
+        self.assertEqual(JavaNull(Example)._signature, b"Lorg/beeware/rubicon/test/Example;")
+
+        # Java nulls can be constructed from an instance
+        self.assertEqual(JavaNull(obj1)._signature, b"Lorg/beeware/rubicon/test/Example;")
+
+        # A Java Null can be constructed for Python or JNI primitives
+        self.assertEqual(JavaNull(int)._signature, b"I")
+        self.assertEqual(JavaNull(jlong)._signature, b"J")
+        self.assertEqual(JavaNull(str)._signature, b"Ljava/lang/String;")
+        self.assertEqual(JavaNull(jstring)._signature, b"Ljava/lang/String;")
+
+        # Bytes is converted directly to an array of byte
+        self.assertEqual(JavaNull(bytes)._signature, b"[B")
+
+        # Some types can't be converted
+        with self.assertRaises(ValueError):
+            JavaNull(None)
+
+        # A Java Null for an array of primitives can be defined with a list
+        # of Python or JNI primitives
+        self.assertEqual(JavaNull([int])._signature, b"[I")
+        self.assertEqual(JavaNull([jlong])._signature, b"[J")
+
+        # A Java Null for an array of objects can be defined with a list
+        self.assertEqual(JavaNull([Example])._signature, b"[Lorg/beeware/rubicon/test/Example;")
+
+        # A Java Null for an array of explicit JNI references
+        self.assertEqual(JavaNull([b'Lcom/example/Thing;'])._signature, b"[Lcom/example/Thing;")
+
+        # Arrays are defined with a type, not a literal
+        with self.assertRaises(ValueError):
+            JavaNull([1])
+
+        # Arrays must have a single element
+        with self.assertRaises(ValueError):
+            JavaNull([])
+
+        # Arrays can *only* have a single element
+        with self.assertRaises(ValueError):
+            JavaNull([int, int])
+
+        # Some types can't be converted in a list
+        with self.assertRaises(ValueError):
+            JavaNull([None])
 
     def test_polymorphic_static_method(self):
         "Check that the right static method is activated based on arguments used"
@@ -278,22 +376,30 @@ class JNITest(TestCase):
         # Retrieve a generic reference to the object (java.lang.Object)
         obj = obj1.get_generic_thing()
 
+        ICallback_null = JavaNull(b'Lorg/beeware/rubicon/test/ICallback;')
+
         # Attempting to use this generic object *as* a Thing will fail.
         with self.assertRaises(AttributeError):
             obj.currentCount()
         with self.assertRaises(ValueError):
-            obj1.combiner(3, "Ham", obj)
+            obj1.combiner(3, "Ham", obj, ICallback_null, JavaNull([int]))
 
         # ...but if we cast it to the type we know it is
         # (org.beeware.rubicon.test.Thing), the same calls will succeed.
         cast_thing = obj.__cast__(Thing)
         self.assertEqual(cast_thing.currentCount(), 2)
-        self.assertEqual(obj1.combiner(4, "Ham", cast_thing), "4::Ham::This is thing 2")
+        self.assertEqual(
+            obj1.combiner(4, "Ham", cast_thing, ICallback_null, JavaNull([int])),
+            "4::Ham::This is thing 2::<no callback>::<no values to count>"
+        )
 
         # We can also cast as a global JNI reference
         # (org.beeware.rubicon.test.Thing), the same calls will succeed.
         global_cast_thing = obj.__cast__(Thing, globalref=True)
-        self.assertEqual(obj1.combiner(4, "Ham", global_cast_thing), "4::Ham::This is thing 2")
+        self.assertEqual(
+            obj1.combiner(4, "Ham", global_cast_thing, ICallback_null, JavaNull([int])),
+            "4::Ham::This is thing 2::<no callback>::<no values to count>"
+        )
 
     def test_convert_to_global(self):
         "An object can be converted into a global JNI reference."
@@ -303,9 +409,14 @@ class JNITest(TestCase):
         Thing = JavaClass('org/beeware/rubicon/test/Thing')
         thing = Thing('This is thing', 2)
 
+        ICallback__null = JavaNull(b'Lorg/beeware/rubicon/test/ICallback;')
+
         global_thing = thing.__global__()
         self.assertEqual(global_thing.currentCount(), 2)
-        self.assertEqual(obj1.combiner(5, "Spam", global_thing), "5::Spam::This is thing 2")
+        self.assertEqual(
+            obj1.combiner(5, "Spam", global_thing, ICallback__null, JavaNull([int])),
+            "5::Spam::This is thing 2::<no callback>::<no values to count>"
+        )
 
     def test_pass_int_array(self):
         """A list of Python ints can be passed as a Java int array."""

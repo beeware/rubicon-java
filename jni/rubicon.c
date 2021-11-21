@@ -886,9 +886,11 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_init(JNIEnv *env, jobject
     LOG_D("Initializing Python runtime...");
     Py_Initialize();
 
+#if PY_VERSION_HEX < 0x03070000
     LOG_D("Initializing Python threads...");
     // If other modules are using threads, we need to initialize them before.
     PyEval_InitThreads();
+#endif
 
 #ifdef __ANDROID__
     LOG_D("Replacing sys.stdout/sys.stderr with Android log wrappers...");

@@ -175,17 +175,33 @@ public class Example extends BaseExample {
     }
 
     /* Handling long argument lists */
-    public String combiner(int x, String name, Thing thing) {
+    public String combiner(int x, String name, Thing thing, ICallback callback, int [] values) {
         if (name == null) {
-            if (thing == null) {
-                return x + ":: No special name or thing";
-            } else {
-                return x + ":: No special name ::" + thing;
-            }
-        } else if (thing == null) {
-            return x + "::" + name + " (but no thing)";
+            name = "<no special name>";
         }
-        return x + "::" + name + "::" + thing;
+
+        String thing_label;
+        if (thing == null) {
+            thing_label = "<no special thing>";
+        } else {
+            thing_label = thing.toString();
+        }
+
+        String callback_label;
+        if (callback == null) {
+            callback_label = "<no callback>";
+        } else {
+            callback_label = "There is a callback";
+        }
+
+        String value_count;
+        if (values == null) {
+            value_count = "<no values to count>";
+        } else {
+            value_count = "There are " + values.length + " values";
+        }
+
+        return x + "::" + name + "::" + thing_label + "::" + callback_label + "::" + value_count;
     }
 
     /* Interface visiblity */
