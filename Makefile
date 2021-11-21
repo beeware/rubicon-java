@@ -35,7 +35,9 @@ PYTHON_VERSION := $(shell echo ${PYTHON_LDVERSION} | sed 's,[^0-9.],,g')
 # Use CFLAGS and LDFLAGS based on Python's. We add -fPIC since we're creating a
 # shared library, and we remove -stack_size (only seen on macOS), since it only
 # applies to executables.
-CFLAGS := $(shell $(PYTHON_CONFIG) --cflags) -fPIC
+# -Wno-nullability-completeness and -Wno-expansion-to-defined silence warnings that
+# are raised by the C library itself.
+CFLAGS := $(shell $(PYTHON_CONFIG) --cflags) -fPIC -Wno-nullability-completeness -Wno-expansion-to-defined
 LDFLAGS := $(shell $(PYTHON_CONFIG) --ldflags ${PYTHON_CONFIG_EXTRA_FLAGS} | sed 'sX-Wl,-stack_size,1000000XXg')
 
 # If we are compiling for Android, the C code will detect it via #define. We need to accommodate

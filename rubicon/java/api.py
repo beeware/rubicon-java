@@ -125,6 +125,8 @@ def convert_args(args, type_names):
             converted.append(java.NewStringUTF(arg.encode('utf-8')))
         elif isinstance(arg, (JavaInstance, JavaProxy)):
             converted.append(arg.__jni__)
+        elif isinstance(arg, JavaNull):
+            converted.append(None)
         else:
             raise ValueError("Unknown argument type", arg, type(arg))
 
@@ -212,16 +214,19 @@ def select_polymorph(polymorphs, args):
                     raise ValueError("Unable convert sequence into array of Java primitive types")
             elif isinstance(arg, (JavaInstance, JavaProxy)):
                 arg_types.append(arg.__class__.__dict__['_alternates'])
+            elif isinstance(arg, JavaNull):
+                arg_types.append([arg._signature])
             else:
                 raise ValueError("Unknown argument type", arg, type(arg))
 
         arg_sig = b''.join(t[0] for t in arg_types)
-
         options = list(itertools.product(*arg_types))
 
+    # Try all the possible interpretations of the arguments
+    # as polymorphic forms.
     for option in options:
         try:
-            return arg_sig, option, polymorphs[b''.join(option)]
+            return option, polymorphs[b''.join(option)]
         except KeyError:
             pass
 
@@ -427,7 +432,7 @@ class StaticJavaMethod(object):
 
     def __call__(self, *args):
         try:
-            arg_sig, match_types, polymorph = select_polymorph(self._polymorphs, args)
+            match_types, polymorph = select_polymorph(self._polymorphs, args)
             result = polymorph['invoker'](
                 self.java_class.__dict__['__jni__'],
                 polymorph['jni'],
@@ -440,7 +445,10 @@ class StaticJavaMethod(object):
                     self.java_class.__dict__['_descriptor'],
                     self.name,
                     e,
-                    self._polymorphs.keys()
+                    ', '.join(
+                        params_signature.decode('utf-8')
+                        for params_signature in self._polymorphs.keys()
+                    )
                 )
             )
 
@@ -485,7 +493,7 @@ class JavaMethod:
 
     def __call__(self, instance, *args):
         try:
-            arg_sig, match_types, polymorph = select_polymorph(self._polymorphs, args)
+            match_types, polymorph = select_polymorph(self._polymorphs, args)
             result = polymorph['invoker'](
                 instance,
                 polymorph['jni'],
@@ -498,7 +506,10 @@ class JavaMethod:
                     self.java_class.__dict__['_descriptor'],
                     self.name,
                     e,
-                    self._polymorphs.keys()
+                    ', '.join(
+                        params_signature.decode('utf-8')
+                        for params_signature in self._polymorphs.keys()
+                    )
                 )
             )
 
@@ -763,7 +774,7 @@ class JavaInstance(object):
             # Invoke the JNI constructor
             ##################################################################
             try:
-                arg_sig, match_types, constructor = select_polymorph(constructors, args)
+                match_types, constructor = select_polymorph(constructors, args)
                 if constructor is None:
                     sig = b''.join(match_types)
                     constructor = java.GetMethodID(
@@ -789,7 +800,10 @@ class JavaInstance(object):
                 raise ValueError(
                     "Can't find constructor matching argument signature %s. Options are: %s" % (
                         e,
-                        ', '.join(k.decode('utf-8') for k in constructors.keys())
+                        ', '.join(
+                            params_signature.decode('utf-8')
+                            for params_signature in constructors.keys()
+                        )
                     )
                 )
 
@@ -866,6 +880,105 @@ class UnknownClassException(Exception):
         return "Couldn't find Java class '%s'" % self.descriptor
 
 
+class JavaNull:
+    def __init__(self, type_or_signature):
+        """
+        A "typed NULL"; a value that will evaluate as a Java NULL when used
+        as argument, but carries an explicit signature for type matching
+        purposes.
+
+        This can be constructed explicitly using a JNI type signature:
+
+            JavaNull(b'Lcom/example/Thing;')
+
+        or inferred from a JavaClass
+
+            Thing = JavaClass('com/example/Thing')
+            JavaNull(Thing)
+
+        or from a Python primitive:
+
+            JavaNull(str)
+
+        or from a JNI primitive:
+
+            JavaNull(jdouble)
+
+        Array arguments can be constructed by passing in a list with a
+        single item; the item being one of the previous inferred types:
+
+            JavaNull([b'Lcom/example/Thing;'])
+            JavaNull([Thing])
+            JavaNull([str])
+            JavaNull([jdouble])
+
+        """
+        if isinstance(type_or_signature, bytes):
+            self._signature = type_or_signature
+        else:
+            try:
+                # If the object has a predefined typed NULL, use it
+                self._signature = type_or_signature.__null__._signature
+            except AttributeError:
+                # If the object is a list, try to convert into an array type
+                # The array *must* have exactly 1 element, and the element
+                # is the type of the array NULL to construct.
+                if isinstance(type_or_signature, Sequence):
+                    if len(type_or_signature) == 1:
+                        try:
+                            self._signature = b'[' + type_or_signature[0].__null__._signature
+                        except AttributeError:
+                            try:
+                                self._signature = {
+                                    bool: b'[Z',
+                                    jboolean: b'[Z',
+                                    jbyte: b'[B',
+                                    jchar: b'[C',
+                                    jshort: b'[S',
+                                    int: b'[I',
+                                    jint: b'[I',
+                                    jlong: b'[J',
+                                    float: b'[F',
+                                    jfloat: b'[F',
+                                    jdouble: b'[D',
+                                    str: b"[Ljava/lang/String;",
+                                    jstring: b"[Ljava/lang/String;",
+                                }[type_or_signature[0]]
+                            except (TypeError, KeyError):
+                                if isinstance(type_or_signature[0], bytes):
+                                    self._signature = self._signature = b'[' + type_or_signature[0]
+                                else:
+                                    raise ValueError(
+                                        "Cannot create a typed null for an array of {}".format(
+                                            type_or_signature[0]
+                                        )
+                                    )
+                    else:
+                        raise ValueError("Typed nulls for an array must contain a single item")
+                else:
+                    # Is the object a primitive type (or JNI type)?
+                    # If so, convert it directly to a type signature.
+                    try:
+                        self._signature = {
+                            bool: b'Z',
+                            jboolean: b'Z',
+                            jbyte: b'B',
+                            jchar: b'C',
+                            jshort: b'S',
+                            int: b'I',
+                            jint: b'I',
+                            jlong: b'J',
+                            float: b'F',
+                            jfloat: b'F',
+                            jdouble: b'D',
+                            str: b"Ljava/lang/String;",
+                            jstring: b"Ljava/lang/String;",
+                            bytes: b'[B',
+                        }[type_or_signature]
+                    except KeyError:
+                        raise ValueError("Cannot create a typed null for {!r}".format(type_or_signature))
+
+
 class JavaClass(type):
     # This class returns known JavaClass instances where possible.
     _class_cache = {}
@@ -940,6 +1053,7 @@ class JavaClass(type):
             {
                 '_descriptor': descriptor_bytes,
                 '__jni__': jni,
+                '__null__': JavaNull(alternates[0]),
                 '_alternates': alternates,
                 '_constructors': None,
                 '_members': {
@@ -1009,10 +1123,12 @@ class JavaClass(type):
         if field_wrapper:
             return field_wrapper.set(value)
 
-        raise AttributeError("Java class '%s' has no attribute '%s'" % (self.__dict__['_descriptor'], name))
+        raise AttributeError("Java class '%s' has no attribute '%s'" % (
+            self.__dict__['_descriptor'].decode('utf-8'), name)
+        )
 
     def __repr__(self):
-        return "<JavaClass: %s>" % self._descriptor
+        return "<JavaClass: %s>" % self._descriptor.decode('utf-8')
 
 
 ###########################################################################
@@ -1054,13 +1170,15 @@ class JavaInterface(type):
         if len(args) == 1:
             descriptor = args[0].encode('utf-8')
             # print("Creating Java Interface " + descriptor)
+            alternates = [b'L%s;' % descriptor]
             java_class = super(JavaInterface, cls).__new__(
                 cls,
                 descriptor.decode('utf-8'),
                 (JavaProxy,),
                 {
                     '_descriptor': descriptor,
-                    '_alternates': ['L%s;' % descriptor],
+                    '__null__': JavaNull(alternates[0]),
+                    '_alternates': alternates,
                     '_methods': {}
                 }
             )
@@ -1068,8 +1186,10 @@ class JavaInterface(type):
             name, bases, attrs = args
             # print("Creating Java Interface " + bases[-1].__dict__['_descriptor'])
             descriptor = bases[-1].__dict__['_descriptor']
+            alternates = [b'L%s;' % descriptor]
             attrs['_descriptor'] = descriptor
-            attrs['_alternates'] = [b'L%s;' % descriptor]
+            attrs['__null__'] = JavaNull(alternates[0])
+            attrs['_alternates'] = alternates
             attrs['_methods'] = {}
             java_class = super(JavaInterface, cls).__new__(cls, name, bases, attrs)
 

@@ -144,6 +144,9 @@ public class Example extends BaseExample {
 
     /* Polymorphism handling */
     public String doubler(String in) {
+        if (in == null) {
+            return "Can't double NULL strings";
+        }
         return in + in;
     }
 
@@ -165,6 +168,36 @@ public class Example extends BaseExample {
 
     public static long tripler(long in) {
         return in + in + in;
+    }
+
+    /* Handling long argument lists */
+    public String combiner(int x, String name, Thing thing, ICallback callback, int [] values) {
+        if (name == null) {
+            name = "<no special name>";
+        }
+
+        String thing_label;
+        if (thing == null) {
+            thing_label = "<no special thing>";
+        } else {
+            thing_label = thing.toString();
+        }
+
+        String callback_label;
+        if (callback == null) {
+            callback_label = "<no callback>";
+        } else {
+            callback_label = "There is a callback";
+        }
+
+        String value_count;
+        if (values == null) {
+            value_count = "<no values to count>";
+        } else {
+            value_count = "There are " + values.length + " values";
+        }
+
+        return x + "::" + name + "::" + thing_label + "::" + callback_label + "::" + value_count;
     }
 
     /* Interface visiblity */

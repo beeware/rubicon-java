@@ -1,0 +1,1 @@
+Methods that accept a Java ``NULL`` as an argument are now supported.

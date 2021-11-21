@@ -2,7 +2,7 @@ import math
 import sys
 from unittest import TestCase
 
-from rubicon.java import JavaClass, JavaInterface
+from rubicon.java import JavaClass, JavaInterface, JavaNull, jstring, jlong
 
 
 class JNITest(TestCase):
@@ -217,7 +217,6 @@ class JNITest(TestCase):
     def test_polymorphic_method(self):
         "Check that the right method is activated based on arguments used"
         Example = JavaClass('org/beeware/rubicon/test/Example')
-
         obj1 = Example()
 
         self.assertEqual(obj1.doubler(42), 84)
@@ -226,6 +225,132 @@ class JNITest(TestCase):
         # If arguments don't match available options, an error is raised
         with self.assertRaises(ValueError):
             obj1.doubler(1.234)
+
+    def test_method_null(self):
+        "Null objects can be passed as arguments"
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        obj1 = Example()
+
+        Thing = JavaClass('org/beeware/rubicon/test/Thing')
+        thing = Thing('This is thing', 2)
+
+        ICallback = JavaInterface('org/beeware/rubicon/test/ICallback')
+
+        class MyInterface(ICallback):
+            def poke(self, example, value):
+                pass
+
+            def peek(self, example, value):
+                pass
+
+        handler = MyInterface()
+
+        # An explicit typed NULL can be used to match None arguments.
+        self.assertEqual(
+            obj1.combiner(3, JavaNull(b'Ljava/lang/String;'), thing, handler, [1, 2]),
+            "3::<no special name>::This is thing 2::There is a callback::There are 2 values"
+        )
+
+        # A typed Null can be constructed from a primitive Python
+        self.assertEqual(
+            obj1.combiner(3, JavaNull(str), thing, handler, [1, 2]),
+            "3::<no special name>::This is thing 2::There is a callback::There are 2 values"
+        )
+
+        # Every JavaClass has a built-in NULL
+        self.assertEqual(
+            obj1.combiner(3, "Pork", Thing.__null__, handler, [1, 2]),
+            '3::Pork::<no special thing>::There is a callback::There are 2 values'
+        )
+
+        # JavaClasses can also be used to construct a null.
+        self.assertEqual(
+            obj1.combiner(3, "Pork", JavaNull(Thing), handler, [1, 2]),
+            '3::Pork::<no special thing>::There is a callback::There are 2 values'
+        )
+
+        # Every JavaInterface has a built-in NULL
+        self.assertEqual(
+            obj1.combiner(3, "Pork", thing, ICallback.__null__, [1, 2]),
+            '3::Pork::This is thing 2::<no callback>::There are 2 values'
+        )
+
+        # JavaInterfaces can also be used to construct a null.
+        self.assertEqual(
+            obj1.combiner(3, "Pork", thing, JavaNull(ICallback), [1, 2]),
+            '3::Pork::This is thing 2::<no callback>::There are 2 values'
+        )
+
+        # Arrays are constructed by passing in a list with a single type item.
+        self.assertEqual(
+            obj1.combiner(3, "Pork", thing, handler, JavaNull([int])),
+            '3::Pork::This is thing 2::There is a callback::<no values to count>'
+        )
+
+        # If NULL arguments don't match available options, an error is raised
+        with self.assertRaises(ValueError):
+            obj1.combiner(3, "Pork", JavaNull(str), handler, [1, 2]),
+
+    def test_polymorphic_method_null(self):
+        "Polymorphic methods can be passed NULLs"
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        obj1 = Example()
+
+        self.assertEqual(obj1.doubler(JavaNull(str)), "Can't double NULL strings")
+
+    def test_java_null_construction(self):
+        "Java NULLs can be constructed"
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        obj1 = Example()
+
+        # Java nulls can be constructed explicitly
+        self.assertEqual(JavaNull(b"Lcom/example/Thing;")._signature, b"Lcom/example/Thing;")
+
+        # Java nulls can be constructed from a JavaClass
+        self.assertEqual(JavaNull(Example)._signature, b"Lorg/beeware/rubicon/test/Example;")
+
+        # Java nulls can be constructed from an instance
+        self.assertEqual(JavaNull(obj1)._signature, b"Lorg/beeware/rubicon/test/Example;")
+
+        # A Java Null can be constructed for Python or JNI primitives
+        self.assertEqual(JavaNull(int)._signature, b"I")
+        self.assertEqual(JavaNull(jlong)._signature, b"J")
+        self.assertEqual(JavaNull(str)._signature, b"Ljava/lang/String;")
+        self.assertEqual(JavaNull(jstring)._signature, b"Ljava/lang/String;")
+
+        # Bytes is converted directly to an array of byte
+        self.assertEqual(JavaNull(bytes)._signature, b"[B")
+
+        # Some types can't be converted
+        with self.assertRaises(ValueError):
+            JavaNull(None)
+
+        # A Java Null for an array of primitives can be defined with a list
+        # of Python or JNI primitives
+        self.assertEqual(JavaNull([int])._signature, b"[I")
+        self.assertEqual(JavaNull([jlong])._signature, b"[J")
+
+        # A Java Null for an array of objects can be defined with a list
+        self.assertEqual(JavaNull([Example])._signature, b"[Lorg/beeware/rubicon/test/Example;")
+
+        # A Java Null for an array of explicit JNI references
+        self.assertEqual(JavaNull([b'Lcom/example/Thing;'])._signature, b"[Lcom/example/Thing;")
+
+        # Arrays are defined with a type, not a literal
+        with self.assertRaises(ValueError):
+            JavaNull([1])
+
+        # Arrays must have a single element
+        with self.assertRaises(ValueError):
+            JavaNull([])
+
+        # Arrays can *only* have a single element
+        with self.assertRaises(ValueError):
+            JavaNull([int, int])
+
+        # Some types can't be converted in a list
+        with self.assertRaises(ValueError):
+            JavaNull([None])
 
     def test_polymorphic_static_method(self):
         "Check that the right static method is activated based on arguments used"
