@@ -196,6 +196,12 @@ java.NewFloatArray.argtypes = [jsize]
 java.SetFloatArrayRegion.restype = None
 java.SetFloatArrayRegion.argtypes = [jfloatArray, jsize, jsize, jfloat_p]
 
+java.NewObjectArray.restype = jobjectArray
+java.NewObjectArray.argtypes = [jsize, jclass, jobject]
+
+java.SetObjectArrayElement.restype = None
+java.SetObjectArrayElement.argtypes = [jobjectArray, jsize, jobject]
+
 
 class _ReflectionAPI(object):
     "A lazy-loading proxy for the key classes and methods in the Java reflection API"

@@ -121,6 +121,19 @@ def convert_args(args, type_names):
             jarg = java.NewDoubleArray(len(arg))
             java.SetDoubleArrayRegion(jarg, 0, len(arg), (jdouble * len(arg))(*arg))
             converted.append(jarg)
+        elif isinstance(arg, Sequence) and type_name == b'[Ljava/lang/String;':
+            jarg = java.NewObjectArray(
+                len(arg),
+                java.FindClass(b'java/lang/String'),
+                java.NewStringUTF(b'')
+            )
+            for i, elem in enumerate(arg):
+                java.SetObjectArrayElement(
+                    jarg,
+                    i,
+                    java.NewStringUTF(elem.encode('utf-8'))
+                )
+            converted.append(jarg)
         elif isinstance(arg, str):
             converted.append(java.NewStringUTF(arg.encode('utf-8')))
         elif isinstance(arg, (JavaInstance, JavaProxy)):
@@ -210,6 +223,11 @@ def select_polymorph(polymorphs, args):
                         arg_types.append([b'[D', b'[F'])
                     else:
                         raise ValueError("Unable to treat all data in list as floats/doubles")
+                elif isinstance(arg[0], (str, jstring)):
+                    if all((isinstance(item, (str, jstring)) for item in arg)):
+                        arg_types.append([b'[Ljava/lang/String;'])
+                    else:
+                        raise ValueError("Unable to treat all data in list as strings")
                 else:
                     raise ValueError("Unable convert sequence into array of Java primitive types")
             elif isinstance(arg, (JavaInstance, JavaProxy)):
