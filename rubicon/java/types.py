@@ -1,6 +1,6 @@
 from ctypes import (
-    POINTER, Structure, c_bool, c_byte, c_char_p, c_double, c_float, c_int32,
-    c_longlong, c_short, c_void_p, c_wchar,
+    POINTER, Structure, c_bool, c_byte, c_char_p, c_double, c_float, c_int16,
+    c_int32, c_int64, c_void_p, c_wchar,
 )
 
 __all__ = [
@@ -18,9 +18,9 @@ __all__ = [
 jboolean = c_bool
 jbyte = c_byte
 jchar = c_wchar
-jshort = c_short
+jshort = c_int16
 jint = c_int32
-jlong = c_longlong
+jlong = c_int64
 jfloat = c_float
 jdouble = c_double
 

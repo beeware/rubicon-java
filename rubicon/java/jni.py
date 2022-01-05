@@ -5,8 +5,8 @@ from .types import (
     jarray, jboolean, jboolean_p, jbooleanArray,
     jbyte, jbyte_p, jbyteArray, jchar, jclass,
     jdouble, jdouble_p, jdoubleArray, jfieldID, jfloat, jfloat_p, jfloatArray,
-    jint, jint_p, jintArray, jlong, jmethodID, jobject, jobjectArray,
-    jshort, jsize, jstring,
+    jint, jint_p, jintArray, jlong, jlong_p, jlongArray, jmethodID, jobject, jobjectArray,
+    jshort, jshort_p, jshortArray, jsize, jstring,
 )
 
 # If RUBICON_LIBRARY is set in the environment, rely on it. If not,
@@ -163,38 +163,62 @@ java.GetStringUTFChars.argtypes = [jstring, jboolean_p]
 
 java.GetArrayLength.restype = jsize
 java.GetArrayLength.argtypes = [jarray]
+
+java.NewObjectArray.restype = jobjectArray
+java.NewObjectArray.argtypes = [jsize, jclass, jobject]
 java.GetObjectArrayElement.restype = jobject
 java.GetObjectArrayElement.argtypes = [jobjectArray, jsize]
+java.SetObjectArrayElement.restype = None
+java.SetObjectArrayElement.argtypes = [jobjectArray, jsize, jobject]
 
 java.NewByteArray.restype = jbyteArray
 java.NewByteArray.argtypes = [jsize]
-
 java.SetByteArrayRegion.restype = None
 java.SetByteArrayRegion.argtypes = [jbyteArray, jsize, jsize, jbyte_p]
+java.GetByteArrayElements.restype = jbyte_p
+java.GetByteArrayElements.argtypes = [jbyteArray, jboolean_p]
 
 java.NewBooleanArray.restype = jbooleanArray
 java.NewBooleanArray.argtypes = [jsize]
-
 java.SetBooleanArrayRegion.restype = None
 java.SetBooleanArrayRegion.argtypes = [jbooleanArray, jsize, jsize, jboolean_p]
+java.GetBooleanArrayElements.restype = jboolean_p
+java.GetBooleanArrayElements.argtypes = [jbooleanArray, jboolean_p]
 
 java.NewDoubleArray.restype = jdoubleArray
 java.NewDoubleArray.argtypes = [jsize]
-
 java.SetDoubleArrayRegion.restype = None
 java.SetDoubleArrayRegion.argtypes = [jdoubleArray, jsize, jsize, jdouble_p]
+java.GetDoubleArrayElements.restype = jdouble_p
+java.GetDoubleArrayElements.argtypes = [jdoubleArray, jboolean_p]
+
+java.NewShortArray.restype = jshortArray
+java.NewShortArray.argtypes = [jsize]
+java.SetShortArrayRegion.restype = None
+java.SetShortArrayRegion.argtypes = [jshortArray, jsize, jsize, jshort_p]
+java.GetShortArrayElements.restype = jshort_p
+java.GetShortArrayElements.argtypes = [jshortArray, jboolean_p]
 
 java.NewIntArray.restype = jintArray
 java.NewIntArray.argtypes = [jsize]
-
 java.SetIntArrayRegion.restype = None
 java.SetIntArrayRegion.argtypes = [jintArray, jsize, jsize, jint_p]
+java.GetIntArrayElements.restype = jint_p
+java.GetIntArrayElements.argtypes = [jintArray, jboolean_p]
+
+java.NewLongArray.restype = jlongArray
+java.NewLongArray.argtypes = [jsize]
+java.SetLongArrayRegion.restype = None
+java.SetLongArrayRegion.argtypes = [jlongArray, jsize, jsize, jlong_p]
+java.GetLongArrayElements.restype = jlong_p
+java.GetLongArrayElements.argtypes = [jlongArray, jboolean_p]
 
 java.NewFloatArray.restype = jfloatArray
 java.NewFloatArray.argtypes = [jsize]
-
 java.SetFloatArrayRegion.restype = None
 java.SetFloatArrayRegion.argtypes = [jfloatArray, jsize, jsize, jfloat_p]
+java.GetFloatArrayElements.restype = jfloat_p
+java.GetFloatArrayElements.argtypes = [jfloatArray, jboolean_p]
 
 
 class _ReflectionAPI(object):

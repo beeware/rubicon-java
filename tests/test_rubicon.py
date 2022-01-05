@@ -2,7 +2,7 @@ import math
 import sys
 from unittest import TestCase
 
-from rubicon.java import JavaClass, JavaInterface, JavaNull, jstring, jlong
+from rubicon.java import JavaClass, JavaInterface, JavaNull, jdouble, jfloat, jstring, jlong, jshort, jint
 
 
 class JNITest(TestCase):
@@ -225,6 +225,62 @@ class JNITest(TestCase):
         # If arguments don't match available options, an error is raised
         with self.assertRaises(ValueError):
             obj1.doubler(1.234)
+
+    def test_byte_array_arg(self):
+        "Bytestrings can be used as arguments (as byte arrays)"
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        obj1 = Example()
+
+        self.assertEqual(obj1.doubler(b'abcd'), b'aabbccdd')
+
+    def test_int_array_arg(self):
+        "Arrays of int can be used as arguments"
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        obj1 = Example()
+        self.assertEqual(obj1.doubler([1, 2]), [1, 1, 2, 2])
+        self.assertEqual(obj1.doubler([jlong(1), jlong(2)]), [1, 1, 2, 2])
+        self.assertEqual(obj1.doubler([jshort(1), jshort(2)]), [1, 1, 2, 2])
+        self.assertEqual(obj1.doubler([jint(1), jint(2)]), [1, 1, 2, 2])
+
+    def assertAlmostEqualList(self, actual, expected):
+        self.assertEqual(len(expected), len(actual), "Lists are different length")
+        for i, (a, e) in enumerate(zip(actual, expected)):
+            self.assertAlmostEqual(a, e)
+
+    def test_float_array_arg(self):
+        "Arrays of float can be used as arguments"
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        obj1 = Example()
+
+        self.assertAlmostEqualList(obj1.doubler([1.1, 2.2]), [1.1, 1.1, 2.2, 2.2])
+        self.assertAlmostEqualList(obj1.doubler([jfloat(1.1), jfloat(2.2)]), [1.1, 1.1, 2.2, 2.2])
+        self.assertAlmostEqualList(obj1.doubler([jdouble(1.1), jdouble(2.2)]), [1.1, 1.1, 2.2, 2.2])
+
+    def test_bool_array_arg(self):
+        "Arrays of bool can be used as arguments"
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        obj1 = Example()
+        self.assertEqual(obj1.doubler([True, False]), [True, True, False, False])
+
+    def test_string_array_arg(self):
+        "Arrays of string can be used as arguments"
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        obj1 = Example()
+        self.assertEqual(obj1.doubler(["one", "two"]), ["one", "one", "two", "two"])
+
+    def test_object_array_arg(self):
+        "Arrays of object can be used as arguments"
+        Example = JavaClass('org/beeware/rubicon/test/Example')
+        obj1 = Example()
+
+        Thing = JavaClass('org/beeware/rubicon/test/Thing')
+        thing1 = Thing('This is one', 1)
+        thing2 = Thing('This is two', 2)
+
+        self.assertEqual(
+            [str(obj) for obj in obj1.doubler([thing1, thing2])],
+            [str(obj) for obj in [thing1, thing1, thing2, thing2]]
+        )
 
     def test_method_null(self):
         "Null objects can be passed as arguments"
