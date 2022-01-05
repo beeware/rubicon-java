@@ -1,10 +1,19 @@
+from ctypes import cast
 from collections.abc import Sequence
 import itertools
 
-from .jni import cast, java, reflect
+from .jni import java, reflect
 from .types import (
-    jboolean, jbyte, jchar, jclass, jdouble, jfloat, jint, jlong, jobject,
-    jobjectArray, jshort, jstring,
+    jboolean, jbooleanArray,
+    jbyte, jbyteArray,
+    jchar, jclass,
+    jdouble, jdoubleArray,
+    jfloat, jfloatArray,
+    jint, jintArray,
+    jlong, jlongArray,
+    jobject, jobjectArray,
+    jshort, jshortArray,
+    jstring,
 )
 
 # A cache of known JavaInterface proxies. This is used by the dispatch
@@ -105,24 +114,45 @@ def convert_args(args, type_names):
             jarg = java.NewByteArray(len(arg))
             java.SetByteArrayRegion(jarg, 0, len(arg), (jbyte * len(arg))(*arg))
             converted.append(jarg)
-        elif isinstance(arg, Sequence) and type_name == b'[Z':
-            jarg = java.NewBooleanArray(len(arg))
-            java.SetBooleanArrayRegion(jarg, 0, len(arg), (jboolean * len(arg))(*arg))
-            converted.append(jarg)
-        elif isinstance(arg, Sequence) and type_name == b'[I':
-            jarg = java.NewIntArray(len(arg))
-            java.SetIntArrayRegion(jarg, 0, len(arg), (jint * len(arg))(*arg))
-            converted.append(jarg)
-        elif isinstance(arg, Sequence) and type_name == b'[F':
-            jarg = java.NewFloatArray(len(arg))
-            java.SetFloatArrayRegion(jarg, 0, len(arg), (jfloat * len(arg))(*arg))
-            converted.append(jarg)
-        elif isinstance(arg, Sequence) and type_name == b'[D':
-            jarg = java.NewDoubleArray(len(arg))
-            java.SetDoubleArrayRegion(jarg, 0, len(arg), (jdouble * len(arg))(*arg))
-            converted.append(jarg)
         elif isinstance(arg, str):
             converted.append(java.NewStringUTF(arg.encode('utf-8')))
+        elif isinstance(arg, Sequence):
+            if type_name == b'[Z':
+                jarg = java.NewBooleanArray(len(arg))
+                java.SetBooleanArrayRegion(jarg, 0, len(arg), (jboolean * len(arg))(*arg))
+                converted.append(jarg)
+            elif type_name == b'[S':
+                jarg = java.NewShortArray(len(arg))
+                java.SetShortArrayRegion(jarg, 0, len(arg), (jshort * len(arg))(*arg))
+                converted.append(jarg)
+            elif type_name == b'[I':
+                jarg = java.NewIntArray(len(arg))
+                java.SetIntArrayRegion(jarg, 0, len(arg), (jint * len(arg))(*arg))
+                converted.append(jarg)
+            elif type_name == b'[J':
+                jarg = java.NewLongArray(len(arg))
+                java.SetLongArrayRegion(jarg, 0, len(arg), (jlong * len(arg))(*arg))
+                converted.append(jarg)
+            elif type_name == b'[F':
+                jarg = java.NewFloatArray(len(arg))
+                java.SetFloatArrayRegion(jarg, 0, len(arg), (jfloat * len(arg))(*arg))
+                converted.append(jarg)
+            elif type_name == b'[D':
+                jarg = java.NewDoubleArray(len(arg))
+                java.SetDoubleArrayRegion(jarg, 0, len(arg), (jdouble * len(arg))(*arg))
+                converted.append(jarg)
+            elif type_name == b'[Ljava/lang/String;':
+                jarg = java.NewObjectArray(len(arg), JavaClass('java/lang/String').__jni__, None)
+                for i, obj in enumerate(arg):
+                    java.SetObjectArrayElement(jarg, i, java.NewStringUTF(obj.encode('utf-8')))
+                converted.append(jarg)
+            elif type_name.startswith(b'[L'):
+                jarg = java.NewObjectArray(len(arg), JavaClass(type_name[2:-1].decode('utf-8')).__jni__, None)
+                for i, obj in enumerate(arg):
+                    java.SetObjectArrayElement(jarg, i, obj.__jni__)
+                converted.append(jarg)
+            else:
+                raise ValueError("Unknown argument type", arg, type(arg))
         elif isinstance(arg, (JavaInstance, JavaProxy)):
             converted.append(arg.__jni__)
         elif isinstance(arg, JavaNull):
@@ -196,20 +226,55 @@ def select_polymorph(polymorphs, args):
                 # If arg is an iterable of all the same basic numeric type, then
                 # an array of that Java type can work.
                 if isinstance(arg[0], (bool, jboolean)):
-                    if all((isinstance(item, (bool, jboolean)) for item in arg)):
+                    if all(isinstance(item, (bool, jboolean)) for item in arg):
                         arg_types.append([b'[Z'])
                     else:
                         raise ValueError("Convert entire list to bool/jboolean to create a Java boolean array")
-                elif isinstance(arg[0], (int, jint)):
-                    if all((isinstance(item, (int, jint)) for item in arg)):
+                elif isinstance(arg[0], int):
+                    if all(isinstance(item, int) for item in arg):
+                        arg_types.append([b'[I', b'[J', b'[S'])
+                    else:
+                        raise ValueError("Unable to treat all data in list as integers")
+                elif isinstance(arg[0], jshort):
+                    if all(isinstance(item, jshort) for item in arg):
+                        arg_types.append([b'[S'])
+                    else:
+                        raise ValueError("Unable to treat all data in list as integers")
+                elif isinstance(arg[0], jint):
+                    if all(isinstance(item, jint) for item in arg):
                         arg_types.append([b'[I'])
                     else:
                         raise ValueError("Unable to treat all data in list as integers")
-                elif isinstance(arg[0], (float, jfloat, jdouble)):
-                    if all((isinstance(item, (float, jfloat, jdouble)) for item in arg)):
+                elif isinstance(arg[0], jlong):
+                    if all(isinstance(item, jlong) for item in arg):
+                        arg_types.append([b'[J'])
+                    else:
+                        raise ValueError("Unable to treat all data in list as integers")
+                elif isinstance(arg[0], float):
+                    if all(isinstance(item, float) for item in arg):
                         arg_types.append([b'[D', b'[F'])
                     else:
-                        raise ValueError("Unable to treat all data in list as floats/doubles")
+                        raise ValueError("Unable to treat all data in list as floats")
+                elif isinstance(arg[0], jfloat):
+                    if all(isinstance(item, jfloat) for item in arg):
+                        arg_types.append([b'[F'])
+                    else:
+                        raise ValueError("Unable to treat all data in list as floats")
+                elif isinstance(arg[0], jdouble):
+                    if all(isinstance(item, jdouble) for item in arg):
+                        arg_types.append([b'[D'])
+                    else:
+                        raise ValueError("Unable to treat all data in list as doubles")
+                elif isinstance(arg[0], (str, jstring)):
+                    if all(isinstance(item, (str, jstring)) for item in arg):
+                        arg_types.append([b'[Ljava/lang/String;'])
+                    else:
+                        raise ValueError("Unable to treat all data in list as strings")
+                elif isinstance(arg[0], JavaInstance):
+                    if all((item.__class__ == arg[0].__class__) for item in arg):
+                        arg_types.append([b'[L' + arg[0].__class__._descriptor + b';'])
+                    else:
+                        raise ValueError("Unable to treat all data in list as objects")
                 else:
                     raise ValueError("Unable convert sequence into array of Java primitive types")
             elif isinstance(arg, (JavaInstance, JavaProxy)):
@@ -322,7 +387,7 @@ def return_cast(raw, return_signature):
         # Check for NULL return values
         if raw.value:
             return java.GetStringUTFChars(cast(raw, jstring), None).decode('utf-8')
-        return None
+        return JavaNull(return_signature)
 
     elif return_signature.startswith(b'L'):
         # Check for NULL return values
@@ -330,7 +395,68 @@ def return_cast(raw, return_signature):
             return JavaClass(return_signature[1:-1].decode('utf-8'))(__jni__=raw)
         return JavaNull(return_signature)
 
-    raise ValueError("Don't know how to cast return signature '%s'" % return_signature)
+    elif return_signature.startswith(b'['):
+        if return_signature == b'[B':
+            array = cast(raw, jbyteArray)
+            length = java.GetArrayLength(array)
+            value = java.GetByteArrayElements(array, None)
+            # Byte arrays can be converted into a byte string
+            return bytes(value[i] for i in range(length))
+        elif return_signature == b'[Z':
+            array = cast(raw, jbooleanArray)
+            length = java.GetArrayLength(array)
+            value = java.GetBooleanArrayElements(array, None)
+        elif return_signature == b'[S':
+            array = cast(raw, jshortArray)
+            length = java.GetArrayLength(array)
+            value = java.GetShortArrayElements(array, None)
+        elif return_signature == b'[I':
+            array = cast(raw, jintArray)
+            length = java.GetArrayLength(array)
+            value = java.GetIntArrayElements(array, None)
+        elif return_signature == b'[J':
+            array = cast(raw, jlongArray)
+            length = java.GetArrayLength(array)
+            value = java.GetLongArrayElements(array, None)
+        elif return_signature == b'[F':
+            array = cast(raw, jfloatArray)
+            length = java.GetArrayLength(array)
+            value = java.GetFloatArrayElements(array, None)
+        elif return_signature == b'[D':
+            array = cast(raw, jdoubleArray)
+            length = java.GetArrayLength(array)
+            value = java.GetDoubleArrayElements(array, None)
+        elif return_signature.startswith(b'[L'):
+            array = cast(raw, jobjectArray)
+            length = java.GetArrayLength(array)
+            value = [
+                java.GetObjectArrayElement(array, i)
+                for i in range(length)
+            ]
+
+            # String is a special type of object; convert to Python strings.
+            # Otherwise, create wrapper JNI objects
+            if return_signature == b'[Ljava/lang/String;':
+                return [
+                    java.GetStringUTFChars(cast(obj, jstring), None).decode('utf-8')
+                    if obj.value
+                    else JavaNull(return_signature[1:])
+                    for obj in value
+                ]
+            else:
+                return [
+                    JavaClass(return_signature[2:-1].decode('utf-8'))(__jni__=obj)
+                    if obj.value
+                    else JavaNull(return_signature[1:])
+                    for obj in value
+                ]
+        else:
+            ValueError("Don't know how to cast return sequence signature '%s'" % return_signature.decode('utf-8'))
+
+        # Convert into a Python list
+        return [value[i] for i in range(length)]
+
+    raise ValueError("Don't know how to cast return signature '%s'" % return_signature.decode('utf-8'))
 
 
 def dispatch_cast(raw, type_signature):

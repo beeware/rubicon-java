@@ -162,6 +162,78 @@ public class Example extends BaseExample {
         return in + in;
     }
 
+    public boolean [] doubler(boolean [] in) {
+        boolean [] out = new boolean[in.length * 2];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = in[i / 2];
+        }
+        return out;
+    }
+
+    public byte [] doubler(byte [] in) {
+        byte [] out = new byte[in.length * 2];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = in[i / 2];
+        }
+        return out;
+    }
+
+    public short [] doubler(short [] in) {
+        short [] out = new short[in.length * 2];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = in[i / 2];
+        }
+        return out;
+    }
+
+    public int [] doubler(int [] in) {
+        int [] out = new int[in.length * 2];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = in[i / 2];
+        }
+        return out;
+    }
+
+    public long [] doubler(long [] in) {
+        long [] out = new long[in.length * 2];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = in[i / 2];
+        }
+        return out;
+    }
+
+    public float [] doubler(float [] in) {
+        float [] out = new float[in.length * 2];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = in[i / 2];
+        }
+        return out;
+    }
+
+    public double [] doubler(double [] in) {
+        double [] out = new double[in.length * 2];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = in[i / 2];
+        }
+        return out;
+    }
+
+    public String [] doubler(String [] in) {
+        String [] out = new String[in.length * 2];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = in[i / 2];
+        }
+        return out;
+    }
+
+    public Thing [] doubler(Thing [] in) {
+        Thing [] out = new Thing[in.length * 2];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = in[i / 2];
+        }
+        return out;
+    }
+
     public static String tripler(String in) {
         return in + in + in;
     }
