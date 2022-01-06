@@ -4,6 +4,19 @@ Release History
 
 .. towncrier release notes start
 
+0.2.6 (2022-01-06)
+==================
+
+Features
+--------
+
+* Added support for arrays in arguments and return values. (#55)
+* Added the ability to cast Java objects from one class to another. (#58)
+* Local JNI Instances can be converted into global JNI instances using ``__global__()`` (#59)
+* Added support for Python 3.9 and 3.10. (#62, #66)
+* Methods that accept a Java ``NULL`` as an argument are now supported. (#63)
+* Methods that return ``NULL`` now return typed ``NULL`` objects. (#67)
+
 0.2.5 (2021-01-05)
 ==================
 

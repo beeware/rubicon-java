@@ -1,1 +1,0 @@
-Added the ability to cast Java objects from one class to another.

@@ -1,1 +1,0 @@
-Added support for arrays in arguments and return values.
