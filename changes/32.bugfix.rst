@@ -1,0 +1,1 @@
+When the test suite completes successfully, it no longer outputs a message suggesting failure.

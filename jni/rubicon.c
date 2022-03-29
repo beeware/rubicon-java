@@ -1010,7 +1010,14 @@ JNIEXPORT jint JNICALL Java_org_beeware_rubicon_Python_run(JNIEnv *env, jobject 
     if (!ret) {
         result = PyObject_Call(run_module_as_main, runargs, NULL);
         if (result == NULL) {
-            LOG_E("Application quit abnormally!");
+            if (PyErr_ExceptionMatches(PyExc_SystemExit)) {
+                LOG_D("Python code raised SystemExit");
+            } else {
+                LOG_E("Application quit abnormally!");
+            }
+
+            // In the case of a SystemExit, printing the exception
+            // will terminate the process (including the Java VM).
             PyErr_Print();
             PyErr_Clear();
             ret = 1;
