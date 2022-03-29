@@ -47,6 +47,13 @@ ifeq ($(IS_ANDROID),yes)
 	LDFLAGS := $(LDFLAGS) -llog
 endif
 
+# When compiling on macOS, check for M1/Apple Silicon.
+IS_APPLE_SILICON := $(shell uname -ms | grep -q "Darwin arm64" && echo yes || echo no)
+ifeq ($(IS_APPLE_SILICON),yes)
+	CFLAGS := $(CFLAGS) -arch x86_64
+	LDFLAGS := $(LDFLAGS) -arch x86_64
+endif
+
 ifdef JAVA_HOME
 	JAVAC := $(JAVA_HOME)/bin/javac
 else
