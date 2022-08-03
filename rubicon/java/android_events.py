@@ -227,7 +227,7 @@ class AndroidInterop:
     def __init__(self):
         # `_runnable_by_fn` is a one-to-one mapping from Python callables to Java Runnables.
         # This allows us to avoid creating more than one Java object per Python callable, which
-        # would be waste of memory and CPU.
+        # would prevent removeCallbacks from working.
         self._runnable_by_fn = {}
         # _handler is a lazily-created `android.os.Handler`. We use its `postDelayed()` method
         # to ask for wakeup. We only create it when needed, which avoids using memory & CPU
@@ -251,7 +251,9 @@ class AndroidInterop:
     def call_later(self, fn, timeout_millis):
         """Enqueue a Python callable `fn` to be run after `timeout_millis` milliseconds."""
         # Coerce timeout_millis to an integer since postDelayed() takes an integer (jlong).
-        self.handler.postDelayed(self.get_or_create_runnable(fn), int(timeout_millis))
+        runnable = self.get_or_create_runnable(fn)
+        self.handler.removeCallbacks(runnable)
+        self.handler.postDelayed(runnable, int(timeout_millis))
 
 
 class PythonRunnable(Runnable):
