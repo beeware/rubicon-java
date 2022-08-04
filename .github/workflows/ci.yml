@@ -28,7 +28,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: '3.X'
     - name: Install dependencies
@@ -52,7 +52,7 @@ jobs:
       - name: Environment - checkout code
         uses: actions/checkout@main
       - name: Environment - Setup python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
       - name: Environment - Use Java 8
@@ -86,7 +86,7 @@ jobs:
       - name: Environment - checkout code
         uses: actions/checkout@main
       - name: Environment - Setup python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
       - name: Environment - Use Java 8
