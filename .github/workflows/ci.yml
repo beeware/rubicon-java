@@ -11,7 +11,7 @@ on:
   pull_request:
     push:
       branches:
-        - master
+        - main
 
 jobs:
   beefore:
@@ -50,7 +50,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Environment - checkout code
-        uses: actions/checkout@master
+        uses: actions/checkout@main
       - name: Environment - Setup python
         uses: actions/setup-python@v1
         with:
@@ -84,7 +84,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Environment - checkout code
-        uses: actions/checkout@master
+        uses: actions/checkout@main
       - name: Environment - Setup python
         uses: actions/setup-python@v1
         with:
@@ -113,7 +113,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Environment - checkout code
-        uses: actions/checkout@master
+        uses: actions/checkout@main
       - name: Install dependencies, compile rubicon-java, and run tests
         uses: docker://i386/ubuntu:18.04
         # This step does everything because changes within the container
