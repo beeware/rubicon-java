@@ -25,7 +25,7 @@ coding:
     (venv) $ python -m pip install --upgrade pip
     (venv) $ python -m pip install --upgrade setuptools
     (venv) $ git clone https://github.com/beeware/rubicon-java.git
-    (venv) $ cd rubicon-objc
+    (venv) $ cd rubicon-java
     (venv) $ python -m pip install -e .
 
 Rubicon uses tox to describe it's testing environment. To install tox, run:
