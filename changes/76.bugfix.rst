@@ -1,0 +1,1 @@
+Asynchronous co-routines clean up their handler callbacks when being re-queued. Without this cleanup, every time an co-routine was awaited, a no-op invocation of the handler would occur.
