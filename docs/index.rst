@@ -29,6 +29,12 @@
 Rubicon Java
 ============
 
+.. note::
+
+    This project has been archived. It was used by Briefcase 0.3.9 and earlier
+    to support Android projects; however, that role is now performed by
+    `Chaquopy <https://chqauo.com>`__.
+
 Rubicon Java is a bridge between the Java Runtime Environment and Python. It
 enables you to:
 

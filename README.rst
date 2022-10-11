@@ -1,3 +1,7 @@
+**This project has been archived. It was used by Briefcase 0.3.9 and earlier to
+support Android projects; however, that role is now performed by `Chaquopy
+<https://chqauo.com>`__.**
+
 .. image:: https://beeware.org/project/projects/bridges/rubicon/rubicon.png
     :width: 72px
     :target: https://beeware.org/rubicon
